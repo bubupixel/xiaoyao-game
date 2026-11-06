@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-114956";</script>
+<script>window.XY_BUILD="20261106-122158";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6704,8 +6704,7 @@ const _openModalT=openModal;openModal=function(h,s,f){const m=$('#modal');if(m&&
 ui.vpW=innerWidth;ui.vpH=innerHeight;
 const _fitSceneS=fitScene;
 fitScene=function(){const w=innerWidth;if(w!==ui.vpW){ui.vpW=w;ui.vpH=innerHeight;}else ui.vpH=Math.max(ui.vpH,innerHeight);
- const box=$('#stageInner'),cv=$('#scene');if(!box||!cv)return _fitSceneS();const avail=box.clientWidth;const maxH=Math.max(150,ui.vpH*.29);const target=Math.min(avail,maxH*SW/SH);
- let k=Math.floor(target*DPR/SW),ww=k*SW/DPR;if(k<1||ww<target*.86)ww=target;const W=Math.floor(ww)+'px',H=Math.floor(ww*SH/SW)+'px';if(cv.style.width!==W)cv.style.width=W;if(cv.style.height!==H)cv.style.height=H;
+ const box=$('#stageInner'),cv=$('#scene');if(!box||!cv)return _fitSceneS();const avail=box.clientWidth;const maxH=Math.max(150,ui.vpH*.34);const ww=Math.min(avail,maxH*SW/SH); /* 盡量填滿寬度，兩邊不留黑邊 */const W=Math.floor(ww)+'px',H=Math.floor(ww*SH/SW)+'px';if(cv.style.width!==W)cv.style.width=W;if(cv.style.height!==H)cv.style.height=H;
  const app=$('#app');if(app)app.style.setProperty('--sh',cv.style.height||'240px');};
 /* 場景圖背景對齊整數像素，避免抖動 */
 const _engFrameS=engFrame;engFrame=function(now){_engFrameS(now);const bg=document.getElementById('sceneBg'),sc=document.getElementById('scene');if(bg&&sc&&!bg.hidden){const L=Math.round(sc.offsetLeft)+'px',T=Math.round(sc.offsetTop)+'px';if(bg.style.left!==L)bg.style.left=L;if(bg.style.top!==T)bg.style.top=T;}};
@@ -6718,6 +6717,8 @@ const _saveModalS=saveModal;saveModal=function(){_saveModalS.apply(this,argument
  if(after)after.insertAdjacentHTML('afterend',h);};
 ACT.toggleCalm=(d,el)=>{S.settings.calm=el&&el.tagName==='INPUT'?el.checked:!S.settings.calm;applyCalm();save();toast(S.settings.calm?'已開啟簡潔模式':'已關閉簡潔模式');};
 const _renderTopS=renderTop;renderTop=function(){_renderTopS();applyCalm();};
+/* 場景圖略為放大，裁掉圖片本身邊緣的白線，兩邊不留黑邊 */
+(function(){const st=document.createElement('style');st.textContent='#sceneBg{transform:scale(1.035);transform-origin:50% 50%}#stageInner{background:#2a2016}';document.head.appendChild(st);})();
 
 /* ================= 擴充十一介面：下一步指引、江湖地圖、回歸奇遇、回來時間、試劍塔、出招策略、切磋碼、分享卡 ================= */
 const clk=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
