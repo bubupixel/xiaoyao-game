@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-183238";</script>
+<script>window.XY_BUILD="20261106-183433";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7958,11 +7958,12 @@ const _engFrameSP=engFrame;engFrame=function(now){if(!S)return _engFrameSP(now);
  const D=SCENE_DEFS[sceneKey()]||{},tk=gameTimeKey(),tint=tk==='night'?(D.indoor?'rgba(50,34,40,.22)':'rgba(28,36,86,.4)'):tk==='dusk'?'rgba(120,56,30,.16)':null;
  if(tint&&q.length){x.globalCompositeOperation='source-atop';x.fillStyle=tint;x.fillRect(0,0,pw,ph);x.globalCompositeOperation='source-over';}return r;};
 /* 放大小畫布（戰鬥、預覽、對手）再畫小人 */
-function sprBig(c,key,flip){if(!c||!sprOk(key))return;const cw=c.clientWidth||c.width*2,ch=c.clientHeight||c.height*2;c.style.width=cw+'px';c.style.height=ch+'px';
- const K=4;c.width=28*K;c.height=52*K;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);drawSpr(x,key,flip,c.width/2,c.height-2,K*SPR_STAND*.95,0,0);}
-const _battleModalSP=battleModal;battleModal=function(title,out){_battleModalSP(title,out);sprBig(document.querySelector('#sheet [data-btp]'),playerSprKey(curLook(),'stand'),false);
+function sprBig(c,key,flip,hCss){if(!c||!sprOk(key))return;const im=SPR[key];const ch=hCss||c.clientHeight||c.height*2;const cw=Math.ceil(ch*im.naturalWidth/im.naturalHeight*1.04);
+ c.style.height=ch+'px';c.style.width=cw+'px';const K=Math.min(3,window.devicePixelRatio||1)*1.5;c.width=Math.round(cw*K);c.height=Math.round(ch*K);const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+ drawSpr(x,key,flip,c.width/2,c.height-1,(c.height-2)/im.naturalHeight,0,0);}
+const _battleModalSP=battleModal;battleModal=function(title,out){_battleModalSP(title,out);sprBig(document.querySelector('#sheet [data-btp]'),playerSprKey(curLook(),'stand'),false,122);
  const rv=document.querySelector('#sheet .bt-rival');if(rv&&out&&out.look)sprBig(rv,playerSprKey(out.look,'stand'),true);};
-const _paintCanvasesSP=paintCanvases;paintCanvases=function(root){_paintCanvasesSP(root);const pv=document.getElementById('preview');if(pv)sprBig(pv,playerSprKey(ui.creating||curLook(),'stand'),false);
+const _paintCanvasesSP=paintCanvases;paintCanvases=function(root){_paintCanvasesSP(root);const pv=document.getElementById('preview');if(pv)sprBig(pv,playerSprKey(ui.creating||curLook(),'stand'),false,190);
  (root||document).querySelectorAll('canvas[data-self]').forEach(c=>sprBig(c,playerSprKey(curLook(),'stand'),false));
  (root||document).querySelectorAll('canvas[data-rival]').forEach(c=>{const R=(S&&S.rivals||[])[+c.dataset.rival];if(R&&R.look)sprBig(c,playerSprKey(R.look,'stand'),true);});};
 
@@ -7972,13 +7973,13 @@ lookEditor=function(L,creating){const owned=creating?OUTFIT_SETS.filter(k=>OUTFI
  <h3>服裝</h3>${chips('lk_outfit',owned.map(k=>[k,OUTFITS[k].n]),outfitTo(L.outfit))}<span class="sub">${creating?'更多服裝可在江湖中取得：裁縫鋪、探索、知己事件。':'已收集 '+owned.length+' / '+OUTFIT_SETS.length+' 套，可到「收藏」查看取得方式。'}</span></div>`;};
 const _colSectionSP=colSection;colSection=function(title,all,owned,rend){if(title==='髮飾'||title==='兵器外觀')return '';
  if(title==='服裝'){const A={};for(const k of OUTFIT_SETS)A[k]=OUTFITS[k];return _colSectionSP(title,A,owned.filter(k=>A[k]),rend);}return _colSectionSP(title,all,owned,rend);};
-(function(){const st=document.createElement('style');st.textContent='.preview canvas#preview{width:84px;height:156px;image-rendering:auto}';document.head.appendChild(st);})();
+(function(){const st=document.createElement('style');st.textContent='.preview canvas#preview{image-rendering:auto;display:block;margin:0 auto;max-width:100%}.preview{padding:10px 0}';document.head.appendChild(st);})();
 
 /* ---------- 敵人：換成高解像度像素圖 ---------- */
 (function(){if(typeof EN_IMG==='undefined')return;for(const k in SPRITE_IMG_SRC){if(!k.startsWith('en_'))continue;const im=new Image();im.src=SPRITE_IMG_SRC[k];EN_IMG[k.slice(3)]=im;}
  for(const k of ['yan','mrx'])if(SPRITE_IMG_SRC[k]){const im=new Image();im.src=SPRITE_IMG_SRC[k];EN_IMG[k]=im;}
  if(typeof EN_RULES!=='undefined')EN_RULES.unshift([/慕容/,'mrx'],[/浪人|霧島|東瀛|倭/,'ronin'],[/禁衛|帶刀|御前|官兵|武官|守衛|將軍/,'guard'],[/虎|熊|豹|獒|獅|野豬/,'tiger']);
- const st=document.createElement('style');st.textContent='.bt-bg .bt-e,img.bt-e{object-fit:contain;object-position:center bottom;image-rendering:auto!important}img.stance-en{object-fit:contain;object-position:center bottom;image-rendering:auto!important}.bt-bg canvas[data-btp]{width:66px!important;height:122px!important}';document.head.appendChild(st);})();
+ const st=document.createElement('style');st.textContent='.bt-bg .bt-e,img.bt-e{object-fit:contain;object-position:center bottom;image-rendering:auto!important}img.stance-en{object-fit:contain;object-position:center bottom;image-rendering:auto!important}.bt-bg canvas[data-btp]{height:122px!important;width:auto!important;max-width:none!important}';document.head.appendChild(st);})();
 
 /* ---------- 寵物：圖片代替 emoji ---------- */
 const PET_H={cat:.32,dog:.4,rabbit:.33,fox:.4,crane:.62,redpanda:.38,squirrel:.34,tiger:.42};/* 相對主角站姿的高度 */
