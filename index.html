@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-191824";</script>
+<script>window.XY_BUILD="20261106-192331";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4563,6 +4563,73 @@ gainItem=function(s,k,n,sum){if(!(n>0))return;s.acc=s.acc||{};let w=Math.floor(n
  if(w<=0)return;s.mat[k]=(s.mat[k]||0)+w;addItemSum(sum,k,w);if(k==='herb')s.stat.herbTotal=Math.floor((s.stat.herbTotal||0)+w);};
 const _normalizeFR=normalize;normalize=function(raw,now){const s=_normalizeFR(raw,now);for(const k in s.mat){const v=+s.mat[k]||0;s.mat[k]=Math.max(0,Math.floor(v+1e-9));}if(s.stat&&s.stat.herbTotal)s.stat.herbTotal=Math.floor(s.stat.herbTotal);return s;};
 
+'use strict';
+/* ================= 逍遙江湖 擴充二十二：更多隨機奇遇 =================
+   奇遇出現得更頻密（約每 45 分鐘一件），並加入各地專屬奇遇。 */
+const xpBit=(s,k)=>{const sum=newSummary();addXp(s,stageReq(s.g)*k,sum);};
+const insBit=(s,n)=>{const a=Math.min(100-s.insight,n);s.insight+=a;return Math.round(a);};
+const fameBit=(s,n)=>{const f=Math.round(n*fameMult(s));s.fame+=f;return f;};
+ENCOUNTERS.push(
+ /* 通用 */
+ {id:'e_fortune',n:'算命先生',text:'路邊一個瞎眼算命先生叫住你：「這位少俠，印堂發亮，最近要走運啊！讓老夫算一卦？」',
+  ch:[{t:'算一卦（20 兩）',need:s=>s.silver>=20?null:'需要 20 兩',fn:s=>{s.silver-=20;const r=Math.random();if(r<.4){const v=encGold(s,1.5);s.silver+=v;return '「往東走，有財。」你半信半疑往東走，真的撿到一個錢袋。銀兩 +'+v+'。';}if(r<.75)return '「三日之內，必有貴人。」……先記著吧。感悟 +'+insBit(s,6)+'。';gainItem(s,'p_qi',1);return '他摸了摸你的手：「骨骼清奇！」然後塞給你一顆聚氣丹，說是「結緣」。';}},
+   {t:'「我命由我。」',fn:s=>{return '算命先生愣了一下，哈哈大笑：「好！好一個我命由我！」他什麼都沒收。感悟 +'+insBit(s,5)+'。';}}]},
+ {id:'e_cat',n:'屋簷上的貓',text:'一隻小花貓卡在屋簷邊下不來，喵喵直叫。底下一個小男孩急得快哭了。',
+  ch:[{t:'施展輕功把牠抱下來',fn:s=>{const f=fameBit(s,4);return '你一躍上簷，把小貓穩穩抱下。小男孩破涕為笑，街坊都在鼓掌。聲望 +'+f+'。';}},
+   {t:'拿出魚乾引牠下來',need:s=>has(s,'fish')?null:'需要 1 條鮮魚',fn:s=>{useItems(s,{fish:1});const ids=encMet(s);if(ids.length){const id=pick(ids);addRel(s,id,3);return '小貓順著你的手跳下來，蹭了你一身毛。'+NPCS[id].n+'正好路過，笑你：「你跟貓倒是很有緣。」好感 +3。';}return '小貓順著你的手跳下來，蹭了你一身毛。';}}]},
+ {id:'e_ambush',n:'山道伏擊',text:'山道轉角，幾個蒙面人從樹上跳下來：「留下買路錢！」',
+  ch:[{t:'拔出兵器',fn:s=>{const E=finishEnemy(Object.assign(enemyBase(Math.max(.5,realmOf(s)*3.8+1.5),false),{name:'蒙面山賊'}));const r=fight(playerFighter(s),E);applyPotions(s,r);
+     if(r.win){const v=encGold(s,1.6);s.silver+=v;return '幾個回合，山賊就跑得一個不剩，還丟下了一袋贓銀。銀兩 +'+v+'。';}return '對方人多，你只好退走。沒有任何損失。';}},
+   {t:'丟出一把碎銀，趁亂離開',fn:s=>{const v=Math.min(s.silver,encGold(s,.3));s.silver-=v;return '山賊搶著撿銀子，你早已走遠。銀兩 -'+v+'。';}}]},
+ {id:'e_well',n:'古井回聲',text:'荒村裡有一口古井，井底傳來一陣奇怪的回聲，像有人在唸口訣。',
+  ch:[{t:'放下繩子爬下去',fn:s=>{if(Math.random()<.5){addProf(s,s.mainInner,90*(1+realmOf(s)),null);return '井壁上刻著一段殘缺的心法，你照著運了一遍氣，渾身舒暢。內功熟練增加。';}gainItem(s,'ore',4);return '井底只有一堆碎石，不過裡面夾著幾塊不錯的礦石。礦石 ×4。';}},
+   {t:'坐在井邊靜聽',fn:s=>{return '聽著聽著，你發現那只是風聲。但心卻莫名地靜了下來。感悟 +'+insBit(s,8)+'。';}}]},
+ {id:'e_wedding',n:'鄉間喜事',text:'村口張燈結綵，一戶人家正在辦喜事。主人家看見你，熱情地拉你進去喝杯喜酒。',
+  ch:[{t:'包個紅包（50 兩）',need:s=>s.silver>=50?null:'需要 50 兩',fn:s=>{s.silver-=50;gainItem(s,'wine',2);const f=fameBit(s,5);return '新郎官連聲道謝，硬塞給你兩罈喜酒。桂花酒 ×2、聲望 +'+f+'。';}},
+   {t:'舞一套劍給大家助興',fn:s=>{addProf(s,s.mainMartial,40*(1+realmOf(s)),null);return '滿堂喝彩，連新娘都掀開蓋頭偷看。武功熟練增加。';}}]},
+ {id:'e_beggar',n:'丐幫小叫化',text:'一個髒兮兮的小叫化攔住你：「大俠，賞口飯吃吧！我可以告訴你一個秘密。」',
+  ch:[{t:'請他吃頓飯（15 兩）',need:s=>s.silver>=15?null:'需要 15 兩',fn:s=>{s.silver-=15;const r=Math.random();if(r<.5){const v=encGold(s,1.2);s.silver+=v;return '他吃飽了，偷偷告訴你城南破廟的佛像底下藏著東西。你去一看，真有一袋銀子！銀兩 +'+v+'。';}gainItem(s,'herb',5);return '他告訴你後山有一片沒人知道的藥田。草藥 ×5。';}},
+   {t:'教他兩招防身',fn:s=>{const f=fameBit(s,3);return '小叫化學得有模有樣，說以後要叫你師父。聲望 +'+f+'。';}}]},
+ {id:'e_kite',n:'斷線風箏',text:'一隻斷了線的大風箏掛在高高的樹梢上，風箏上畫著一隻仙鶴。',
+  ch:[{t:'爬上去拿下來',fn:s=>{const ids=encMet(s).filter(id=>!NPCS[id].male);if(ids.length){const id=pick(ids);addRel(s,id,5);return '風箏的主人跑過來——竟然是'+NPCS[id].n+'！「謝謝……這是我小時候做的。」好感 +5。';}gainItem(s,'cloth2',1);return '風箏是一個小姑娘的，她用一匹綢緞答謝你。綢緞 ×1。';}},
+   {t:'看著它隨風飄遠',fn:s=>{return '風一吹，風箏掙脫樹枝，飛向天邊。你看了很久。感悟 +'+insBit(s,6)+'。';}}]},
+ {id:'e_book',n:'舊書攤',text:'市集角落有個舊書攤，攤主在打瞌睡，書堆裡露出一本封面發黃的拳譜。',
+  ch:[{t:'買下拳譜（80 兩）',need:s=>s.silver>=80?null:'需要 80 兩',fn:s=>{s.silver-=80;addProf(s,s.mainMartial,100*(1+realmOf(s)),null);if(Math.random()<.15){gainItem(s,'p_break',1);return '書頁裡竟夾著一顆用蠟封好的破境丹！武功熟練增加、破境丹 ×1。';}return '雖然是殘本，但幾個招式很有意思。武功熟練增加。';}},
+   {t:'站著翻看一會兒',fn:s=>{return '攤主醒了，瞪了你一眼。你已經記住了好幾頁。感悟 +'+insBit(s,5)+'。';}}]},
+ {id:'e_storm',n:'雷雨夜',text:'夜裡雷雨大作，一道閃電劈中了院子裡的老槐樹，樹幹裂開，裡面似乎有東西在發光。',
+  ch:[{t:'冒雨去看',fn:s=>{if(Math.random()<.3){gainItem(s,'yuntie',1);return '是一塊被雷劈出來的天外隕鐵！還燙手。天外隕鐵 ×1。';}gainItem(s,'xingsha',1);return '樹洞裡有一小撮閃亮的星砂。星砂 ×1。';}},
+   {t:'在雷聲中練功',fn:s=>{xpBit(s,.04);return '每一道雷聲都像在敲打你的經脈。修為增加。';}}]},
+ /* 地方奇遇 */
+ {id:'e_town_tea',loc:'town',n:'茶館鬥茶',text:'青石鎮的茶館今天辦鬥茶會，掌櫃看見你：「客官也來湊個熱鬧？」',
+  ch:[{t:'拿出碧螺春參賽',need:s=>has(s,'tea')?null:'需要 1 包碧螺春',fn:s=>{useItems(s,{tea:1});const v=encGold(s,1.4);s.silver+=v;return '你的茶湯清亮回甘，拿了第二名。彩頭銀兩 +'+v+'。';}},
+   {t:'在旁邊看熱鬧',fn:s=>{return '各家茶人的手法讓你大開眼界。感悟 +'+insBit(s,5)+'。';}}]},
+ {id:'e_luoyang_peony',loc:'luoyang',n:'牡丹花會',text:'洛陽城的牡丹開了，滿城的人都出來賞花。一位老花匠說他培育了一株「墨牡丹」，可惜被人偷了。',
+  ch:[{t:'幫他追查花賊',fn:s=>{const f=fameBit(s,8);const v=encGold(s,1);s.silver+=v;return '你在城西找到花賊，墨牡丹完好無缺。老花匠感激不已。聲望 +'+f+'、銀兩 +'+v+'。';}},
+   {t:'買一盆牡丹回家（120 兩）',need:s=>s.silver>=120?null:'需要 120 兩',fn:s=>{s.silver-=120;return '你捧著牡丹回到家，整個院子都香了。感悟 +'+insBit(s,10)+'。';}}]},
+ {id:'e_jiangnan_boat',loc:'jiangnan',n:'畫舫歌聲',text:'江面上漂來一艘畫舫，船上的歌女唱著一首你從沒聽過的曲子。',
+  ch:[{t:'撐小船靠過去聽',fn:s=>{return '曲子講的是一個等人的故事。你聽著聽著，想起了很多人。感悟 +'+insBit(s,10)+'。';}},
+   {t:'跳上畫舫打聽',fn:s=>{if(Math.random()<.5){gainItem(s,'zhenzhu',1);return '畫舫主人說這是東海傳來的曲子，送了你一顆珍珠。東海珍珠 ×1。';}const v=encGold(s,.8);s.silver+=v;return '船上有人在賭錢，你贏了幾把就走。銀兩 +'+v+'。';}}]},
+ {id:'e_hanshan_bell',loc:'hanshan',n:'寒山夜鐘',text:'寒山古寺的鐘聲在半夜響了，可是敲鐘的僧人說，今晚沒有人敲鐘。',
+  ch:[{t:'上鐘樓看看',fn:s=>{if(Math.random()<.4){gainItem(s,'hantie',1);return '鐘樓上沒有人，只有一塊結著霜的寒鐵靠在鐘邊。千年寒鐵 ×1。';}return '鐘樓上空無一人。風一吹，鐘又輕輕響了一聲。感悟 +'+insBit(s,8)+'。';}},
+   {t:'在禪房裡聽鐘聲打坐',fn:s=>{xpBit(s,.035);return '鐘聲一下一下，像在洗你的心。修為增加。';}}]},
+ {id:'e_damo_mirage',loc:'damo',n:'沙漠海市',text:'大漠的地平線上，忽然浮現一座水晶般的城市，城門口有人在向你招手。',
+  ch:[{t:'朝那座城走去',fn:s=>{const v=Math.min(s.stam,10);s.stam-=v;if(Math.random()<.5){gainItem(s,'putao',2);return '城市越走越遠，最後消失了。但你在沙丘下找到了商隊遺落的兩罈葡萄酒。葡萄美酒 ×2、體力 -'+v+'。';}return '走了一個時辰，城市消失了。你只好原路回去。體力 -'+v+'、感悟 +'+insBit(s,6)+'。';}},
+   {t:'記下它的樣子',fn:s=>{return '你把那座城畫在紙上。後來阿依娜看見了，說：「那是碧琉璃城。」感悟 +'+insBit(s,7)+'。';}}]},
+ {id:'e_persia_bazaar',loc:'persia',n:'飛毯商人',text:'碧琉璃城的夜市裡，一個商人坐在一張據說「會飛」的地毯上，正在叫賣。',
+  ch:[{t:'買一張（300 兩）',need:s=>s.silver>=300?null:'需要 300 兩',fn:s=>{s.silver-=300;if(Math.random()<.5){gainItem(s,'liuli',1);gainItem(s,'zanghong',1);return '地毯當然不會飛，但商人捲地毯時掉出了一隻琉璃盞和一包藏紅花，硬是送了你。';}gainItem(s,'meiguilu',3);return '地毯當然不會飛，不過商人附送了三瓶玫瑰露。玫瑰露 ×3。';}},
+   {t:'跟他學幾句波斯話',fn:s=>{if(s.npc.sly&&s.npc.sly.met)addRel(s,'sly',3);return '下次見到蘇拉雅，你可以用波斯話跟她打招呼了。感悟 +'+insBit(s,6)+'。';}}]},
+ {id:'e_plateau_yak',loc:'plateau',n:'走失的犛牛',text:'草甸上，一個牧民小姑娘正在找她走失的犛牛，急得滿頭大汗。',
+  ch:[{t:'幫她把犛牛趕回來',fn:s=>{gainItem(s,'suyou',2);if(s.npc.zxd&&s.npc.zxd.met)addRel(s,'zxd',3);return '你在山坳裡找到了牠。小姑娘送你兩塊酥油，說阿媽做的最香。酥油 ×2。';}},
+   {t:'在湖邊陪她唱歌等',fn:s=>{return '歌還沒唱完，犛牛自己慢悠悠地走回來了。感悟 +'+insBit(s,8)+'。';}}]},
+ {id:'e_chaoyin_pearl',loc:'chaoyin',n:'海女',text:'潮音港的礁石上，一個海女剛剛浮出水面，手裡握著一個巨大的海蚌。',
+  ch:[{t:'向她買下海蚌（150 兩）',need:s=>s.silver>=150?null:'需要 150 兩',fn:s=>{s.silver-=150;if(Math.random()<.6){gainItem(s,'zhenzhu',1+(Math.random()<.3?1:0));return '撬開一看，裡面躺著圓潤的珍珠！';}gainItem(s,'haiwei',4);return '蚌裡沒有珍珠，不過肉很鮮。海味乾貨 ×4。';}},
+   {t:'跟她學潛水',fn:s=>{s.stam=Math.max(0,s.stam-8);return '你在水裡憋氣憋到眼冒金星，內息卻悠長了不少。體力 -8、感悟 +'+insBit(s,7)+'。';}}]},
+);
+/* 地方奇遇只在當地出現 */
+const _encAddX=encAdd;encAdd=function(s,n){const keep=ENCOUNTERS.slice();for(const e of keep.filter(e=>e.loc&&e.loc!==s.loc))ENCOUNTERS.splice(ENCOUNTERS.indexOf(e),1);try{return _encAddX(s,n);}finally{ENCOUNTERS.splice(0,ENCOUNTERS.length,...keep);}};
+/* 奇遇頻率加倍（約每 45 分鐘一件） */
+const _catchUpX=catchUp;catchUp=function(s,now){const r=_catchUpX(s,now);if(s.started&&r&&r.applied>0){s.encAcc=(s.encAcc||0)+r.applied;let n=0;while(s.encAcc>=ENC_GAP){s.encAcc-=ENC_GAP;n++;}if(n)encAdd(s,n);}return r;};
+
 </script>
 <script>
 'use strict';
@@ -8187,6 +8254,11 @@ html.calm .mapbar.fresh{animation:none}`;document.head.appendChild(st);})();
 const _vJianghuSH=vJianghu;vJianghu=function(){return _vJianghuSH().replace('data-act="openForge">鐵匠舖</button>','data-act="openForge">兵器鋪</button>');};
 ACT.mkTab=d=>{ui.mkTab=d.t;marketModal();const sh=$('#sheet');if(sh)sh.scrollTop=0;};
 ACT.fgTab=d=>{ui.fgTab=d.t;forgeModal();const sh=$('#sheet');if(sh)sh.scrollTop=0;};
+
+/* 江湖頁：取消「四季天氣」欄位；偶遇朋友改由「下一步」提示 */
+lifeCard=function(){return '';};
+const _nextStepX=nextStep;nextStep=function(){const g=_nextStepX();if(!S||!S.started)return g;if(['encOpen','visitOpen','ogStart','signIn','silkFinish'].includes(g.act))return g;
+ const m=meetHere(S);if(m)return {ic:'👋',t:NPCS[m.id].n+'也在這裡',sub:m.T.txt,btn:'打招呼',act:'meetGreet',data:{n:m.id}};return g;};
 
 </script>
 <script>
