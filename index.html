@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-204054";</script>
+<script>window.XY_BUILD="20261106-205954";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4674,6 +4674,9 @@ function salvageCommon(s){const L=s.inv.filter(x=>!isEqU(s,x.u)&&!fuUniq(x)&&x.q
  s.inv=s.inv.filter(x=>!L.includes(x));for(const k in tot)gainItem(s,k,tot[k]);return {n:L.length,g:tot};}
 Object.assign(TITLES,{w_fuse4:{n:'百鍊成鋼',src:'以升品合成出傳說裝備',tier:5,e:{atkPct:4,defPct:3}}});
 
+/* 轉機同步時間 */
+const _normalizeSY=normalize;normalize=function(raw,now){const s=_normalizeSY(raw,now);if(Number.isFinite(raw&&raw.syncAt))s.syncAt=raw.syncAt;return s;};
+
 </script>
 <script>
 'use strict';
@@ -8430,6 +8433,32 @@ function giSwap(root){if(!root||!root.querySelectorAll)return;const w=document.c
  const st=document.createElement('style');st.textContent=`img.gi{width:1.35em;height:1.35em;vertical-align:-.3em;object-fit:contain;display:inline-block;image-rendering:auto}
 .guide-ic img.gi{width:34px;height:34px;vertical-align:middle}.st-ic img.gi{width:30px;height:30px}.mapbar .mb-ic img.gi{width:40px;height:40px;vertical-align:middle}
 .plot span img.gi,.crop span img.gi{width:30px;height:30px}`;document.head.appendChild(st);})();
+
+/* ================= 轉機同步：iPhone ⇄ iPad，存檔只經過你自己的 AirDrop／iCloud 檔案 ================= */
+const SYNC_NAME='逍遙江湖-轉機存檔.txt',PRE_KEY='xyjh2_before_sync';
+const fmtWhen=t=>{if(!t)return '未知時間';const d=new Date(t);return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+const saveBrief=s=>`${esc(s.name||'無名')}・${REALM_NAMES[realmOf(s)]}・修為 ${fmt(Math.floor(s.xp||0))}・銀兩 ${fmt(Math.floor(s.silver||0))}`;
+function syncCard(){return `<div class="card sync-card"><h3>📱 轉機同步</h3><span class="sub">iPhone 和 iPad 之間搬進度。收工時在這部「傳出」，另一部開工時「接收」。存檔只經過你自己的 AirDrop 或 iCloud，不經任何伺服器。</span>
+ <div class="row"><button class="btn" data-act="syncOut">傳出進度<small>AirDrop／存到 iCloud</small></button><button class="btn jade" data-act="syncIn">接收進度<small>選擇轉機存檔</small></button></div>
+ ${S.syncAt?`<span class="mini">上次傳出：${fmtWhen(S.syncAt)}</span>`:''}${storageGet(PRE_KEY)?'<button class="btn ghost sm" data-act="syncUndo">復原接收前的進度</button>':''}</div>`;}
+const _saveModalSY=saveModal;saveModal=function(){_saveModalSY();const sh=$('#sheet');if(!sh)return;const c=sh.querySelector('.card');if(c)c.insertAdjacentHTML('beforebegin',syncCard());};
+function syncPick(){let inp=document.getElementById('syncFile');if(!inp){inp=document.createElement('input');inp.type='file';inp.id='syncFile';inp.accept='.txt,text/plain';inp.style.display='none';document.body.appendChild(inp);
+  inp.addEventListener('change',()=>{const f=inp.files&&inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{inp.value='';syncPreview(String(r.result||''));};r.readAsText(f);});}inp.click();}
+function syncPreview(code){let s;try{s=importCode(code,Date.now());}catch(e){return toast('讀取失敗：'+(e.message||'不是逍遙江湖的存檔'));}ui.syncCode=code;
+ const older=(s.syncAt||0)&&S.syncAt&&s.syncAt<S.syncAt;
+ openModal(`${backRow('接收進度')}<div class="card story"><h3>收到的進度</h3><span class="sub">${saveBrief(s)}</span><span class="mini">傳出時間：${fmtWhen(s.syncAt)}</span></div>
+ <div class="card"><h3>這部裝置目前</h3><span class="sub">${saveBrief(S)}</span></div>
+ ${older?'<p class="warn">注意：收到的進度比這部裝置上次傳出的還要舊。</p>':''}
+ <button class="btn" data-act="syncLoad">用收到的進度取代</button><button class="btn ghost" data-act="closeModal">取消</button><p class="mini">取代前會自動備份目前進度，之後可在「存」印章裡復原。</p>`);}
+Object.assign(ACT,{
+ syncOut:()=>{sync();S.syncAt=Date.now();S.lastExport=S.syncAt;save();const code=exportCode(S);const f=new File([code],SYNC_NAME,{type:'text/plain'});
+  const dl=()=>{try{const url=URL.createObjectURL(new Blob([code],{type:'text/plain'}));const a=document.createElement('a');a.href=url;a.download=SYNC_NAME;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('已存成檔案：'+SYNC_NAME);}catch(e){toast('請改用「匯出存檔碼」');}};
+  if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:SYNC_NAME}).then(()=>{toast('已傳出，到另一部裝置按「接收進度」');saveModal();},e=>{if(!e||e.name!=='AbortError')dl();});else dl();},
+ syncIn:()=>syncPick(),
+ syncLoad:()=>{try{const s=importCode(ui.syncCode,Date.now());sync();storageSet(PRE_KEY,exportCode(S));S=s;S.pending=null;save();closeModal();toast('已接收進度');sync();save();render();renderTop();if(S.pending)showOffline();}catch(e){toast('接收失敗：'+(e.message||'格式錯誤'));}},
+ syncUndo:()=>{const c=storageGet(PRE_KEY);if(!c)return toast('沒有可以復原的進度');try{const s=importCode(c,Date.now());S=s;S.pending=null;save();try{localStorage.removeItem(PRE_KEY);}catch(e){}closeModal();toast('已復原接收前的進度');render();renderTop();}catch(e){toast('復原失敗');}},
+});
+(function(){const st=document.createElement('style');st.textContent='.sync-card{box-shadow:inset 0 0 0 2px #c8a050}.sync-card .row .btn small{display:block}';document.head.appendChild(st);})();
 
 </script>
 <script>
