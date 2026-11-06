@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-183433";</script>
+<script>window.XY_BUILD="20261106-184558";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4455,6 +4455,109 @@ const _normalizeOF=normalize;normalize=function(raw,now){const s=_normalizeOF(ra
  if(!s.col.outfits.includes(s.look.outfit))s.look.outfit='qingshan';return s;};
 const _newStateOF=newState;newState=function(now){const s=_newStateOF(now);s.col.outfits=OUTFIT_SETS.filter(k=>OUTFITS[k].start);if(!OUTFITS[s.look.outfit])s.look.outfit='qingshan';return s;};
 
+'use strict';
+/* ================= 逍遙江湖 擴充二十一：神兵譜完整篇、兩本新秘笈 =================
+   1. 神兵隨主人境界成長：攻擊永遠比同境界最強的一般兵器高三至五成。
+   2. 神兵譜補齊五把：九天綾、蛇王牙、天機匣、玄武重槍、太初古劍。
+   3. 新秘笈：《星月寶典》（絲路）、《雪域大手印》（高原）。 */
+
+/* ---------- 一、神兵成長 ---------- */
+function bestBaseAtk(r){let m=0;for(const k in BASES){const b=BASES[k];if(b.slot==='weapon'&&b.req<=r&&b.atk>m)m=b.atk;}return m||10;}
+const SB_MULT={u_zhaoxue:1.32,u_duanjiang:1.36,u_jiutian:1.32,u_sheya:1.36,u_tianji:1.34,u_xuanwu:1.42,u_taichu:1.5};
+function sbBaseAtk(k){const b=BASES[k];let r=b.req;try{if(typeof S!=='undefined'&&S&&S.started)r=Math.max(r,realmOf(S),S.reb&&S.reb.mr||0);}catch(e){}return Math.round(bestBaseAtk(r)*(SB_MULT[k]||1.3));}
+for(const [k,v] of [
+ ['u_jiutian',{n:'九天綾',t:'hidden',req:5,spd:6,fx:{dodge:8,crit:6},slot:'weapon',uniq:1}],
+ ['u_sheya',{n:'蛇王牙',t:'gauntlet',req:5,hp:160,fx:{lifesteal:6,pierce:10},slot:'weapon',uniq:1}],
+ ['u_tianji',{n:'天機匣',t:'hidden',req:6,spd:5,wis:6,fx:{dbl:10,stun:6},slot:'weapon',uniq:1}],
+ ['u_xuanwu',{n:'玄武重槍',t:'spear',req:7,def:40,fx:{pierce:16,reflect:8},slot:'weapon',uniq:1}],
+ ['u_taichu',{n:'太初古劍',t:'sword',req:7,spd:4,xp:10,fx:{crit:10,critDmg:30,opening:30},slot:'weapon',uniq:1}]])
+ Object.defineProperty(BASES,k,{value:v,enumerable:false,configurable:true});
+for(const k in SB_MULT){const b=BASES[k];if(b)Object.defineProperty(b,'atk',{get:()=>sbBaseAtk(k),enumerable:true,configurable:true});}
+const isUniqWeapon=it=>!!(it&&BASES[it.b]&&BASES[it.b].uniq);
+
+/* ---------- 二、五把新神兵 ---------- */
+SHENBING.zhaoxue.done+=' 神兵會隨主人的境界一起成長。';SHENBING.duanjiang.done+=' 神兵會隨主人的境界一起成長。';
+SHENBING.zhaoxue.go='破冰';SHENBING.zhaoxue.scene='hm';SHENBING.duanjiang.go='前往江心';SHENBING.duanjiang.scene='jy';
+Object.assign(ITEMS,{
+ jiutian_can:{n:'九天殘綾',cat:'材料',d:'一截會自己飄起來的白綾，摸上去像雲。'},
+ sheya_can:{n:'青鱗蛇牙',cat:'材料',d:'蛇母口中的毒牙，比匕首還長。'},
+ tianji_can:{n:'天機匣心',cat:'材料',d:'一顆會自己轉動的銅芯，裡面刻滿了星圖。'},
+ xuanwu_can:{n:'玄冰槍頭',cat:'材料',d:'封在萬年玄冰裡的槍頭，冰化了它還是冷的。'},
+ taichu_can:{n:'無名古劍',cat:'材料',d:'劍身上沒有任何銘文，卻讓所有劍都低下了頭。'},
+});
+const rel=(s,id,n)=>!!(s.npc[id]&&s.npc[id].rel>=n);
+Object.assign(SHENBING,{
+ jiutian:{n:'九天綾',type:'暗器',base:'u_jiutian',riddle:'花瓣落盡之處，綾自天來。',go:'追上落花',scene:'hy',clue:{loc:'yaohua',p:.14,pity:5,line:'【神兵線索】花海深處，一截白綾從雲裡垂下來，你一伸手，它又飄回了天上……（神兵譜已更新）'},
+  steps:[{t:'？？？',hint:'瑤華仙境的探索，或許會有發現。'},
+   {t:'落英之舞',hint:'春天（一至三月）的白天到瑤華仙境，且與花見月的關係達到「信任」。',
+    ready:s=>s.loc==='yaohua'&&seasonOf(s)==='spring'&&!isNight(s)&&rel(s,'hy',80),
+    text:['滿天的花瓣忽然停在半空中。花見月抓住你的袖子：「是花神……瑤華宮的傳說是真的！」','花瓣聚成一個人影，手裡握著一條長長的白綾，輕輕一揮，整片花海都跟著轉了起來。'],foe:{n:'花神之影',L:27},item:'jiutian_can',
+    win:'花神之影化作漫天花雨，只留下一截白綾，慢慢落進你手心。（得到「九天殘綾」）'},
+   {t:'九天殘綾',hint:'請唐小滿重鑄：東海珍珠 ×3、雲錦 ×2、銀 8,000。',forge:{zhenzhu:3,cloth3:2},silver:8000},{t:'九天綾',hint:'已重鑄完成。'}],
+  done:'白綾在唐小滿手裡展開，像一條會呼吸的雲：「這不是兵器，是一場舞。」閃避與暴擊大增，隨主人境界成長。'},
+ sheya:{n:'蛇王牙',type:'拳套',base:'u_sheya',riddle:'三敗蛇王，方得其牙。',go:'深入蛇窟',scene:'mh',
+  steps:[{t:'？？？',hint:'擊敗青鱗蛇王三次（蛇谷挑戰）。'},
+   {t:'蛇母',hint:'夜裡（戌時以後）到青冥蛇谷，且與墨蘅的關係達到「信任」。',
+    ready:s=>s.loc==='shegu'&&isNight(s)&&rel(s,'mh',80),
+    text:['墨蘅帶你走進萬蛇窟的最深處。骨笛一響，所有的蛇都退開了，只有一條沒有動。','「那是蛇王的母親。」墨蘅低聲說，「牠不會讓路。」黑暗裡亮起兩盞綠色的燈——是牠的眼睛。'],foe:{n:'青冥蛇母',L:29},item:'sheya_can',
+    win:'蛇母慢慢盤起身子，像是終於累了。牠張開嘴，一顆毒牙掉在你腳邊。墨蘅說：「牠認你了。」（得到「青鱗蛇牙」）'},
+   {t:'青鱗蛇牙',hint:'請唐小滿重鑄：蛇膽 ×5、玄鐵 ×3、銀 9,000。',forge:{shedan:5,iron:3},silver:9000},{t:'蛇王牙',hint:'已重鑄完成。'}],
+  done:'唐小滿把蛇牙鑲進一對拳套裡，拳鋒泛著青光：「打中的人會很痛很痛。」吸血與破甲，隨主人境界成長。'},
+ tianji:{n:'天機匣',type:'暗器',base:'u_tianji',riddle:'三問不答，匣不自開。',go:'登上觀星台',scene:'wr',clue:{loc:'tianji',p:.12,pity:6,line:'【神兵線索】機關庫的角落有一個上了九道鎖的銅匣，匣子上刻著：「三問不答，匣不自開。」（神兵譜已更新）'},
+  steps:[{t:'？？？',hint:'天機閣的探索，或許會有發現。'},
+   {t:'三問',hint:'夜裡到天機閣，與溫如晦的關係達到「信任」，並且已聽他說過往事（江湖風雲錄第十四章）。',
+    ready:s=>s.loc==='tianji'&&isNight(s)&&rel(s,'wr',80)&&!!s.flags.wr_past,
+    text:['溫如晦把銅匣放在渾天儀下：「第一問，你為何習武？第二問，你為誰揮劍？第三問——」','他還沒問完，銅匣自己打開了，一具傀儡從匣中站起，手裡握著九枚銅針。「它要問的，是你配不配。」'],foe:{n:'天機傀儡・問心',L:33},item:'tianji_can',
+    win:'傀儡停住，九枚銅針一起落地，排成一個「可」字。溫如晦笑了：「三問，它替你答了。」（得到「天機匣心」）'},
+   {t:'天機匣心',hint:'請唐小滿重鑄：天外隕鐵 ×4、星砂 ×3、銀 12,000。',forge:{yuntie:4,xingsha:3},silver:12000},{t:'天機匣',hint:'已重鑄完成。'}],
+  done:'匣子一開一合，九針連發。唐小滿看得目瞪口呆：「這、這是我做的？」連擊與擊暈，隨主人境界成長。'},
+ xuanwu:{n:'玄武重槍',type:'槍',base:'u_xuanwu',riddle:'北方玄冰，鎮著一桿槍。',go:'鑿開玄冰',scene:'hls',clue:{loc:'kunlun',p:.12,pity:6,line:'【神兵線索】寒窟的冰壁裡，隱約有一桿長槍的影子，槍尖指著北方。（神兵譜已更新）'},
+  steps:[{t:'？？？',hint:'崑崙雪域的探索，或許會有發現。'},
+   {t:'玄冰鎮守',hint:'下雪的日子到崑崙雪域，且與賀蘭朔的關係達到「信任」。',
+    ready:s=>s.loc==='kunlun'&&(wxToday(s)==='snow'||seasonOf(s)==='winter')&&rel(s,'hls',80),
+    text:['賀蘭朔帶著斬馬刀，陪你走到雪線最北邊。「二十年前，我就是為了這桿槍上山的。」','冰層裂開，一頭背著蛇紋的巨龜從冰裡爬出來，龜殼上插著那桿槍。'],foe:{n:'玄冰龜蛇',L:35},item:'xuanwu_can',
+    win:'巨龜緩緩沉回冰裡，槍頭留在了雪地上。賀蘭朔看了很久：「……它等的人，是你。」（得到「玄冰槍頭」）'},
+   {t:'玄冰槍頭',hint:'請唐小滿重鑄：千年寒鐵 ×4、天珠 ×1、銀 15,000。',forge:{hantie:4,tianzhu:1},silver:15000},{t:'玄武重槍',hint:'已重鑄完成。'}],
+  done:'槍一出爐，鐵匠舖的爐火都暗了三分。唐小滿抱著手臂發抖：「好冷……好帥。」破甲、反震與防禦，隨主人境界成長。'},
+ taichu:{n:'太初古劍',type:'劍',base:'u_taichu',riddle:'劍塚最深處，有一把沒有名字的劍。',go:'走進劍塚',scene:'lzx',
+  steps:[{t:'？？？',hint:'先重鑄其他六把神兵中的任意四把。'},
+   {t:'劍塚',hint:'月圓之夜到青雲門，且沈青霜與林照雪都與你達到「知己」。',
+    ready:s=>s.loc==='qingyun'&&isFullMoon(s)&&isNight(s)&&rel(s,'sq',150)&&rel(s,'lzx',150),
+    text:['月圓之夜，青雲門後山的劍塚亮了起來。上千把斷劍同時嗡鳴，像在向什麼東西行禮。','沈青霜和林照雪一左一右站在你身邊。劍塚最深處，一個沒有臉的劍魂慢慢站起，手裡的劍沒有名字。'],foe:{n:'太初劍魂',L:40},item:'taichu_can',
+    win:'劍魂收劍，對你點了點頭，然後化作月光。上千把斷劍一起安靜下來。（得到「無名古劍」）'},
+   {t:'無名古劍',hint:'請唐小滿重鑄：千年寒鐵 ×3、天外隕鐵 ×3、天山雪蓮 ×2、銀 20,000。',forge:{hantie:3,yuntie:3,xuelian:2},silver:20000},{t:'太初古劍',hint:'已重鑄完成。'}],
+  done:'唐小滿捧著劍，手一直在抖：「這把劍……我只是替它擦掉了灰。」天下第一的劍，隨主人境界成長。'},
+});
+SHENBING_LATER.splice(0,SHENBING_LATER.length);
+/* 線索：探索 */
+const _resolveExpSB2=resolveExp;resolveExp=function(s,t,sum){const E=EXPLORES[s.exp.e];_resolveExpSB2(s,t,sum);const r=s.expResult;if(!r||r.loss||!s.sb||!E)return;
+ for(const id in SHENBING){const B=SHENBING[id];if(!B.clue||B.clue.loc!==E.loc)continue;const st=sbState(s,id);if(st.step!==0)continue;st.pity++;if(Math.random()<B.clue.p||st.pity>=B.clue.pity)sbClue(s,id,B.clue.line,r);}
+ if(E.loc==='kunlun'||E.loc==='hanshan'){s.acc.pt_ht2=(s.acc.pt_ht2||0)+1;if(E.loc==='kunlun'&&(Math.random()<.18||s.acc.pt_ht2>=6)){s.acc.pt_ht2=0;gainItem(s,'hantie',1,sum);r.lines.push('【稀有材料】得到「千年寒鐵」！');}}
+ if(E.loc==='jiuyou'||E.loc==='plateau'){s.acc.pt_yt2=(s.acc.pt_yt2||0)+1;if(Math.random()<.16||s.acc.pt_yt2>=6){s.acc.pt_yt2=0;gainItem(s,'yuntie',1,sum);r.lines.push('【稀有材料】得到「天外隕鐵」！');}}};
+/* 線索：三敗蛇王（第一次之後重複挑戰也算） */
+const _challengeSB2=challenge;challenge=function(s,id){const o=_challengeSB2(s,id);if(id==='sheking'&&o&&o.res&&o.res.win&&s.sb){s.stat.sheking=(s.stat.sheking||0)+1;const st=sbState(s,'sheya');
+  if(st.step===0){if(s.stat.sheking>=3){sbClue(s,'sheya',null,null);o.lines.push('【神兵線索】蛇王第三次敗退時，吐出一句人話：「去問……我的母親。」（神兵譜已更新）');}else o.lines.push('青鱗蛇王敗退了（'+s.stat.sheking+'/3）。');}}return o;};
+/* 太初古劍：重鑄四把神兵後出現線索 */
+const _sbForge2=sbForge;sbForge=function(s,id){const e=_sbForge2(s,id);if(!e){const n=Object.keys(SHENBING).filter(k=>k!=='taichu'&&sbState(s,k).step>=3).length;const st=sbState(s,'taichu');
+  if(st.step===0&&n>=4)sbClue(s,'taichu',null,null);}return e;};
+const _normalizeSB2=normalize;normalize=function(raw,now){const s=_normalizeSB2(raw,now);const n=Object.keys(SHENBING).filter(k=>k!=='taichu'&&s.sb[k]&&s.sb[k].step>=3).length;if(n>=4&&(!s.sb.taichu||s.sb.taichu.step===0))s.sb.taichu={step:1,pity:0};return s;};
+TITLES.e_shenbing.src='重鑄全部七把神兵';TITLES.e_shenbing.tier=7;TITLES.e_shenbing.e={atkPct:10,crit:5,critDmg:15};
+
+/* ---------- 三、兩本新秘笈 ---------- */
+Object.assign(ARTS,{
+ xingyue:{n:'星月流光',t:'hidden',tier:3,d:'《星月寶典》所載：波斯星象與中原暗器合而為一，出手如流星劃過夜空。',e:l=>({crit:2*l,critDmg:4*l,dodge:1.2*l,spd:.8*l}),how:'集齊秘笈《星月寶典》並參悟'},
+ dashouyin:{n:'雪域大手印',t:'fist',tier:3,d:'《雪域大手印》所載：一掌按下，如雪山壓頂，攻守一體。',e:l=>({atkPct:5*l,defPct:3*l,hpPct:3*l,stun:.6*l}),how:'集齊秘笈《雪域大手印》並參悟'},
+});
+for(const k of ['xingyue','dashouyin'])if(!ART_ORDER.includes(k))ART_ORDER.push(k);
+if(typeof ART_REQ!=='undefined')Object.assign(ART_REQ,{xingyue:['locust_stone',6],dashouyin:['long_fist',6]});
+Object.assign(BOOKS,{
+ xingyue:{n:'《星月寶典》',kind:'正統',pages:['damo','persia','persia','tianji'],fx:'參悟後習得暗器「星月流光」',art:'xingyue',
+  pt:['落雁關駝隊的貨箱夾層裡，夾著一頁畫滿星圖的羊皮紙。','玫瑰沙丘的風吹開沙子，露出一頁波斯文寫的暗器手法。','碧琉璃城地下水道的石壁上，刻著一段星月口訣。','天機閣的星圖庫裡，有一頁對照波斯星名的註解。']},
+ dashouyin:{n:'《雪域大手印》',kind:'正統',pages:['plateau','kunlun','plateau','hanshan'],fx:'參悟後習得拳掌「雪域大手印」',art:'dashouyin',
+  pt:['天湖邊的瑪尼堆裡，壓著一頁手印圖。','崑崙寒窟的冰壁上，凍著一頁掌法。','古格石窟的壁畫旁，有一頁寫給後人的手印心訣。','寒山古寺的藏經閣裡，夾著一頁從雪域傳來的經文。']},
+});
+TITLES.e_books.src='參悟全部六本秘笈';
+
 </script>
 <script>
 'use strict';
@@ -7994,6 +8097,20 @@ drawHome=(function(prev){return function(c,t){const H=S&&S.home2,ks=H?Object.key
 function petIco(k){return SPRITE_IMG_SRC['pet_'+k]?`<img class="pet-ico" src="${SPRITE_IMG_SRC['pet_'+k]}" alt="">`:PETS[k].ic;}
 for(const k in PETS)Object.defineProperty(PETS[k],'ic',{get:()=>petIco(k),configurable:true});
 (function(){const st=document.createElement('style');st.textContent='.pet-ico{width:28px;height:28px;object-fit:contain;vertical-align:middle;margin-right:4px}';document.head.appendChild(st);})();
+
+/* ================= 擴充二十一介面：神兵譜完整篇 ================= */
+shenbingHTML=function(){const done7=Object.keys(SHENBING).filter(id=>sbState(S,id).step>=3).length;
+ let h=`<div class="lbl">神兵譜 ${done7}/${Object.keys(SHENBING).length}</div><div class="card"><span class="sub">神兵要追線索、等時機、過強敵才能得到，重鑄找青石鎮的唐小滿。神兵會隨主人境界成長，永遠比同境界的一般兵器更強。</span>`;
+ for(const id in SHENBING){const B=SHENBING[id],st=sbState(S,id),stp=B.steps[st.step],done=st.step>=3;const hint=typeof stp.hint==='function'?stp.hint(S):stp.hint;
+  const atk=done||st.step>0?`・攻擊約 ${fmt(Math.round(BASES[B.base].atk*QUAL[4].m))}`:'';
+  h+=`<div class="sb${done?' done':''}"><div class="sb-h"><span class="sb-ic sbi sbi-${id}${st.step>0?' seen':''}">${done?'⚔':'？'}</span><div style="min-width:0"><b>${st.step>0?B.n:'？？？'}</b> <span class="mini">${B.type}・${done?'已重鑄':'線索 '+st.step+'/3'}${atk}</span><div class="sub">「${B.riddle}」</div></div></div>
+  ${done?`<details class="tip"><summary>神兵來歷</summary><span class="eff">${B.done}</span></details>`:`<span class="eff next">${st.step===0?'提示：':'目前：「'+stp.t+'」・'}${hint}</span>`}
+  ${!done&&stp.ready&&stp.ready(S)?`<button class="btn" data-act="sbFightOpen" data-id="${id}">時機已到・${B.go||'前去一探'}</button>`:''}
+  ${!done&&stp.forge?`<button class="btn jade" data-act="sbForge" data-id="${id}" ${S.loc!=='town'?'disabled':''}>請唐小滿重鑄<small>${S.loc!=='town'?'要在青石鎮':Object.entries(stp.forge).map(([k,v])=>matN(k)+' '+(S.mat[k]||0)+'/'+v).join('、')+'・銀 '+fmt(stp.silver)}</small></button>`:''}</div>`;}
+ return h+`<span class="mini">稀有材料：千年寒鐵 ${S.mat.hantie||0}（寒山、崑崙）・天外隕鐵 ${S.mat.yuntie||0}（天機閣、邙山、九幽、雪域）</span></div>`;};
+sbFightModal=function(id){const B=SHENBING[id],st=sbState(S,id),stp=B.steps[st.step];if(!stp.ready)return;
+ openModal(`${backRow('神兵・'+B.n)}<div class="ev-text">${stp.text.map(t=>`<p>${esc(t)}</p>`).join('')}</div><p class="mini">對手：${stp.foe.n}・戰力約 ${fmt(powerOf(enemyBase(stp.foe.L,true)))}（你的戰力 ${fmt(computeStats(S).power)}）・消耗體力 10。打輸沒有損失，可再來。</p>
+ <button class="choice" data-act="sbFight" data-id="${id}">拔劍出手</button><button class="choice" data-act="closeModal">先回去準備</button>`,npcScene(B.scene||'jy'));SFX.story();};
 
 </script>
 <script>
