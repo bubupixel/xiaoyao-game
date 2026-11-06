@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-130637";</script>
+<script>window.XY_BUILD="20261106-132204";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7502,13 +7502,12 @@ function outlineCanvas(c){if(!c||!c.width)return c;let o=OUTL.get(c);if(o)return
  for(let y=0;y<h;y++)for(let i=0;i<w;i++){const p=(y*w+i)*4;if(d[p+3]>40){q[p]=d[p];q[p+1]=d[p+1];q[p+2]=d[p+2];q[p+3]=d[p+3];continue;}
   if((i+1<w&&d[p+7]>40)||(i>0&&d[p-1]>40)||(y+1<h&&d[p+w*4+3]>40)||(y>0&&d[p-w*4+3]>40)){q[p]=34;q[p+1]=20;q[p+2]=14;q[p+3]=175;}}
  x.putImageData(out,0,0);OUTL.set(c,o);return o;}
-const _playerCanvasU=playerCanvas;playerCanvas=function(){return outlineCanvas(_playerCanvasU.apply(this,arguments));};
-if(typeof engNpc==='function'){const _engNpcU=engNpc;engNpc=function(){const N=_engNpcU();if(N&&!N._ol){for(const k in N)if(Array.isArray(N[k]))N[k]=N[k].map(c=>c&&c.getContext?outlineCanvas(c):c);N._ol=1;}return N;};}
+/* 人物描邊已取消（線條太粗），只保留柔和陰影 */
 /* ---------- 3. 居所擺設：補上描邊、受光與色調，配合房間的光源 ---------- */
 const FUR_SH={};
 function furShaded(k){if(FUR_SH[k])return FUR_SH[k];const im=FUR_IMG[k];if(!imgOk(im))return im;const P=3,w=im.naturalWidth,h=im.naturalHeight,c=document.createElement('canvas');c.width=w+P*2;c.height=h+P*2;const x=c.getContext('2d');
  const sil=document.createElement('canvas');sil.width=c.width;sil.height=c.height;const s=sil.getContext('2d');s.drawImage(im,P,P);s.globalCompositeOperation='source-in';s.fillStyle='rgba(38,22,12,.9)';s.fillRect(0,0,sil.width,sil.height);
- const r=Math.max(1,Math.round(Math.max(w,h)/90));for(const [dx,dy] of [[-r,0],[r,0],[0,-r],[0,r],[-r,-r],[r,r],[-r,r],[r,-r]])x.drawImage(sil,dx,dy);
+ /* 擺設描邊已取消，只保留受光與色調 */
  x.drawImage(im,P,P);x.globalCompositeOperation='source-atop';const g=x.createLinearGradient(0,0,c.width,c.height);g.addColorStop(0,'rgba(255,236,190,.22)');g.addColorStop(.5,'rgba(255,220,170,0)');g.addColorStop(1,'rgba(40,20,8,.32)');x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
  x.fillStyle='rgba(150,90,30,.10)';x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='source-over';FUR_SH[k]=c;return c;}
 /* ---------- 4. 頭像：統一一層暖色暈影與宣紙底調，兩批背景不再突兀 ---------- */
