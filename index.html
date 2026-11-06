@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-193532";</script>
+<script>window.XY_BUILD="20261106-202747";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6090,6 +6090,71 @@ function bgmStart(){if(!S||S.settings.music===false)return;bgmUnlock();if(!BGM.c
 function bgmStop(){BGM.on=false;if(BGM.ctx){bgmVolume(0);}if(SILENT_TAG)SILENT_TAG.pause();}
 function bgmPause(){if(BGM.ctx&&BGM.ctx.state==='running')BGM.ctx.suspend();if(SILENT_TAG)SILENT_TAG.pause();}
 function bgmResume(){if(BGM.ctx&&BGM.on&&BGM.ctx.state!=='running'){BGM.ctx.resume();BGM.next=BGM.ctx.currentTime+.15;if(SILENT_TAG){const p=SILENT_TAG.play();if(p&&p.catch)p.catch(()=>{});}}}
+
+/* ========== 背景音樂第二版：古箏（撥弦物理合成）、輕柔歡快的五聲音階曲子 ==========
+   原創曲譜以簡譜寫成：1 2 3 5 6，' 為高八度，, 為低八度，0 為休止；冒號後是長度（八分音符數）。 */
+const ZTUNES={
+ spring:{n:'春日遊',bpm:92,bars:[
+  '3:2 5:1 6:1 1\':2 6:2','5:1 6:1 5:1 3:1 2:4','3:2 5:2 6:1 1\':1 6:1 5:1','3:6 0:2','2:2 3:1 5:1 6:2 5:1 3:1','2:1 3:1 2:1 1:1 6,:4','1:2 2:1 3:1 5:2 3:1 2:1','1:6 0:2',
+  '6:2 1\':1 2\':1 3\':2 2\':1 1\':1','6:2 5:2 6:4','5:1 6:1 1\':1 6:1 5:1 3:1 2:1 3:1','5:6 0:2','3\':2 2\':1 1\':1 6:2 1\':2','5:1 6:1 5:1 3:1 2:4','3:1 5:1 2:1 3:1 1:1 2:1 6,:1 1:1','1:8']},
+ bamboo:{n:'竹影搖',bpm:76,bars:[
+  '6,:2 1:2 2:4','3:2 5:1 3:1 2:4','1:2 2:1 3:1 5:2 6:2','5:6 0:2','6:2 5:1 6:1 1\':4','6:1 5:1 3:2 5:4','3:2 2:1 1:1 2:2 3:2','2:6 0:2',
+  '5:2 6:2 1\':2 2\':2','3\':4 2\':2 1\':2','6:2 1\':1 6:1 5:2 3:2','5:6 0:2','6:1 1\':1 6:1 5:1 3:2 5:2','2:2 3:1 2:1 1:4','6,:2 1:2 2:1 3:1 2:1 1:1','1:8']},
+ market:{n:'趕集謠',bpm:108,bars:[
+  '5:1 5:1 6:1 5:1 3:2 5:2','6:1 1\':1 6:1 5:1 6:4','1\':1 1\':1 6:1 5:1 3:1 5:1 6:2','5:4 3:2 0:2','2:1 3:1 5:1 3:1 2:1 1:1 2:2','3:1 5:1 3:1 2:1 1:4','6,:1 1:1 2:1 3:1 5:1 3:1 2:1 3:1','1:4 0:4',
+  '1\':2 6:1 1\':1 2\':2 1\':2','6:1 5:1 6:1 1\':1 5:4','3:1 5:1 6:1 5:1 3:1 2:1 1:2','2:4 0:4','5:1 6:1 1\':1 2\':1 3\':2 2\':1 1\':1','6:2 5:1 6:1 1\':4','2:1 3:1 5:1 6:1 5:1 3:1 2:1 3:1','1:8']},
+ moon:{n:'月下吟',bpm:64,bars:[
+  '3:4 5:2 6:2','5:4 3:4','2:2 3:2 5:2 3:1 2:1','1:8','6,:2 1:2 2:2 3:2','5:4 6:2 5:2','3:2 2:2 1:2 2:2','3:8',
+  '5:2 6:2 1\':4','6:2 5:2 3:4','2:2 3:1 5:1 3:2 2:1 1:1','6,:8','1:2 2:2 3:2 5:2','6:4 5:2 3:2','2:2 3:2 2:2 6,:2','1:8']},
+ river:{n:'江上行',bpm:84,bars:[
+  '1:1 2:1 3:2 5:2 3:2','2:1 3:1 2:1 1:1 6,:4','1:2 3:2 5:1 6:1 5:2','3:6 0:2','5:1 6:1 1\':2 6:1 5:1 3:2','2:2 3:1 5:1 3:4','2:1 1:1 6,:2 1:2 2:2','1:6 0:2',
+  '3:2 5:1 6:1 1\':2 2\':2','1\':1 6:1 5:2 6:4','5:2 3:1 5:1 6:2 1\':2','6:6 0:2','1\':2 6:2 5:1 3:1 2:2','3:2 5:2 2:4','1:1 2:1 3:1 5:1 3:1 2:1 6,:2','1:8']},
+};
+const ZSEMI={1:0,2:2,3:4,5:7,6:9};
+function parseBar(str){let t=0;return str.split(' ').map(tok=>{const [n,l]=tok.split(':');const len=+l;const d=n[0];let o=0;for(const c of n.slice(1))o+=c==="'"?1:c===','?-1:0;const r={t,len,rest:d==='0',semi:d==='0'?0:ZSEMI[d]+12*o,deg:+d};t+=len;return r;});}
+for(const k in ZTUNES)ZTUNES[k].pb=ZTUNES[k].bars.map(parseBar);
+Object.assign(MUSIC_MOODS,{
+ inn:{n:'春日遊・客棧',tunes:['spring','river'],key:293.66,bpm:1,perc:'block'},calm:{n:'竹影搖・庭院',tunes:['bamboo','moon'],key:261.63,bpm:.95},
+ flow:{n:'竹影搖・山林',tunes:['bamboo','river'],key:293.66,bpm:1},lively:{n:'趕集謠・市井',tunes:['market','spring'],key:329.63,bpm:1,perc:'block'},
+ heroic:{n:'江上行・練武',tunes:['river','spring'],key:293.66,bpm:1.08,perc:'drum'},night:{n:'月下吟・夜',tunes:['moon','bamboo'],key:261.63,bpm:.9}});
+
+/* 古箏音色：Karplus–Strong 撥弦，每個音高預先算好一次 */
+const ZBUF=new Map();
+function zBuf(f){const C=BGM.ctx,sr=C.sampleRate,key=Math.round(f);if(ZBUF.has(key))return ZBUF.get(key);
+ const N=Math.max(2,Math.floor(sr/f-.5)),len=Math.floor(sr*Math.min(3.2,1.4+220/f)),buf=C.createBuffer(1,len,sr),d=buf.getChannelData(0),line=new Float32Array(N);
+ let lp=0;for(let i=0;i<N;i++){const x=Math.random()*2-1;lp=lp*.35+x*.65;line[i]=lp;}
+ const pos=Math.max(1,Math.floor(N*.13));for(let i=N-1;i>=pos;i--)line[i]-=line[i-pos]*.85;/* 撥弦位置：近岳山，聲音清亮 */
+ const decay=Math.min(.9993,.9962+f/180000);let p=0,prev=0;
+ for(let i=0;i<len;i++){const cur=line[p],nx=line[(p+1)%N];const y=(cur+nx)*.5*decay;line[p]=y;d[i]=cur+.18*(cur-prev);prev=cur;p=(p+1)%N;}
+ let pk=0;for(let i=0;i<len;i++)pk=Math.max(pk,Math.abs(d[i]));for(let i=0;i<len;i++)d[i]/=pk||1;
+ const r={buf,f0:sr/(N-.5)};ZBUF.set(key,r);return r;}
+/* bend：按音（音高往上推再回來）；vib：揉弦 */
+zheng=function(t,f,v,dur,o){o=o||{};const C=BGM.ctx;t=Math.max(t,C.currentTime+.01,0);const Z=zBuf(f),s=C.createBufferSource(),g=C.createGain(),pan=C.createStereoPanner?C.createStereoPanner():null;
+ s.buffer=Z.buf;const r0=f/Z.f0;s.playbackRate.setValueAtTime(r0,t);
+ if(o.bend){s.playbackRate.setValueAtTime(r0,t+.12);s.playbackRate.linearRampToValueAtTime(r0*Math.pow(2,o.bend/12),t+.32);s.playbackRate.linearRampToValueAtTime(r0,t+Math.min(dur,.9));}
+ if(o.vib&&dur>.5){const l=C.createOscillator(),lg=C.createGain();l.frequency.value=5.2;lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(r0*.012,t+.35);l.connect(lg);lg.connect(s.playbackRate);l.start(t);l.stop(t+dur+1);}
+ g.gain.setValueAtTime(.42*v,t);g.gain.setTargetAtTime(.0001,t+Math.max(.25,dur*1.25),.35);
+ s.connect(g);if(pan){pan.pan.value=o.pan||0;g.connect(pan);bgmSend(pan);}else bgmSend(g);s.start(t);s.stop(t+Math.min(Z.buf.duration,dur*1.25+1.6));};
+
+/* 曲子排程 */
+function zf(m,semi){return m.key*Math.pow(2,semi/12);}
+makePiece=function(moodKey,seed){const m=MUSIC_MOODS[moodKey]||MUSIC_MOODS.calm;const L=m.tunes||['spring'];const T=ZTUNES[L[(seed>>>0)%L.length]]||ZTUNES.spring;return {m,T,bars:T.pb};};
+const ZCHORD={1:0,3:0,5:0,6:9,2:7};
+bgmSchedule=function(){if(!BGM.on||!BGM.ctx||!BGM.piece)return;const C=BGM.ctx,P=BGM.piece,m=P.m,T=P.T,ed=60/(T.bpm*(m.bpm||1))/2;
+ while(BGM.next<C.currentTime+.6){const nb=P.bars.length,bar=Math.floor(BGM.step/8)%nb,i=BGM.step%8,t=BGM.next,notes=P.bars[bar];
+  if(i===0){/* 左手：低音與分解和弦 */const first=notes.find(n=>!n.rest);const root=ZCHORD[first?first.deg:1]??0;const bs=root-12;
+   zheng(t,zf(m,bs),.5,ed*4,{pan:-.25});zheng(t+ed*2,zf(m,bs+7),.22,ed*2,{pan:-.2});zheng(t+ed*4,zf(m,bs+12),.26,ed*2,{pan:-.2});zheng(t+ed*6,zf(m,bs+7),.2,ed*2,{pan:-.2});
+   if(bar===0||bar===8){/* 花指：開段前一串上行刮奏 */const sc=[0,2,4,7,9,12,14,16];for(let k=0;k<sc.length;k++)zheng(t-ed*.9+k*.035,zf(m,sc[k]),.18+k*.02,.4,{pan:.3});}
+   if(m.perc==='drum'&&bar%2===0)drum(t,.5);}
+  if(m.perc==='block'&&(i===0||i===4))block(t,i===0?.35:.22,i===4);
+  for(const n of notes)if(n.t===i&&!n.rest){const dur=n.len*ed;const long=n.len>=4;
+   zheng(t,zf(m,n.semi),i===0?.95:.8,dur,{pan:.15,vib:long,bend:long&&(n.deg===3||n.deg===6)&&Math.random()<.5?1:0});
+   if(BGM.cycle%2===1&&bar>=8&&n.len>=2)dizi(t+.02,zf(m,n.semi)*2,.35,dur*.95);
+   if(n.len===8&&bar===nb-1)for(let k=1;k<4;k++)zheng(t+ed*4+k*.09,zf(m,n.semi+[4,7,12][k-1]),.25,ed*2,{pan:.3});}
+  BGM.next+=ed;BGM.step++;
+  if(BGM.step%(nb*8)===0){BGM.cycle++;BGM.next+=ed*2;/* 換下一首 */BGM.piece=makePiece(BGM.mood,BGM.cycle);}}};
+bgmSetMood=function(key){if(!key||key===BGM.mood)return;BGM.mood=key;BGM.piece=makePiece(key,gday(S)%2);BGM.step=0;BGM.cycle=0;if(BGM.ctx)BGM.next=Math.max(BGM.next,BGM.ctx.currentTime+.15);};
+if(BGM.mood){const k=BGM.mood;BGM.mood=null;bgmSetMood(k);}
 
 'use strict';
 /* ================= 介面、像素場景與音效 ================= */
