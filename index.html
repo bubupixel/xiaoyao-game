@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-144405";</script>
+<script>window.XY_BUILD="20261106-152453";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7519,6 +7519,25 @@ const _drawPorU=drawPor;drawPor=function(c,k){const ok=_drawPorU(c,k);if(!ok)ret
 .bt-bg.elite .bt-e{width:104px!important;height:104px!important}
 .bt-bg.boss{height:156px!important}.bt-bg.boss .bt-e{width:138px!important;height:138px!important;filter:drop-shadow(0 0 7px rgba(255,90,40,.6)) drop-shadow(0 6px 0 rgba(0,0,0,.35))}
 .bt-tag{position:absolute;right:8px;top:6px;padding:1px 8px;font-size:12px;letter-spacing:.2em;background:#9c2a1f;color:#fff4e0;box-shadow:0 0 0 1px #f0d27a;font-family:var(--f-title)}`;document.head.appendChild(st);})();
+/* ---------- 深色底卡片（故事卡、深藍框）一律用淺色字，避免深字配深底 ---------- */
+(function(){const L='--rice:#f2e8cf;--rice2:#d6c8a4;--gold2:#fbe7a0;--gold:#dfba52;--red2:#f5a07c;--ok:#a8d88f;--cyan:#8fe6e0;--rule:rgba(240,231,208,.2);color:#f2e8cf';
+ const st=document.createElement('style');st.textContent=`.card.story,.sheet .card.story,#sheet.paper .card.story,#sheet.paper .fr-navy{${L}}
+#sheet.paper .card.story h3,.sheet .card.story h3,.card.story h3{color:#fbe7a0!important}
+#sheet.paper .card.story .sub,#sheet.paper .card.story .mini,#sheet.paper .card.story .eff,.sheet .card.story .sub,.sheet .card.story .mini{color:#d6c8a4!important}
+#sheet.paper .card.story p,#sheet.paper .card.story li,#sheet.paper .card.story b{color:#f2e8cf}`;document.head.appendChild(st);})();
+/* ---------- 對比度修正：淺底上的淺字、深底上的深字 ---------- */
+(function(){const st=document.createElement('style');st.textContent=`
+.btn .good,.btn small .good{color:#c8f0b0!important}.btn .bad,.btn small .bad{color:#ffc2a8!important}
+.btn.ghost .good,.chip .good{color:#2f6a3a!important}.btn.ghost .bad,.chip .bad{color:#9c2a1f!important}
+.sg-cell.big b{color:#8c5a12}.sg-cell.now b,.sg-cell.now span{color:#fbe7a0}
+.card .warn,.art .warn,#sheet.paper .warn{color:#a8361c!important}
+.stage-pill[style*="2f6a3a"]{background:#24502d!important}
+.fac-head h3{filter:brightness(.72) saturate(1.2)}
+.fac-art .stage-pill{color:#fff4e0!important;text-shadow:0 1px 0 rgba(0,0,0,.45)}
+.card .done{color:#2f6a3a}
+.lock-sum,.mini{color:inherit}
+.locbar-here{color:#f2e8cf}.locbar-here b{color:#fbe7a0}`;document.head.appendChild(st);})();
+(function(){const st=document.createElement('style');st.textContent=`.stage-pill{text-shadow:0 1px 0 rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}`;document.head.appendChild(st);})();
 
 </script>
 <script>
