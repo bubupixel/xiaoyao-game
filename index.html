@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-223100";</script>
+<script>window.XY_BUILD="20261107-080310";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3746,7 +3746,8 @@ const artReq=id=>ART_REQ[id]||null;
 const artRootOk=(s,id)=>{const r=ART_REQ[id];return !r||alv(s,r[0])>=r[1];};
 const artReqText=(s,id)=>{const r=ART_REQ[id];if(!r)return '';return '需「'+ARTS[r[0]].n+'」Lv '+r[1]+(alv(s,r[0])>=r[1]?' ✓':'（目前 '+alv(s,r[0])+'）');};
 /* 根基未到，進階武功的熟練暫停增長（已練成的等級保留） */
-const _addProfA=addProf;addProf=function(s,id,amt,sum){if(!artRootOk(s,id))return;return _addProfA(s,id,amt,sum);};
+/* 根基不足時，修練會先打磨所需的根基武功；根基已到目前境界上限、或尚未習得，則照常增長，避免卡死 */
+const _addProfA=addProf;addProf=function(s,id,amt,sum,_d){if(!artRootOk(s,id)){const r=ART_REQ[id],R=r&&s.arts[r[0]];if(R&&R.lv<maxArtLv(s)&&(_d|0)<4)return addProf(s,r[0],amt,sum,(_d|0)+1);}return _addProfA(s,id,amt,sum);};
 /* 基本功是一切武學之源：每練到一級，同類進階武功的熟練效率 +3% */
 const _addProfA2=addProf;addProf=function(s,id,amt,sum){const A=ARTS[id];if(A&&!ROOT_SET.has(id)&&amt>0){const root=ART_ROOT[A.t];if(root)amt*=1+.03*alv(s,root);}return _addProfA2(s,id,amt,sum);};
 
@@ -7840,7 +7841,7 @@ const _nextStepO=nextStep;nextStep=function(){const g=_nextStepO();if(g.act==='e
 function artFull(id,st,mx){const A=ARTS[id],a=S.arts[id],coef=artCoef(A.t,st.wt),req=profReq(id,a.lv),isMain=S.mainInner===id||S.mainMartial===id,root=ROOT_SET.has(id),ok=artRootOk(S,id);
  return `<div class="card art${root?' art-root':''}" data-art="${id}"><div class="h-row"><span class="nm">${root?'<span class="root-tag">青雲基本功</span>':''}${A.sig?'<span class="sig-tag">'+NPCS[A.sig].n+'所傳</span>':''}${A.n}${isMain?' <span class="done">主修</span>':''}</span><span class="lv">Lv ${a.lv}/${mx}</span></div>
  <span class="eff">${A.d}</span><span class="eff">目前：${fmtEff(A.e(a.lv),coef)}${coef<1?` <span class="warn">（兵器不合，${Math.round(coef*100)}%）</span>`:''}</span>
- ${!ok?`<span class="eff warn">根基不足：${artReqText(S,id)}，熟練暫停增長</span>`:a.lv>=10?'<span class="eff next">已練至化境</span>':`<span class="eff next">下一級：${fmtEff(A.e(a.lv+1),coef)}</span>`}
+ ${!ok?`<span class="eff warn">根基不足：${artReqText(S,id)}。修練時會先打磨「${ARTS[ART_REQ[id][0]].n}」，練夠了再回到這門武功</span>`:a.lv>=10?'<span class="eff next">已練至化境</span>':`<span class="eff next">下一級：${fmtEff(A.e(a.lv+1),coef)}</span>`}
  ${bar(a.prof/req*100,'thin')}<div class="h-row"><span class="sub" data-prof="${id}">熟練 ${fmt(a.prof)} / ${fmt(req)}</span>${isMain?'':`<button class="btn ghost sm" data-act="${A.t==='inner'?'setInner':'setMartial'}" data-v="${id}">設為主修</button>`}</div></div>`;}
 function vArtsTree(){const st=computeStats(S),mx=maxArtLv(S);
  let h=`<div class="card"><p class="sub" style="margin:0">武功分七類，<b>每一類都從青雲門的基本功起步</b>：基本功練到指定等級，進階武功才會增長熟練；基本功每高一級，同類進階武功的熟練效率 +3%。等級上限 ${mx} 級（隨境界提升）。</p></div>`;
