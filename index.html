@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-190037";</script>
+<script>window.XY_BUILD="20261106-190909";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4557,6 +4557,11 @@ Object.assign(BOOKS,{
   pt:['天湖邊的瑪尼堆裡，壓著一頁手印圖。','崑崙寒窟的冰壁上，凍著一頁掌法。','古格石窟的壁畫旁，有一頁寫給後人的手印心訣。','寒山古寺的藏經閣裡，夾著一頁從雪域傳來的經文。']},
 });
 TITLES.e_books.src='參悟全部六本秘笈';
+
+/* ---------- 修正：物品數量出現小數（例如寵物加成令草藥變成 164.96） ---------- */
+gainItem=function(s,k,n,sum){if(!(n>0))return;s.acc=s.acc||{};let w=Math.floor(n);const f=n-w;if(f>1e-9){const a='fr_'+k;s.acc[a]=(s.acc[a]||0)+f;const x=Math.floor(s.acc[a]+1e-9);if(x>0){s.acc[a]-=x;w+=x;}}
+ if(w<=0)return;s.mat[k]=(s.mat[k]||0)+w;addItemSum(sum,k,w);if(k==='herb')s.stat.herbTotal=Math.floor((s.stat.herbTotal||0)+w);};
+const _normalizeFR=normalize;normalize=function(raw,now){const s=_normalizeFR(raw,now);for(const k in s.mat){const v=+s.mat[k]||0;s.mat[k]=Math.max(0,Math.floor(v+1e-9));}if(s.stat&&s.stat.herbTotal)s.stat.herbTotal=Math.floor(s.stat.herbTotal);return s;};
 
 </script>
 <script>
