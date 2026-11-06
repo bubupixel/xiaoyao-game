@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261106-143437";</script>
+<script>window.XY_BUILD="20261106-144405";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7378,7 +7378,7 @@ const _vQuestL2=vQuest;vQuest=function(){let h=_vQuestL2();if(S.flags.ending)h=h
 /* ---------- 人物：今天在做什麼、心情 ---------- */
 const MOOD_IC={miss:'💭',tired:'😪',calm:'🌧',good:'🙂',great:'😄'};
 function lifeLine(id){if(!npcMet(S,id))return '';const T=npcToday(S,id),M=npcMood(S,id);if(!T)return '';const where=T.at==='home'?'你家':LOCS[T.at]?LOCS[T.at].n:'';
- return `<span class="sub life-line">${MOOD_IC[M.k]||''} 今天：${esc(T.txt)}${T.trip?'（'+where+'）':''}・${M.n}${M.k==='miss'?`（${daysSince(S,id)} 日沒見）`:''}</span>`;}
+ return `<span class="sub life-line">今天：${esc(T.txt)}${T.trip?'（'+where+'）':''}・${M.n}${M.k==='miss'?`（${daysSince(S,id)} 日沒見）`:''}</span>`;}
 const _vNpcsL=vNpcs;vNpcs=function(){const h=_vNpcsL();const P='<div class="card"><div class="npc-head"><canvas width="46" height="46" data-npc="';const parts=h.split(P);if(parts.length<2)return h;
  return parts[0]+parts.slice(1).map(p=>{const id=p.slice(0,p.indexOf('"'));const k=p.indexOf('</div></div>');return k<0?P+p:P+p.slice(0,k+12)+lifeLine(id)+p.slice(k+12);}).join('');};
 const _npcModalL=npcModal;npcModal=function(id){_npcModalL(id);const sh=$('#sheet');if(!sh)return;const q=sh.querySelector('.quote');const l=lifeLine(id);if(q&&l)q.insertAdjacentHTML('beforebegin',`<div class="life-mini">${l}</div>`);};
