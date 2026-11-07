@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-221009";</script>
+<script>window.XY_BUILD="20261107-222012";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5239,6 +5239,10 @@ function estPatrol(s,i,ci){const e=s.estate,P=estPatrolInfo(s);if(!P)return {err
  else{if(e.type==='teahouse'){e.intel+=3;got='情報 +3';}else{const v=Math.round(hr);s.silver+=v;got='銀兩 +'+fmt(v);}}
  e.log.push({m:E.n+'：'+c[0]+'。'+got});if(e.log.length>30)e.log.splice(0,e.log.length-30);return {E,c,got};}
 delete HOME2.fish;
+/* 未來弟子：到了對應地點，每個江湖日有很大機會直接遇見（奇遇滿了也會插隊） */
+{const _tr3=tickRates;tickRates=function(s,sec,t,sum){_tr3(s,sec,t,sum);if(!s.started||!s.loc)return;const k='zlpd_'+s.loc,d=gday(s);if(s.flags[k]===d)return;
+  const E=ENCOUNTERS.find(e=>e.zlPre!=null&&e.loc===s.loc&&(!e.cond||e.cond(s)));s.flags[k]=d;if(!E)return;const L=encState(s);if(L.includes(E.id))return;if(Math.random()>=.6)return;
+  if(L.length>=ENC_MAX)L.pop();L.unshift(E.id);if(sum&&sum.ext)sumLine(sum,'奇遇：'+E.n+'。');};}
 
 </script>
 <script>
@@ -9240,8 +9244,8 @@ if(typeof DISC_POR_IMG!=='undefined'&&typeof PORTRAIT_IMG!=='undefined'){for(con
 if(ui.homeOpen.zl_teaser==null)ui.homeOpen.zl_teaser=1;
 function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,can=S.g>=70;
  return fold('zl_teaser',`開宗立派 <span class="mini">${can?'可以開派了！':'等級 70 解鎖'}</span>`,`<div class="card"><span class="sub">晉升一代大宗師後，就能自創門派：選擇宗風、親自挑選上門求師的少年，決定他們的修行與栽培，看著他們出師下山。開派後還會展開江湖風雲錄第二部「傳燈」。</span>
-  <div class="zl-tz">${ZL_NAMED.map(N=>{const m=S.flags['zlpre'+N.por];return `<div class="zl-tzi${m?'':' unk'}">${zlPor({por:N.por,name:N.name,male:N.male},44)}<span>${m?N.name:'？'}</span></div>`;}).join('')}</div>
-  <span class="mini">江湖各地有些少年，正等著遇見你。已結識 ${met}/12・在各地的奇遇中遇見他們，日後收徒時會更親近你。</span>${can?'':bar(S.g/70*100,'gold')+`<span class="mini">等級 ${S.g} / 70</span>`}</div>`);}
+  <div class="zl-tz">${ZL_NAMED.map(N=>{const m=S.flags['zlpre'+N.por];return `<div class="zl-tzi${m?'':' unk'}">${zlPor({por:N.por,name:N.name,male:N.male},44)}<span>${m?N.name:(LOCS[(ZL_PRE.find(x=>x.p===N.por)||{}).loc]||{n:'？'}).n}</span></div>`;}).join('')}</div>
+  <span class="mini">江湖各地有些少年，正等著遇見你。已結識 ${met}/12・到圖下標示的地方走走，就有機會遇見他們；日後收徒時會更親近你。</span>${can?'':bar(S.g/70*100,'gold')+`<span class="mini">等級 ${S.g} / 70</span>`}</div>`);}
 (function(){const st=document.createElement('style');st.textContent='.zl-tz{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}.zl-tzi{display:grid;justify-items:center;gap:2px;font-size:11px}.zl-tzi.unk .zl-por{filter:grayscale(1) brightness(.35) blur(1px)}.zl-tzi.unk span{opacity:.6}';document.head.appendChild(st);})();
 
 /* ================= 精簡介面：移除居所裝飾、茶具、花園 ================= */
