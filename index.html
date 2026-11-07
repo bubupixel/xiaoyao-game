@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-134828";</script>
+<script>window.XY_BUILD="20261107-181445";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8591,6 +8591,35 @@ document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closes
 (function(){const st=document.createElement('style');st.textContent=`.sb-ic.sbi,.sb-ic.bki{cursor:pointer;position:relative}.sb-ic.sbi::after,.sb-ic.bki::after{content:'?';position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:#7a2a1a;color:#fbe9c0;font:700 11px/16px var(--f-ui);text-align:center;box-shadow:0 0 0 1.5px #f0c860;filter:none}
 .lore-ic::after{display:none}.lore-head{display:flex;gap:12px;align-items:center;margin:4px 4px 8px}.lore-head .sb-ic{width:72px!important;height:72px!important;flex:none}.lore-head b{display:block;font-family:var(--f-title);font-size:20px}
 .lore-from{margin:0 4px 4px;font-size:13.5px;color:#7a2a1a;font-family:var(--f-title)}`;document.head.appendChild(st);})();
+
+/* ================= 行囊與送禮：分類整理 ================= */
+const BAG_GROUPS=[['use','料理・丹藥',k=>USABLE.has(k)||['料理','藥品'].includes(ITEMS[k].cat)],['food','食材',k=>ITEMS[k].cat==='食材'],['herb','藥材',k=>ITEMS[k].cat==='藥材'],['mat','材料',k=>['材料','布料'].includes(ITEMS[k].cat)],['tok','信物',k=>ITEMS[k].cat==='信物'],['etc','其他',()=>true]];
+function bagGroups(keys){const g={};for(const k of keys){const G=BAG_GROUPS.find(x=>x[2](k));(g[G[0]]=g[G[0]]||[]).push(k);}for(const id in g)g[id].sort((a,b)=>(S.mat[b]||0)-(S.mat[a]||0));return g;}
+ui.bagCat=ui.bagCat||'all';
+function bagView(){const keys=Object.keys(S.mat).filter(k=>S.mat[k]>0&&ITEMS[k]);if(!keys.length)return `<div class="card"><p class="sub" style="margin:0">行囊空空。到市集採買，或去翠竹林採藥吧。</p></div>`;
+ const g=bagGroups(keys),cats=BAG_GROUPS.filter(x=>g[x[0]]);if(ui.bagCat!=='all'&&!g[ui.bagCat])ui.bagCat='all';
+ let h=`<div class="chips bag-tabs"><button class="chip" data-act="bagCat" data-c="all" aria-pressed="${ui.bagCat==='all'}">全部 ${keys.length}</button>${cats.map(([id,n])=>`<button class="chip" data-act="bagCat" data-c="${id}" aria-pressed="${ui.bagCat===id}">${n} ${g[id].length}</button>`).join('')}</div>`;
+ for(const [id,n] of cats){if(ui.bagCat!=='all'&&ui.bagCat!==id)continue;
+  h+=`<div class="lbl">${n}</div><div class="card bag-list">${g[id].map(k=>`<details class="bag-it"><summary>${itemIco(k)}<b>${matN(k)}</b><span class="bag-n">×${fmt(S.mat[k])}</span>${USABLE.has(k)?`<button class="btn sm" data-act="useItem" data-k="${k}">${ITEMS[k].cat==='料理'?'食用':'服用'}</button>`:''}</summary><div class="sub">${ITEMS[k].d||''}</div></details>`).join('')}</div>`;}
+ return h;}
+const _vLifeBag=vLife;vLife=function(){const h=_vLifeBag();if(ui.seg.life!=='bag')return h;
+ const i=h.indexOf('<div class="lbl">'),j=h.indexOf('<div class="card"><h3>目前效果</h3>');if(j<0)return h;const start=h.slice(0,i>=0&&i<j?i:j);const head=start.includes('行囊空空')?start.slice(0,start.indexOf('<div class="card"><p class="sub" style="margin:0">行囊空空')):start;
+ return head+bagView()+h.slice(j);};
+ACT.bagCat=d=>{ui.bagCat=d.c;render();};
+/* 送禮：按喜好與種類分組 */
+const _npcModalBag=npcModal;npcModal=function(id){_npcModalBag(id);const sh=$('#sheet');if(!sh)return;const box=[...sh.querySelectorAll('.card')].find(c=>{const t=c.querySelector('h3');return t&&/送禮|贈禮/.test(t.textContent);});if(!box)return;
+ const ch=box.querySelector('.chips');if(!ch)return;const N=S.npc[id];const keys=Object.keys(S.mat).filter(k=>S.mat[k]>0&&ITEMS[k]&&ITEMS[k].cat!=='布料'&&ITEMS[k].cat!=='信物');
+ const chip=k=>`<button class="chip" data-act="npcGift" data-n="${id}" data-k="${k}">${itemIco(k)}${matN(k)} ×${S.mat[k]}${N.known[k]!=null?(N.known[k]>=12?' ♥':N.known[k]<0?' ✕':''):''}</button>`;
+ const liked=keys.filter(k=>N.known[k]>=12),rest=keys.filter(k=>!(N.known[k]>=12)&&!(N.known[k]<0)),bad=keys.filter(k=>N.known[k]<0);const g=bagGroups(rest);
+ let h='';if(liked.length)h+=`<div class="gift-g"><span class="gift-h">♥ 她喜歡的</span><div class="chips">${liked.map(chip).join('')}</div></div>`;
+ for(const [gid,n] of BAG_GROUPS)if(g[gid])h+=`<details class="gift-g"${liked.length?'':' open'}><summary class="gift-h">${n}（${g[gid].length}）</summary><div class="chips">${g[gid].map(chip).join('')}</div></details>`;
+ if(bad.length)h+=`<details class="gift-g"><summary class="gift-h">✕ 她不喜歡（${bad.length}）</summary><div class="chips">${bad.map(chip).join('')}</div></details>`;
+ ch.outerHTML=h||'<span class="mini">行囊裡沒有可送的東西。</span>';
+ if(!NPCS[id].male)return;box.innerHTML=box.innerHTML.replace('她喜歡的','他喜歡的').replace('她不喜歡','他不喜歡');};
+(function(){const st=document.createElement('style');st.textContent=`.bag-tabs{margin:4px 4px 2px}.bag-list{padding-block:4px}
+.bag-it{border-bottom:2px dotted var(--rule);padding:4px 0}.bag-it:last-child{border-bottom:0}.bag-it summary{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;min-height:34px}.bag-it summary::-webkit-details-marker{display:none}
+.bag-it summary b{flex:1;min-width:0}.bag-n{font-variant-numeric:tabular-nums;color:#6a4626;margin-right:4px}.bag-it summary .btn{width:auto;flex:none}.bag-it .sub{margin:2px 0 4px 30px}
+.gift-g{margin-top:6px}.gift-h{display:block;font-family:var(--f-title);font-size:14px;color:#7a2a1a;cursor:pointer;margin:2px 0}.gift-g .chips{margin-top:2px}details.gift-g>summary{list-style:none}details.gift-g>summary::-webkit-details-marker{display:none}details.gift-g>summary::before{content:'▸ '}details.gift-g[open]>summary::before{content:'▾ '}.bag-it summary::after{content:'▸';color:#a08060;font-size:12px}.bag-it[open] summary::after{content:'▾'}`;document.head.appendChild(st);})();
 
 </script>
 <script>
