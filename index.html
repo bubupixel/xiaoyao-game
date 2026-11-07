@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-211716";</script>
+<script>window.XY_BUILD="20261107-212348";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9168,6 +9168,9 @@ function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,
 {const _vh=vHome;vHome=function(){return _vh().replace(/<details class="hm-sec" data-fold="garden"[\s\S]*?<\/details>/,'');};}
 {const _hc=homeCard;homeCard=function(){return _hc().replace(/<button class="btn jade" data-act="openLux">[\s\S]*?<\/button>/,'').replace(/<span class="mini">每點溫馨度[\s\S]*?<\/span><\/div>$/,'</div>');};}
 {const _mm=marketModal;marketModal=function(){if(ui.mkTab==='misc')ui.mkTab='food';_mm();const t=$('#sheet .shop-tab[data-t="misc"]');if(t)t.remove();};}
+/* 居所畫面不再畫出擺設；標題列不再顯示溫馨度 */
+{const _dh=drawHome;drawHome=function(c,t){const col=S&&S.col,d=col?col.decor:null;if(col)col.decor=[];try{return _dh(c,t);}finally{if(col)col.decor=d;}};}
+{const _vh2=vHome;vHome=function(){return _vh2().replace(/<span class="sub">♥ [^<]*?・((?:春|夏|秋|冬)・[^<]*)<\/span>/,'<span class="sub">$1</span>');};}
 
 /* ================= 寵物 2.0 介面（人物 › 寵物） ================= */
 const PET_EVO_IMG={};for(const k in PETS)if(SPRITE_IMG_SRC['pete_'+k])PET_EVO_IMG[k]=SPRITE_IMG_SRC['pete_'+k];
