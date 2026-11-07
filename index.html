@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-084319";</script>
+<script>window.XY_BUILD="20261107-131416";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -922,7 +922,7 @@ const STROLL=[
   ch:[{t:'歸還錢袋',fn:s=>{s.flags.goodDeed=(s.flags.goodDeed||0)+1;gainItem(s,'tea',1);return '書生千恩萬謝，硬塞給你一包碧螺春。';}},
       {t:'先打開看看',fn:s=>{s.silver+=30;return '裡面只有 30 兩和一封家書。你猶豫了一下，還是交給了巡街的衙役，衙役順手賞了你 30 兩。';}}]},
  {id:'junk',w:2,cond:s=>true,t:'角落的舊貨攤上堆滿了瓶瓶罐罐，攤主神秘兮兮地說：「八十兩，摸一樣。」',
-  ch:[{t:'花 80 兩摸一樣',need:s=>s.silver>=80?null:'銀兩不足',fn:s=>{s.silver-=80;const pool=[['outfits','duanda'],['teasets','zisha'],['decor','zhulian'],['accs','hongsheng']].filter(([k,id])=>!s.col[k].includes(id));
+  ch:[{t:'花 80 兩摸一樣',need:s=>s.silver>=80?null:'銀兩不足',fn:s=>{s.silver-=80;const pool=[['outfits','duanda'],['teasets','zisha'],['decor','zhulian']].filter(([k,id])=>!s.col[k].includes(id));
     if(pool.length&&Math.random()<.6){const [k,id]=pick(pool);giveCol(s,k,id);return '你摸到了「'+{outfits:OUTFITS,teasets:TEASETS,decor:DECOR,accs:ACCS}[k][id].n+'」，賺到了！';}gainItem(s,'ore',3);return '摸到三塊生鏽的鐵……不過拿去鐵匠舖還能用（礦石 ×3）。';}},
       {t:'不了',fn:s=>'攤主聳聳肩：「下回再來。」'}]},
  {id:'lost',w:2,cond:s=>true,t:'一個小娃娃坐在糖葫蘆攤前哭，說找不到娘了。',
@@ -936,7 +936,7 @@ const STROLL=[
       {t:'在旁邊看熱鬧',fn:s=>{addRecord(s,'teafight');return '你學到不少品茶的門道。';}}]},
  {id:'lantern',w:4,cond:s=>isNight(s),t:'夜市張燈結綵，原來今晚是燈會。滿街花燈映得人臉通紅。',
   ch:[{t:'買一盞花燈（60 兩）',need:s=>s.silver>=60?null:'銀兩不足',fn:s=>{s.silver-=60;addRecord(s,'lantern');if(!s.col.decor.includes('huadeng')){giveCol(s,'decor','huadeng');return '你提著花燈回家，掛在居所裡（居所裝飾：花燈）。';}gainItem(s,'osman',2);return '又添一盞燈，賣燈的大娘送你兩份桂花。';}},
-      {t:'猜燈謎',fn:s=>{addRecord(s,'lantern');if(Math.random()<.5&&!s.col.accs.includes('jinchai')){giveCol(s,'accs','jinchai');return '你連猜三道燈謎，贏得一支燈籠金釵！';}return '燈謎太難，只猜中一道，換到一包糖。';}}]},
+      {t:'猜燈謎',fn:s=>{addRecord(s,'lantern');if(Math.random()<.5){const v=60+realmOf(s)*40;s.silver+=v;return '你連猜三道燈謎，攤主笑著把彩頭塞給你。銀兩 +'+v+'。';}return '燈謎太難，只猜中一道，換到一包糖。';}}]},
  {id:'meetsw',w:3,cond:s=>s.npc.sw.met,t:'你在藥材攤前碰見蘇晚晴，她正和攤主為一兩銀子的價錢討價還價。',
   ch:[{t:'幫她說話',fn:s=>{addRel(s,'sw',4);return '攤主拗不過兩個人，讓了價。晚晴朝你眨眨眼：「合作愉快！」（好感 +4）';}},{t:'替她付錢',need:s=>s.silver>=20?null:'銀兩不足',fn:s=>{s.silver-=20;addRel(s,'sw',2);return '晚晴愣了一下：「這怎麼好意思……下次我請你喝藥茶。」（好感 +2）';}}]},
 ];
@@ -4455,6 +4455,16 @@ const _normalizeOF=normalize;normalize=function(raw,now){const s=_normalizeOF(ra
  s.col.outfits=OUTFIT_SETS.filter(k=>L.has(k));const ro=raw&&raw.look&&raw.look.outfit;s.look.outfit=ro&&(OUTFITS[ro]||OUTFIT_TO[ro])?outfitTo(ro):s.look.outfit;
  if(!s.col.outfits.includes(s.look.outfit))s.look.outfit='qingshan';return s;};
 const _newStateOF=newState;newState=function(now){const s=_newStateOF(now);s.col.outfits=OUTFIT_SETS.filter(k=>OUTFITS[k].start);if(!OUTFITS[s.look.outfit])s.look.outfit='qingshan';return s;};
+
+/* ---------- 取消髮飾：不再發放、不再販售，劇情文字一併移除 ---------- */
+{const _gc=giveCol;giveCol=function(s,kind,id){if(kind==='accs')return false;return _gc(s,kind,id);};}
+const ACC_NAMES=Object.values(ACCS).map(a=>a.n).filter(n=>n!=='無');
+function accTextFix(t){if(typeof t!=='string')return t;const N=ACC_NAMES.join('|');
+ return t.replace(new RegExp('、(?:髮飾|飾品)「(?:'+N+')」','g'),'').replace(new RegExp('(?:髮飾|飾品)「(?:'+N+')」、','g'),'').replace(new RegExp('獲得(?:髮飾|飾品)「(?:'+N+')」，','g'),'');}
+{const _ec=npcEventChoose;npcEventChoose=function(){const r=_ec.apply(this,arguments);if(r&&typeof r==='object'&&r.txt)r.txt=accTextFix(r.txt);return r;};}
+(function(){const scrub=A=>{if(!Array.isArray(A))return;for(let i=A.length-1;i>=0;i--)if(A[i]&&A[i].acc)A.splice(i,1);};
+ for(const G of [typeof FAC_EXTRA!=='undefined'?FAC_EXTRA:null,typeof FAC_SHOP!=='undefined'?FAC_SHOP:null])if(G)for(const k in G)scrub(G[k]);if(typeof SECT_SHOP!=='undefined')scrub(SECT_SHOP);})();
+for(const k in ACCS)if(ACCS[k].price)delete ACCS[k].price;
 
 'use strict';
 /* ================= 逍遙江湖 擴充二十一：神兵譜完整篇、兩本新秘笈 =================
