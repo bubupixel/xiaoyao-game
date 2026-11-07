@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-195040";</script>
+<script>window.XY_BUILD="20261107-195422";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -682,11 +682,17 @@ function normalize(raw,now){
  const d=newState(now),s=Object.assign({},d,raw);
  for(const k of ['look','mat','acc','buffs','flags','chal','stat','settings','eq'])s[k]=Object.assign({},d[k],(raw[k]&&typeof raw[k]==='object'&&!Array.isArray(raw[k]))?raw[k]:{});
  for(const k of ['gm','g','xp','silver','stam','insight','lastTs','maxTs','nextUid','contrib','sectDone','created','lastExport','savedAt'])if(typeof s[k]!=='number'||!Number.isFinite(s[k]))s[k]=d[k];
- if(raw.gv!==3&&Number.isFinite(raw.g)){const og=Math.max(0,Math.min(31,Math.floor(raw.g))),r=Math.floor(og/4),k=og%4,ng=r*STAGE_N+[0,3,5,8][k];
+ if(!(raw.gv>=3)&&Number.isFinite(raw.g)){const og=Math.max(0,Math.min(31,Math.floor(raw.g))),r=Math.floor(og/4),k=og%4,ng=r*STAGE_N+[0,3,5,8][k];
   const oreq=Math.round(120*Math.pow(1.56,og)),frac=Math.max(0,(+raw.xp||0)/oreq);s.g=ng;s.xp=frac*stageReq(ng);}
  if(raw.gv===3&&Number.isFinite(raw.g)){const og=Math.max(0,Math.min(71,Math.floor(raw.g))),r=Math.floor(og/9),k=og%9,ng=r*10+(k===8?9:k);
   const oreq=Math.round(120*Math.pow(1.56,og*4/9)*8/9),frac=Math.max(0,Math.min(.999,(+raw.xp||0)/oreq));s.g=ng;s.xp=frac*stageReq(ng);}
  s.gv=4;
+ /* 修正：第四版存檔曾被誤當舊存檔重複換算，等級會無故跳升。從紀錄找回跳升前的等級 */
+ if(raw.gv===4&&!raw.gfix){const L=Array.isArray(raw.log)?raw.log:[];let prev=null,bad=null;
+  for(const e of L){const m=e&&typeof e.m==='string'?e.m:'';const k=m.match(/・等級 (\d+)。/);let n=k?+k[1]:(/衝破瓶頸/.test(m)&&prev!=null?prev+1:null);if(n==null)continue;
+   if(prev!=null&&n>prev+3){bad=prev;break;}prev=n;}
+  if(bad!=null&&bad<s.g){s.g=bad;s.xp=0;s.gfixFrom=Math.floor(raw.g);}}
+ s.gfix=1;
  s.g=Math.max(0,Math.min(G_MAX,Math.floor(s.g)));s.xp=Math.max(0,s.xp);s.silver=Math.max(0,s.silver);s.stam=Math.max(0,Math.min(100,s.stam));s.insight=Math.max(0,Math.min(100,s.insight));
  for(const k in s.mat){if(!ITEMS[k]||typeof s.mat[k]!=='number'||!Number.isFinite(s.mat[k])||s.mat[k]<0)delete s.mat[k];else s.mat[k]=Math.floor(s.mat[k]);}
  const arts={};if(raw.arts&&typeof raw.arts==='object')for(const id in raw.arts){const a=raw.arts[id];if(ARTS[id]&&a&&a.lv>=1)arts[id]={lv:Math.min(10,Math.floor(a.lv)),prof:Math.max(0,+a.prof||0)};}
@@ -4946,6 +4952,8 @@ const _normalizeZL=normalize;normalize=function(raw,now){const s=_normalizeZL(ra
   const apt=Math.max(1,Math.min(5,d.apt|0||2)),male=Math.random()<.5,st=()=>Math.max(1,Math.min(10,Math.round(apt*1.4+Math.random()*3)));
   return {id:Z.seq++,name:d.name,male,por:(male?0:6)+(i%6),apt,trait:tk[i%tk.length],origin:ZL_ORIGINS[i%ZL_ORIGINS.length],st:{gen:st(),wu:st(),shen:st(),xin:st()},lv:Math.min(ZL_LV_MAX,(d.lv||1)*2),xp:0,mood:70,loyal:55,
    path:d.job==='shop'?'shang':d.job==='explore'?'tan':'wu',method:'ci',talk:-1,gift:-1,ev:null,job:null};});return s;};
+/* 等級跳升修正的提示 */
+{const _nG=normalize;normalize=function(raw,now){const s=_nG(raw,now);if(s.gfixFrom){addLog(s,'【修正】等級曾因錯誤跳升至 '+s.gfixFrom+'，已還原為等級 '+s.g+'。');addJournal(s,'修行','等級錯誤跳升已修正：還原為等級 '+s.g+'。');delete s.gfixFrom;}return s;};}
 
 </script>
 <script>
