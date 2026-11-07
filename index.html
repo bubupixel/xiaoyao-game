@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-191611";</script>
+<script>window.XY_BUILD="20261107-192135";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -378,7 +378,7 @@ let SIM_T=0;const nowT=()=>SIM_T||Date.now();
 /* ---------- 境界 ---------- */
 const REALM_NAMES=['初入江湖','三流高手','二流高手','一流高手','後天高手','先天高手','武林宗師','一代大宗師'];
 /* 每個大境界分九重（第三版起；舊存檔由四階自動換算） */
-const STAGE_N=9,STAGE_NAMES=['一重','二重','三重','四重','五重','六重','七重','八重','九重'];
+const STAGE_N=10,STAGE_NAMES=Array.from({length:STAGE_N},(_,i)=>'第'+(i+1)+'級'); /* 第四版：改為等級制，每 10 級換一個境界稱號 */
 const REALM_TEXT=['初涉江湖，筋骨未成，一切從吐納開始。','氣行小周天，拳腳已有章法。','內息綿長，招式圓轉，江湖上已有薄名。','出手如電，尋常匪類望風而逃。','打通任督，後天真氣生生不息。','返璞歸真，先天一炁自成循環。','一招一式皆成道理，足以開宗立派。','天人合一，大宗師之名傳遍江湖。'];
 const G_MAX=8*STAGE_N-1;
 const realmOfG=g=>Math.floor(g/STAGE_N);
@@ -387,7 +387,7 @@ const realmOf=s=>realmOfG(s.g);
 const stageReq=g=>Math.round(120*Math.pow(1.56,gEq(g))*8/STAGE_N);
 const xpBase=g=>0.5*Math.pow(1.30,gEq(g));
 const isGate=g=>g<G_MAX&&g%STAGE_N===STAGE_N-1;
-const stageName=g=>REALM_NAMES[realmOfG(g)]+'・'+STAGE_NAMES[g%STAGE_N];
+const stageName=g=>REALM_NAMES[realmOfG(g)]+'・等級 '+g;
 const maxArtLv=s=>Math.min(10,3+realmOf(s));
 
 /* ---------- 武功 ---------- */
@@ -502,7 +502,7 @@ const ITEMS={
  f_cake:{n:'桂花糕',cat:'料理',d:'食用：30 分鐘內悟性 +3。'},f_pork:{n:'紅燒肉',cat:'料理',d:'食用：30 分鐘內攻擊 +8%。'},
  f_chicken:{n:'藥膳雞湯',cat:'料理',d:'食用：體力 +30，30 分鐘內修為 +10%。'},
  m_wound:{n:'金創藥',cat:'藥品',d:'戰鬥中氣血低於三成時自動使用，回復三成氣血（每場一次）。'},
- p_stam:{n:'回氣丹',cat:'藥品',d:'服用：體力 +40。'},p_qi:{n:'聚氣丹',cat:'藥品',d:'服用：30 分鐘修為 ×1.5（可累積，上限 4 小時，離線亦計）。'},
+ p_stam:{n:'回氣丹',cat:'藥品',d:'服用：體力 +20。'},p_qi:{n:'聚氣丹',cat:'藥品',d:'服用：30 分鐘修為 ×1.5（可累積，上限 4 小時，離線亦計）。'},
  p_break:{n:'破境丹',cat:'藥品',d:'服用：感悟 +25（提高大境界突破成功率）。'},
 };
 const RECIPES=[
@@ -661,7 +661,7 @@ function giveCol(s,kind,id){const L=s.col[kind];if(!L.includes(id)){L.push(id);c
 function newNpc(){return {rel:0,met:false,ev:{},talkDay:-1,giftDay:-1,helpDay:-1,req:0,known:{}};}
 function newState(now){
  const s={v:SAVE_VER,started:false,name:'無名',gender:'f',look:{hair:'ponytail',hcolor:'ink',outfit:'qingshan',acc:'muzan',wskin:null},
-  created:now,lastTs:now,maxTs:now,gm:8*60,g:0,gv:3,xp:0,silver:150,stam:100,insight:0,
+  created:now,lastTs:now,maxTs:now,gm:8*60,g:0,gv:4,xp:0,silver:150,stam:100,insight:0,
   mode:'neigong',mainInner:'breathing',mainMartial:'basic_sword',loc:'town',
   arts:{basic_sword:{lv:1,prof:0},long_fist:{lv:1,prof:0},breathing:{lv:1,prof:0}},
   inv:[],eq:{weapon:null,armor:null,acc:null},nextUid:1,
@@ -683,7 +683,9 @@ function normalize(raw,now){
  for(const k of ['gm','g','xp','silver','stam','insight','lastTs','maxTs','nextUid','contrib','sectDone','created','lastExport','savedAt'])if(typeof s[k]!=='number'||!Number.isFinite(s[k]))s[k]=d[k];
  if(raw.gv!==3&&Number.isFinite(raw.g)){const og=Math.max(0,Math.min(31,Math.floor(raw.g))),r=Math.floor(og/4),k=og%4,ng=r*STAGE_N+[0,3,5,8][k];
   const oreq=Math.round(120*Math.pow(1.56,og)),frac=Math.max(0,(+raw.xp||0)/oreq);s.g=ng;s.xp=frac*stageReq(ng);}
- s.gv=3;
+ if(raw.gv===3&&Number.isFinite(raw.g)){const og=Math.max(0,Math.min(71,Math.floor(raw.g))),r=Math.floor(og/9),k=og%9,ng=r*10+(k===8?9:k);
+  const oreq=Math.round(120*Math.pow(1.56,og*4/9)*8/9),frac=Math.max(0,Math.min(.999,(+raw.xp||0)/oreq));s.g=ng;s.xp=frac*stageReq(ng);}
+ s.gv=4;
  s.g=Math.max(0,Math.min(G_MAX,Math.floor(s.g)));s.xp=Math.max(0,s.xp);s.silver=Math.max(0,s.silver);s.stam=Math.max(0,Math.min(100,s.stam));s.insight=Math.max(0,Math.min(100,s.insight));
  for(const k in s.mat){if(!ITEMS[k]||typeof s.mat[k]!=='number'||!Number.isFinite(s.mat[k])||s.mat[k]<0)delete s.mat[k];else s.mat[k]=Math.floor(s.mat[k]);}
  const arts={};if(raw.arts&&typeof raw.arts==='object')for(const id in raw.arts){const a=raw.arts[id];if(ARTS[id]&&a&&a.lv>=1)arts[id]={lv:Math.min(10,Math.floor(a.lv)),prof:Math.max(0,+a.prof||0)};}
@@ -906,7 +908,7 @@ function resolveExp(s,t,sum){const ei=s.exp.e,E=EXPLORES[ei];s.exp=null;const r=
  s.stat.explores++;s.expResult=r;sum.exps.push(r);addLog(s,'自'+E.n+'探索歸來：勝 '+r.wins+' 場'+(r.loss?'，負傷而回':'')+'。');}
 
 /* ---------- 生活：客棧 ---------- */
-function innRest(s){if(s.silver<30)return '銀兩不足（需 30）';if(s.stam>=100)return '體力已滿';s.silver-=30;s.stam=Math.min(100,s.stam+40);advTime(s,120);addLog(s,'在客棧小睡兩個時辰，神清氣爽。');return null;}
+function innRest(s){if(s.silver<60)return '銀兩不足（需 60）';if(s.stam>=100)return '體力已滿';s.silver-=60;s.stam=Math.min(100,s.stam+40);advTime(s,120);addLog(s,'在客棧小睡兩個時辰，神清氣爽。');return null;}
 function innTea(s,own,now){let txt;
  if(own){if(!has(s,'tea'))return {err:'沒有碧螺春'};useItems(s,{tea:1});}else{if(s.silver<10)return {err:'銀兩不足（需 10）'};s.silver-=10;}
  const pct=(own?15:10)+TEASETS[s.teaset].b;s.buffs.teaPct=Math.max(s.buffs.tea>now?s.buffs.teaPct:0,pct);s.buffs.tea=Math.min(now+2*3600e3,Math.max(now,s.buffs.tea)+1800e3);advTime(s,60);
@@ -974,7 +976,7 @@ function craft(s,id){const rc=RECIPES.find(r=>r.id===id);if(!rc)return '沒有�
 function useItem(s,k,now){if(!has(s,k))return '沒有'+ITEMS[k].n;const st=v=>{if(s.stam>=100)return '體力已滿';s.stam=Math.min(100,s.stam+v);return null;};let e=null;
  const ext=(key,ms,cap)=>{s.buffs[key]=Math.min(now+(cap||7200e3),Math.max(now,s.buffs[key])+ms);};
  switch(k){case'f_veg':e=st(15);break;case'f_soup':e=st(25);break;case'f_cake':ext('fwis',1800e3);break;case'f_pork':ext('fatk',1800e3);break;
-  case'f_chicken':s.stam=Math.min(100,s.stam+30);ext('fxp',1800e3);break;case'p_stam':e=st(40);break;
+  case'f_chicken':s.stam=Math.min(100,s.stam+30);ext('fxp',1800e3);break;case'p_stam':e=st(20);break;
   case'p_qi':if(s.buffs.qi-now>=4*3600e3-1)return '藥力已達上限';ext('qi',1800e3,4*3600e3);break;
   case'p_break':if(s.insight>=100)return '感悟已滿';s.insight=Math.min(100,s.insight+25);break;default:return '這個不能直接使用';}
  if(e)return e;useItems(s,{[k]:1});return null;}
@@ -1790,7 +1792,7 @@ function goalCandidates(s,tier){const r=realmOf(s),out=[],C=(key,n,d,max,counter
   if(locUnlocked(s,'luoyang'))C('arena','登台比武','在洛陽擂台打 1 場',1,1);
   if(s.letters&&s.letters.some(l=>l.from&&!l.replied))C('reply','魚雁往返','回覆 1 封書信（人物 › 書信）',1,1);}
  else if(tier==='mid'){
-  const left=STAGE_N-1-s.g%STAGE_N;if(!isGate(s.g)&&s.g<G_MAX&&left>0)C('stage','更上一層','修為再升 '+Math.min(3,left)+' 重',Math.min(3,left),1);
+  const left=STAGE_N-1-s.g%STAGE_N;if(!isGate(s.g)&&s.g<G_MAX&&left>0)C('stage','更上一層','修為再升 '+Math.min(3,left)+' 級',Math.min(3,left),1);
   const a=s.arts[s.mainMartial];if(a&&a.lv<maxArtLv(s))C('art:'+s.mainMartial+':'+(a.lv+1),'勤練武功','把「'+ARTS[s.mainMartial].n+'」練到 '+(a.lv+1)+' 級',a.lv+1);
   for(const id of metIds){const sg=relStage(s.npc[id].rel);if(sg<3)C('rel:'+id+':'+(sg+1),'加深情誼','與'+NPCS[id].n+'的關係達到「'+STAGES_REL[sg+1].n+'」',STAGES_REL[sg+1].at);}
   const ch=CHAL.find(c=>!s.chal[c.id]&&locUnlocked(s,c.loc)&&c.L<=4+r*4.2);if(ch)C('chal:'+ch.id,'挑戰強敵','擊敗「'+ch.n+'」（'+LOCS[ch.loc].n+'）',1);
@@ -3324,7 +3326,7 @@ const WEEKS=[
  {id:'wulin',n:'武林大會週',d:'各路豪傑齊聚洛陽，本週攻擊與防禦 +5%。',e:{atkPct:5,defPct:5},tasks:[['wins',25,'打贏 25 場戰鬥'],['tower',3,'試劍塔再登 3 層'],['explores',6,'完成 6 次探索']]},
  {id:'harvest',n:'豐收週',d:'五穀豐登，本週採集收穫 +30%、銀兩 +10%。',e:{herbBonus:30,goldPct:10},tasks:[['herbTotal',40,'採集 40 份草藥'],['cooked',10,'烹飪或製藥 10 次'],['explores',6,'完成 6 次探索']]},
  {id:'qiyu',n:'奇遇週',d:'江湖暗流湧動，本週奇遇出現快一倍、探索加速 15%。',e:{expSpeed:15},tasks:[['enc',4,'經歷 4 件奇遇'],['explores',8,'完成 8 次探索'],['wins',15,'打贏 15 場戰鬥']]},
- {id:'biguan',n:'閉關週',d:'天地靈氣充沛，本週修為與武功熟練 +20%。',e:{xpPct:20,profPct:20},tasks:[['xpTotal',0,'累積修為（約三重）'],['cooked',6,'烹飪或製藥 6 次'],['wins',15,'打贏 15 場戰鬥']]},
+ {id:'biguan',n:'閉關週',d:'天地靈氣充沛，本週修為與武功熟練 +20%。',e:{xpPct:20,profPct:20},tasks:[['xpTotal',0,'累積修為（約三級）'],['cooked',6,'烹飪或製藥 6 次'],['wins',15,'打贏 15 場戰鬥']]},
  {id:'shanglv',n:'商旅週',d:'商隊往來頻繁，本週銀兩 +20%、體力回復 +20%。',e:{goldPct:20,stamRegen:20},tasks:[['explores',10,'完成 10 次探索'],['herbTotal',30,'採集 30 份草藥'],['wins',15,'打贏 15 場戰鬥']]},
 ];
 const weekOf=k=>WEEKS[((k%WEEKS.length)+WEEKS.length)%WEEKS.length];
@@ -4777,6 +4779,10 @@ const _normalizeTW2=normalize;normalize=function(raw,now){const s=_normalizeTW2(
 const _challengeBAL=challenge;challenge=function(s,id){const before=s.silver;const o=_challengeBAL(s,id);const g=s.silver-before;
  if(o&&!o.err&&g>0){const keep=Math.max(1,Math.round(g/10));s.silver=before+keep;if(o.sum)o.sum.silver=Math.max(0,(o.sum.silver||0)-(g-keep));
   if(o.lines)o.lines=o.lines.map(l=>l.replace('銀兩 +'+g,'銀兩 +'+keep));}return o;};
+
+/* ---------- 平衡：試劍塔每層銀兩降為五分之一 ---------- */
+const _towerFightBAL=towerFight;towerFight=function(s){const before=s.silver;const o=_towerFightBAL(s);const g=s.silver-before;
+ if(o&&!o.err&&g>0){const keep=Math.max(1,Math.round(g/5));s.silver=before+keep;if(o.lines)o.lines=o.lines.map(l=>l.replace('銀兩 +'+fmt(g),'銀兩 +'+fmt(keep)));}return o;};
 
 </script>
 <script>
@@ -6416,7 +6422,7 @@ function renderTop(){const st=computeStats(S),req=stageReq(S.g),gate=isGate(S.g)
  $('#vSilver').textContent=fmt(S.silver);$('#vStam').textContent=Math.floor(S.stam);
  const rate=xpRate(S,st);const now=Date.now();const bufs=[];if(S.buffs.qi>now)bufs.push('聚氣');if(S.buffs.tea>now)bufs.push('茶香');if(S.buffs.fwis>now||S.buffs.fatk>now||S.buffs.fxp>now)bufs.push('飽食');
  const mOn=S.settings.music!==false;$('#cal').innerHTML=`<span><b>${dateText(S)}</b>・${LOCS[S.loc].n}</span><button class="musicbtn${mOn?' on':''}" data-act="toggleMusic" aria-pressed="${mOn}" aria-label="背景音樂">♪ ${mOn?(bgmPlaying()&&BGM.mood?MUSIC_MOODS[BGM.mood].n:'點一下播放'):'音樂關閉'}</button>`;
- $('#status').innerHTML=`<div class="st-row"><div class="realm"><b>${REALM_NAMES[realmOf(S)]}</b><span class="stamp">${STAGE_NAMES[S.g%STAGE_N]}</span></div><div class="pw">戰力 <b>${fmt(st.power)}</b></div></div>
+ $('#status').innerHTML=`<div class="st-row"><div class="realm"><b>${REALM_NAMES[realmOf(S)]}</b><span class="stamp lv-stamp">${S.g}<small>級</small></span></div><div class="pw">戰力 <b>${fmt(st.power)}</b></div></div>
  ${bar(S.xp/req*100,gate&&full?'gold':'')}
  <div class="st-sub"><span>修為 <b>${fmt(S.xp)}</b> / ${fmt(req)}</span><span>${MODES[S.mode].n}・每秒 +${rate<10?rate.toFixed(2):fmt(rate)}${bufs.length?' <b style="color:#9c2a1f">'+bufs.join('・')+'</b>':''}</span></div>
  ${S.g>=G_MAX&&full?'<div class="st-sub"><span style="color:#9c2a1f">已臻一代大宗師化境。</span></div>':gate&&full?'<div class="st-sub"><span style="color:#9c2a1f">已達瓶頸，到「修行」頁衝關。</span></div>':''}`;
@@ -6591,7 +6597,7 @@ function itemDetail(u){const it=S.inv.find(i=>i.u===u);if(!it)return closeModal(
 
 function innModal(){const unread=RUMORS.filter(r=>r.cond(S)&&!S.col.rumors.includes(r.id));const now=Date.now();
  openModal(`${backRow('悅來客棧')}<p class="sub">掌櫃的撥著算盤：「客官，打尖還是住店？」</p>
- <div class="card"><h3>休息</h3><span class="sub">小睡兩個時辰，體力 +40（30 兩）</span><button class="btn" data-act="innRest" ${S.silver>=30&&S.stam<100?'':'disabled'}>住店休息</button></div>
+ <div class="card"><h3>休息</h3><span class="sub">小睡兩個時辰，體力 +40（60 兩）</span><button class="btn" data-act="innRest" ${S.silver>=60&&S.stam<100?'':'disabled'}>住店休息</button></div>
  <div class="card"><h3>飲茶</h3><span class="sub">30 分鐘內武功熟練提升，有時能聽到鄰桌閒談。使用中的茶具：${TEASETS[S.teaset].n}（+${TEASETS[S.teaset].b}%）${S.buffs.tea>now?'・茶香尚餘 '+fmtTime((S.buffs.tea-now)/1000):''}</span>
   <div class="row"><button class="btn ghost" data-act="innTea" data-own="0" ${S.silver>=10?'':'disabled'}>店家粗茶<small>10 兩・熟練 +${10+TEASETS[S.teaset].b}%</small></button><button class="btn jade" data-act="innTea" data-own="1" ${has(S,'tea')?'':'disabled'}>自沏碧螺春<small>持有 ${S.mat.tea||0}・熟練 +${15+TEASETS[S.teaset].b}%</small></button></div></div>
  <div class="card"><h3>江湖傳聞牆</h3><span class="sub">打賞說書人 10 兩，聽一則傳聞（一個時辰）。讀過的傳聞收在「收藏」。</span>
@@ -7819,7 +7825,7 @@ function rebCard(){const R=rebState(S),ready=rebReady(S);if(!ready&&!R.n)return 
  return h+'</div>';}
 function rebAskModal(){const R=rebState(S);openModal(`${backRow('輪迴飛升')}<div class="ev-text"><p>放下一身修為，從吐納開始重新走一遍江湖路。第二次走，每一步都會比第一次快。</p></div>
  <div class="card"><h3>保留</h3><span class="sub">武功、裝備、銀兩、物品、收藏、居所與據點、所有人物好感與故事、江湖風雲錄進度、稱號、試劍塔紀錄、已去過的地方（照樣可以去）、已用過等級的兵器（照樣可以裝備）。</span></div>
- <div class="card"><h3>重置</h3><span class="sub">境界回到「初入江湖・一重」，修為歸零。</span></div>
+ <div class="card"><h3>重置</h3><span class="sub">境界回到「初入江湖・等級 0」，修為歸零。</span></div>
  <div class="card"><h3>得到</h3><span class="sub">天賦點 ${rebGain(S)} 點、修為永久 +10%、感悟 +30、體力回滿${R.n?'':'、稱號「輪迴行者」'}。</span></div>
  <p class="sub">這一步做了就不能反悔。確定嗎？</p><button class="btn" data-act="rebGo">確定飛升</button><button class="btn ghost" data-act="closeModal">再想想</button>`,undefined);}
 
@@ -8660,6 +8666,7 @@ const _vHomeUp=vHome;vHome=function(){let h=_vHomeUp();if(typeof HOUSES==='undef
  const row=`<div class="house-up">${N?`<div><b>翻修成「${N.n}」</b><span class="sub">${N.d||'房間更大，可以擺更多擺設，住客也更多。'}</span></div><button class="btn sm" data-act="houseUp" ${S.silver<N.cost?'disabled':''}>${fmt(N.cost)} 兩</button>`:'<span class="mini">已是江湖上最好的住所。</span>'}</div>`;
  const k=h.indexOf('</div>',h.indexOf('<canvas id="room"'));return k<0?h:h.slice(0,k)+row+h.slice(k);};
 (function(){const st=document.createElement('style');st.textContent='.house-up{display:flex;gap:8px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(120,80,40,.35)}.house-up>div{flex:1;min-width:0;display:grid}.house-up .btn{width:auto;flex:none}';document.head.appendChild(st);})();
+(function(){const st=document.createElement('style');st.textContent='.stamp.lv-stamp{writing-mode:horizontal-tb!important;display:inline-flex!important;flex-direction:column;align-items:center;justify-content:center;width:auto!important;min-width:32px;padding:0 4px;line-height:1;font-size:14px}.stamp.lv-stamp small{font-size:10px;margin-top:1px}';document.head.appendChild(st);})();
 
 </script>
 <script>
