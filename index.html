@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-212556";</script>
+<script>window.XY_BUILD="20261107-212715";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1805,7 +1805,7 @@ function goalCandidates(s,tier){const r=realmOf(s),out=[],C=(key,n,d,max,counter
   const ch=CHAL.find(c=>!s.chal[c.id]&&locUnlocked(s,c.loc)&&c.L<=4+r*4.2);if(ch)C('chal:'+ch.id,'挑戰強敵','擊敗「'+ch.n+'」（'+LOCS[ch.loc].n+'）',1);
   if(s.estate){if(!s.estate.type)C('estate:open','成家立業','在居所開設據點（生活 › 據點）',1);else if(s.estate.lvl<5)C('estate:'+(s.estate.lvl+1),'生意興隆','把據點擴建到 '+(s.estate.lvl+1)+' 級',s.estate.lvl+1);}
   C('rec:'+(s.col.records.length+2),'行萬里路','再收集 2 筆探索紀錄（探索時隨機獲得）',s.col.records.length+2);
-  if(!s.fac&&r>=1)C('fac:join','投身門派','加入一個勢力（人物 › 門派）',1);}
+  if(!s.fac&&r>=1)C('fac:join','投身門派','加入一個勢力（修行 › 門派）',1);}
  else{
   if(r<7)C('realm:'+(r+1),'突破瓶頸','晉升「'+REALM_NAMES[r+1]+'」',r+1);
   for(const id of metIds){const sg=relStage(s.npc[id].rel);if(sg<3)C('zhiji:'+id,'生死之交','與'+NPCS[id].n+'成為知己',150);
@@ -5001,7 +5001,7 @@ const zlGradName=s=>{const Z=zl(s)&&zlState(s);if(!Z)return '你的弟子';const
 MAIN.push(
  {n:'第二十一章・院中有人',por:'d5',zlPart:1,intro:'說書人把醒木推給你的第二天早上，你推開家門，院子裡站著一個小和尚。慧明站在他身後，雙手合十：「這孩子叫了塵。寺裡留不住他了——他說，要拜一位真正的大俠為師。」',
   goal:'開宗立派（需等級 70，若已在其他門派要先離開），收下了塵與另外兩位弟子',prog:s=>'弟子：'+Math.min(3,zlCnt(s))+' / 3'+(zlNmIn(s,5)?'・了塵已入門':'・了塵未入門'),
-  boss:{n:'九幽秋使',L:46,realm:7,loc:'town',btn:'夜守山門',need:s=>!zl(s)?'需要先開宗立派（人物 › 門派）':!zlNmIn(s,5)?'需要收了塵為弟子':zlCnt(s)<3?'需要 3 位弟子（目前 '+zlCnt(s)+' 位）':null,
+  boss:{n:'九幽秋使',L:46,realm:7,loc:'town',btn:'夜守山門',need:s=>!zl(s)?'需要先開宗立派（修行 › 門派）':!zlNmIn(s,5)?'需要收了塵為弟子':zlCnt(s)<3?'需要 3 位弟子（目前 '+zlCnt(s)+' 位）':null,
    win:s=>{s.flags.zc21=true;giveTitle(s,'m_zc21');addJournal(s,'主線','門派初立，九幽秋使夜襲山門，被你和弟子們擊退。她臨走前說：「冬使在找一個帶著玉珮的孩子。」','zc21');
     return ['門派開張的第三個晚上，山門外起了霧。霧裡走出一個穿秋香色衣裳的女人，手裡拿著一把滴著露水的團扇。','「慕容大人走了，九幽還在。」她笑著說，「聽說這裡新開了一家門派，我來看看，能不能順手收了。」',
      zlLine(s,5,'了塵擋在其他弟子前面，小小的身子抖得厲害，卻一步也沒退。')||'你的弟子們擋在門前，誰都沒有退。',
@@ -5018,7 +5018,7 @@ MAIN.push(
    lose:'冬使的劍冷得像寒山的雪。慧明把你們藏進藏經閣：「明天再來，雪會停的。」沒有任何損失。'},
   done:s=>!!s.flags.zc22,rew:{silver:36000,item:['yuntie',3],gear:true}},
  {n:'第二十三章・少年論劍',por:'d3',zlNeed:3,intro:'論劍大會的帖子送到了門派。帖子背面有人用劍尖刻了一行字：「沈孤鴻，我在決賽等你。——沈青霜」',
-  goal:'收沈孤鴻為弟子，帶弟子們在論劍大會闖進決賽（人物 › 門派 › 論劍大會）',prog:s=>{const Z=zl(s)&&zlState(s);const b=Z?zlCupInfo(s).best||0:0;return (zlNmIn(s,3)?'沈孤鴻已入門':'沈孤鴻未入門')+'・歷屆最佳：'+['未參賽／首輪','第二輪','決賽','魁首'][Math.min(3,b)];},
+  goal:'收沈孤鴻為弟子，帶弟子們在論劍大會闖進決賽（修行 › 門派 › 論劍大會）',prog:s=>{const Z=zl(s)&&zlState(s);const b=Z?zlCupInfo(s).best||0:0;return (zlNmIn(s,3)?'沈孤鴻已入門':'沈孤鴻未入門')+'・歷屆最佳：'+['未參賽／首輪','第二輪','決賽','魁首'][Math.min(3,b)];},
   boss:{n:'九幽夏使・假面劍客',L:50,realm:7,loc:'luoyang',btn:'登上論劍台',need:s=>!zlNmIn(s,3)?'需要收沈孤鴻為弟子':(zlCupInfo(s).best||0)<2?'需要在論劍大會闖進決賽':null,
    win:s=>{s.flags.zc23=true;const d=zlNmIn(s,3);if(d){d.loyal=Math.min(100,d.loyal+12);zlStatUp(d,'gen',1);}if(s.npc.sq&&s.npc.sq.met)addRel(s,'sq',8);giveTitle(s,'m_zc23');
     addJournal(s,'主線','論劍大會決賽，揭穿假面劍客是九幽夏使。沈孤鴻與沈青霜和好。','zc23');
@@ -5099,7 +5099,7 @@ for(const P of ZL_PRE){const N=zlNamed(P.p);const hit=s=>{s.flags['zlpre'+P.p]=1
 /* 等級里程碑：提醒玩家開宗立派這個目標 */
 {const _tr=tickRates;tickRates=function(s,sec,t,sum){_tr(s,sec,t,sum);if(!s.started)return;const F=s.flags;
   if(s.g>=40&&!F.zlHint40){F.zlHint40=1;addJournal(s,'江湖傳聞','說書人講到一段舊事：「自古一代大宗師，皆可開宗立派、廣收門徒。」你心裡動了一下。');if(sum&&sum.ext)sumLine(sum,'江湖傳聞：一代大宗師可以開宗立派、收徒傳藝。');}
-  if(s.g>=70&&!F.zlHint70){F.zlHint70=1;addJournal(s,'門派','你已是一代大宗師，可以開宗立派了（人物 › 門派）。');addLog(s,'你已是一代大宗師——可以開宗立派、收徒傳藝了！');if(sum&&sum.ext)sumLine(sum,'晉升一代大宗師：可以開宗立派、收徒傳藝了！');}};}
+  if(s.g>=70&&!F.zlHint70){F.zlHint70=1;addJournal(s,'門派','你已是一代大宗師，可以開宗立派了（修行 › 門派）。');addLog(s,'你已是一代大宗師——可以開宗立派、收徒傳藝了！');if(sum&&sum.ext)sumLine(sum,'晉升一代大宗師：可以開宗立派、收徒傳藝了！');}};}
 
 /* ================= 精簡：取消居所裝飾（含珍寶閣）、茶具、花園 =================
    已擁有的擺設與茶具效果照舊保留；之後不再取得、不再販售。飲茶一律享有最好的茶具加成。 */
@@ -9151,7 +9151,7 @@ const _vFactionZL=vFaction;vFaction=function(){let h=_vFactionZL();const f=S.fac
 /* 門派大殿場景：在自創門派頁時顯示 */
 SCENE_DEFS.zlhall={n:'門派大殿',player:[128,150],base:()=>{}};SCENE_NAMES.zlhall='門派大殿';
 {const im=new Image();im.onload=()=>{ENG.sig='';};im.src=ZL_HALL_SRC;SCENE_IMG.zlhall=im;}
-{const _sk=sceneKey;sceneKey=function(){if(S&&!ui.sceneOverride&&!ui.creating&&Date.now()>=ui.travelUntil&&ui.tab==='people'&&ui.seg.people==='fac'&&S.fac&&S.fac.id==='zili'){SCENE_NAMES.zlhall=S.fac.name||'門派大殿';return 'zlhall';}return _sk();};}
+{const _sk=sceneKey;sceneKey=function(){if(S&&!ui.sceneOverride&&!ui.creating&&Date.now()>=ui.travelUntil&&ui.tab==='cultivate'&&ui.seg.cult==='fac'&&S.fac&&S.fac.id==='zili'){SCENE_NAMES.zlhall=S.fac.name||'門派大殿';return 'zlhall';}return _sk();};}
 if(typeof OUTDOOR!=='undefined')OUTDOOR.add('zlhall');
 /* 弟子頭像也供主線章節使用 */
 if(typeof DISC_POR_IMG!=='undefined'&&typeof PORTRAIT_IMG!=='undefined'){for(const k in DISC_POR_IMG){PORTRAIT_IMG[k]=DISC_POR_IMG[k];const im=new Image();im.src=DISC_POR_IMG[k];POR_IMG[k]=im;const N=zlNamed(+k.slice(1));if(N&&typeof POR_NAME!=='undefined')POR_NAME[k]=N.name;}}
@@ -9171,6 +9171,11 @@ function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,
 /* 居所畫面不再畫出擺設；標題列不再顯示溫馨度 */
 {const _dh=drawHome;drawHome=function(c,t){const col=S&&S.col,d=col?col.decor:null;if(col)col.decor=[];try{return _dh(c,t);}finally{if(col)col.decor=d;}};}
 {const _vh2=vHome;vHome=function(){return _vh2().replace(/<span class="sub">♥ [^<]*?・((?:春|夏|秋|冬)・[^<]*)<\/span>/,'<span class="sub">$1</span>');};}
+/* 門派搬到「修行」分類 */
+{const CS=[['train','修行'],['arts','武功'],['gear','裝備']],CS2=CS.concat([['fac','門派']]);
+ const _vc=vCultivate;vCultivate=function(){if(ui.seg.cult==='fac')return seg('cult',CS2)+vFaction();return _vc().replace(seg('cult',CS),seg('cult',CS2));};
+ const _vp=vPeople;vPeople=function(){if(ui.seg.people==='fac')ui.seg.people='me';return _vp().replace(/<button data-act="seg" data-k="people" data-v="fac"[^>]*>[^<]*<\/button>/,'');};
+ ACT.goFac=()=>{ui.tab='cultivate';ui.seg.cult='fac';render();$('#view').scrollTop=0;};}
 
 /* ================= 寵物 2.0 介面（人物 › 寵物） ================= */
 const PET_EVO_IMG={};for(const k in PETS)if(SPRITE_IMG_SRC['pete_'+k])PET_EVO_IMG[k]=SPRITE_IMG_SRC['pete_'+k];
