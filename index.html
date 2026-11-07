@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-192518";</script>
+<script>window.XY_BUILD="20261107-195040";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4794,6 +4794,159 @@ const OFF_MAT=new Set(['herb','ore','bamboo','lingzhi','iron','hantie','yuntie',
 {const _cu=catchUp;catchUp=function(s,now){const from=Math.max(s.lastTs||now,s.maxTs||0),off=s.started&&(now-from)/1000>=ONLINE_GAP_SEC;if(!off)return _cu(s,now);
  const sv=s.silver;OFFLINE_RUN=true;let r;try{r=_cu(s,now);}finally{OFFLINE_RUN=false;}const g=s.silver-sv;if(g>0){const cut=Math.floor(g/2);s.silver-=cut;if(r&&r.sum)r.sum.silver=Math.max(0,(r.sum.silver||0)-cut);}return r;};}
 
+'use strict';
+/* ================= 逍遙江湖 擴充二十五：開宗立派 2.0 =================
+   一代大宗師（等級 70）才能開宗立派。六種宗風；每日三位上門求師的候選人，由你挑選；
+   每位弟子有資質、性格、出身與四項天賦，你決定他的修行方向與栽培方式；
+   弟子有心情與忠誠，會發生各自的事件；修到真傳可以出師（留任長老、下山歷練、傳承衣缽）。
+   門派建設、論劍大會。舊存檔自動轉換。 */
+ZILI_REQ.realm=7;ZILI_REQ.fame=1500;ZILI_REQ.silver=30000;
+const ZL_STYLES={
+ jian:{n:'劍宗',t:'以劍入道',d:'弟子武道成長 +30%，論劍大會獎勵加倍；掌門攻擊 +5%。',e:{atkPct:5}},
+ yi:{n:'醫宗',t:'杏林春暖',d:'弟子醫藥產出加倍；掌門氣血 +8%、體力回復 +10%。',e:{hpPct:8,stamRegen:10}},
+ shang:{n:'商宗',t:'貨通天下',d:'弟子經營收益 +40%，收徒費用 -30%；掌門財運 +8%。',e:{goldPct:8}},
+ yin:{n:'隱宗',t:'逍遙物外',d:'弟子心情不會低落，悟性成長加快；掌門修為 +8%、悟性 +3。',e:{xpPct:8,wis:3}},
+ xia:{n:'俠宗',t:'俠之大者',d:'傳道與行俠聲望 +50%，出師弟子回報加倍；掌門暴擊 +4%。',e:{crit:4}},
+ bai:{n:'百工宗',t:'巧奪天工',d:'弟子探索帶回雙倍材料，常有稀有礦材；掌門防禦 +4%。',e:{defPct:4}},
+};
+const ZL_PATHS={
+ wu:{n:'武道',d:'專心練武，提升戰力，可出戰論劍大會，帶來少量聲望。',st:['gen','shen']},
+ yi:{n:'醫藥',d:'採藥煉丹，定期上繳草藥、金創藥、回氣丹與聚氣丹。',st:['wu','xin']},
+ shang:{n:'經營',d:'下山打理生意，每天帶回銀兩。',st:['xin','wu']},
+ tan:{n:'探索',d:'遊歷各地，帶回礦石、草藥與稀有材料。',st:['shen','gen']},
+ chuan:{n:'傳道',d:'在山門講學，帶來聲望，上門求師的人資質更好。',st:['xin','wu']},
+};
+const ZL_METHODS={
+ yan:{n:'嚴師',d:'修為 ×1.5，心情每天下降。',xp:1.5,out:1,mood:-6,loyal:0},
+ ci:{n:'慈師',d:'修為 ×0.9，心情與忠誠慢慢上升。',xp:.9,out:1,mood:4,loyal:2},
+ shi:{n:'實戰',d:'修為 ×1.3、產出 ×1.2，偶爾受傷。',xp:1.3,out:1.2,mood:-2,loyal:1},
+ fang:{n:'放養',d:'修為 ×0.7、產出 ×1.3，常有奇遇（好壞皆有）。',xp:.7,out:1.3,mood:2,loyal:-1},
+};
+const ZL_TRAITS={
+ qin:{n:'勤奮',d:'修為 +20%',xp:1.2,like:'yan'},hui:{n:'聰慧',d:'悟性成長加倍',like:'ci'},pi:{n:'頑皮',d:'放養時奇遇更多，嚴師時心情大跌',like:'fang',hate:'yan'},
+ ao:{n:'孤傲',d:'武道 +20%，被嚴管會不服',path:'wu',pb:1.2,hate:'yan'},hou:{n:'溫厚',d:'忠誠成長加倍',like:'ci'},ling:{n:'機靈',d:'探索 +30%',path:'tan',pb:1.3,like:'fang'},
+ hao:{n:'豪爽',d:'實戰時修為更高',like:'shi'},wen:{n:'沉穩',d:'醫藥與經營 +20%',path:'yi|shang',pb:1.2,like:'ci'},
+};
+const ZL_ORIGINS=['山村孤兒','書香子弟','富商之後','獵戶之子','江湖遺孤','宮中逃出的小宮女','落第書生','漁家兒女','鏢師之後','寺廟長大','街頭乞兒','沒落世家'];
+const ZL_SURN='林沈蘇陸唐謝顧葉江柳秦白溫裴楚薛何韓雲莫';const ZL_GM=['長歌','清風','慕白','承影','劍心','懷瑾','驚鴻','少游','遠山','明川','子陵','望之'],ZL_GF=['若雪','書瑤','望舒','晚照','聽雨','雲舒','紫煙','靈犀','知秋','念卿','月棠','青蘿'];
+const ZL_RANKS=[{n:'入門弟子',lv:1},{n:'內門弟子',lv:10},{n:'核心弟子',lv:20},{n:'真傳弟子',lv:30}];
+const ZL_LV_MAX=30;
+const ZL_BUILD={
+ yan:{n:'演武場',d:'弟子修為 +15%／級',max:5,cost:l=>20000*Math.pow(2,l)},
+ yao:{n:'百草園',d:'醫藥、探索產出 +15%／級',max:5,cost:l=>18000*Math.pow(2,l)},
+ cang:{n:'藏經閣',d:'弟子悟性成長、出師加成 +10%／級',max:5,cost:l=>25000*Math.pow(2,l)},
+ shan:{n:'山門',d:'弟子上限 +1、候選人資質提高／級',max:5,cost:l=>30000*Math.pow(2,l)},
+};
+const zl=s=>s.fac&&s.fac.id==='zili'?s.fac:null;
+function zlState(s){const f=zl(s);if(!f)return null;if(!f.zl||typeof f.zl!=='object')f.zl={};const Z=f.zl;
+ if(!ZL_STYLES[Z.style])Z.style='jian';Z.build=Object.assign({yan:0,yao:0,cang:0,shan:0},Z.build||{});Z.cand=Z.cand||{day:-1,list:[],rf:0};Z.elders=Z.elders||[];Z.out=Z.out||[];Z.heir=Z.heir||null;Z.cup=Z.cup||{week:-1,done:0,best:0};Z.seq=Z.seq||1;return Z;}
+const zlHash=(a,b)=>{let h=(a*374761393+b*668265263)>>>0;h=Math.imul(h^(h>>>13),1274126177)>>>0;return (h^(h>>>16))>>>0;};
+function zlMakeCand(s,seed){const Z=zlState(s),R=(()=>{let x=seed>>>0;return ()=>{x=(x+0x6D2B79F5)>>>0;let t=Math.imul(x^(x>>>15),x|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};})();
+ const male=R()<.5,boost=Z.build.shan*.04+(s.fac.disciples.filter(d=>d.path==='chuan').length)*.03;const r=R()-boost,apt=r<.06?5:r<.22?4:r<.52?3:r<.82?2:1;
+ const stat=()=>Math.max(1,Math.min(10,Math.round(apt*1.4+R()*4-1)));const tk=Object.keys(ZL_TRAITS);
+ return {male,por:(male?0:6)+Math.floor(R()*6),name:ZL_SURN[Math.floor(R()*ZL_SURN.length)]+(male?ZL_GM:ZL_GF)[Math.floor(R()*12)],apt,trait:tk[Math.floor(R()*tk.length)],origin:ZL_ORIGINS[Math.floor(R()*ZL_ORIGINS.length)],
+  st:{gen:stat(),wu:stat(),shen:stat(),xin:stat()}};}
+function zlCands(s){const Z=zlState(s);if(!Z)return [];const d=gday(s);if(Z.cand.day!==d){Z.cand={day:d,rf:0,taken:[],list:[0,1,2].map(i=>zlMakeCand(s,zlHash(d*7+i,(s.created|0)%100000)))};}return Z.cand.list;}
+function zlDiscMax(s){const f=zl(s);if(!f)return 0;const Z=zlState(s);return 3+f.rank+(f.rules.includes('guangna')?2:0)+Z.build.shan;}
+discMax=zlDiscMax;
+const zlRecruitCost=(s,c)=>Math.round(800*c.apt*c.apt*(1+s.fac.disciples.length*.25)*(zlState(s).style==='shang'?.7:1));
+function zlRecruit(s,i){const f=zl(s);if(!f)return {err:'需自立門戶'};const L=zlCands(s),c=L[i],Z=zlState(s);if(!c)return {err:'沒有這位候選人'};if(Z.cand.taken.includes(i))return {err:'已經收下了'};
+ if(f.disciples.length>=zlDiscMax(s))return {err:'弟子已滿（提升門派名望或擴建山門）'};const cost=zlRecruitCost(s,c);if(s.silver<cost)return {err:'銀兩不足（需 '+fmt(cost)+'）'};
+ s.silver-=cost;Z.cand.taken.push(i);const d=Object.assign({id:Z.seq++,lv:1,xp:0,mood:70,loyal:40,path:'wu',method:'ci',talk:-1,gift:-1,ev:null,job:null},JSON.parse(JSON.stringify(c)));f.disciples.push(d);
+ addJournal(s,'門派','收「'+d.name+'」為門下弟子（'+d.origin+'・'+ZL_TRAITS[d.trait].n+'・資質 '+'★'.repeat(d.apt)+'）。');return {d};}
+function zlRefresh(s){const Z=zlState(s);if(!Z)return {err:'需自立門戶'};zlCands(s);const c=500*(Z.cand.rf+1);if(s.silver<c)return {err:'銀兩不足（需 '+fmt(c)+'）'};s.silver-=c;Z.cand.rf++;Z.cand.taken=[];
+ Z.cand.list=[0,1,2].map(i=>zlMakeCand(s,zlHash(gday(s)*7+i+Z.cand.rf*31,(s.created|0)%100000+Z.cand.rf)));return {};}
+const zlRank=d=>ZL_RANKS.filter(r=>d.lv>=r.lv).pop();
+const zlNeed=d=>Math.round(3600*Math.pow(1.18,d.lv-1));
+function zlPower(d){return Math.round((d.st.gen*12+d.st.shen*9+d.st.wu*4+d.st.xin*3)*(1+d.lv*.22)*(1+d.apt*.12));}
+function zlStatUp(d,k,n){d.st[k]=Math.min(20,+(d.st[k]+n).toFixed(2));}
+/* 每秒累積：修為、產出、心情、忠誠 */
+function zlTick(s,sec,sum){const f=zl(s);if(!f)return;const Z=zlState(s),S0=ZL_STYLES[Z.style];
+ for(const d of f.disciples){if(d.away)continue;const M=ZL_METHODS[d.method]||ZL_METHODS.ci,T=ZL_TRAITS[d.trait]||{};const moodK=d.mood<30?.5:1;
+  let xpm=M.xp*(T.xp||1)*(1+Z.build.yan*.15)*(1+d.apt*.15)*(Z.style==='jian'&&d.path==='wu'?1.3:1)*(d.method==='shi'&&d.trait==='hao'?1.25:1)*moodK;
+  if(d.lv<ZL_LV_MAX){d.xp+=sec*xpm;while(d.lv<ZL_LV_MAX&&d.xp>=zlNeed(d)){d.xp-=zlNeed(d);d.lv++;const P=ZL_PATHS[d.path];for(const k of P.st)zlStatUp(d,k,.35);zlStatUp(d,'wu',(d.trait==='hui'?.3:.15)*(1+Z.build.cang*.1)*(Z.style==='yin'?1.5:1));
+   const R=zlRank(d);if(ZL_RANKS.some(x=>x.lv===d.lv)){addJournal(s,'門派','弟子'+d.name+'晉升為「'+R.n+'」。','zl'+d.id+'_'+d.lv);if(sum&&sum.ext)sumLine(sum,'弟子'+d.name+'晉升為'+R.n+'！');}}}
+  else d.xp=0;
+  /* 心情與忠誠：每江湖小時調整一次 */
+  d.mt=(d.mt||0)+sec;while(d.mt>=3600){d.mt-=3600;let dm=M.mood/24;if(T.like===d.method)dm+=.25;if(T.hate===d.method)dm-=.5;if(Z.style==='yin')dm=Math.max(dm,.1);d.mood=Math.max(0,Math.min(100,d.mood+dm));
+   d.loyal=Math.max(0,Math.min(100,d.loyal+(M.loyal/24)*(d.trait==='hou'?2:1)+(d.mood>70?.05:d.mood<20?-.1:0)));}
+  /* 產出 */
+  const P=ZL_PATHS[d.path],pw=(d.st[P.st[0]]+d.st[P.st[1]])/10*(1+d.lv*.06)*M.out*moodK*(T.path&&T.path.split('|').includes(d.path)?T.pb:1);const k='zl_'+d.id;s.acc[k]=(s.acc[k]||0)+sec*pw;
+  while(s.acc[k]>=3600){s.acc[k]-=3600;zlYield(s,d,sum);}}
+ /* 出師弟子：偶爾寄回禮物 */
+ for(const o of Z.out){o.t=(o.t||0)+sec;if(o.t>=6*3600){o.t=0;const v=Math.round(300*(1+o.lv*.1)*(Z.style==='xia'?2:1));s.silver+=v;const fm=Math.round(5*(Z.style==='xia'?2:1)*fameMult(s));s.fame+=fm;if(sum)sum.silver+=v;
+   if(Math.random()<.3)gainItem(s,pick(['lingzhi','iron','xingsha','zhenzhu']),1,sum);if(sum&&sum.ext)sumLine(sum,'下山歷練的'+o.name+'託人送回謝禮：銀兩 +'+v+'。');}}}
+function zlYield(s,d,sum){const Z=zlState(s),st=Z.style,bY=1+Z.build.yao*.15;
+ if(d.path==='wu'){const fm=Math.max(1,Math.round(1*fameMult(s)));s.fame+=fm;}
+ else if(d.path==='yi'){const m=(st==='yi'?2:1)*bY;gainItem(s,'herb',2*m,sum);if(Math.random()<.35)gainItem(s,'m_wound',1*m,sum);if(Math.random()<.2)gainItem(s,'p_stam',1*m,sum);if(Math.random()<.06)gainItem(s,'p_qi',1,sum);}
+ else if(d.path==='shang'){const v=Math.round(60*(1+d.lv*.08)*(st==='shang'?1.4:1));s.silver+=v;if(sum)sum.silver+=v;}
+ else if(d.path==='tan'){const m=(st==='bai'?2:1)*bY;gainItem(s,'ore',2*m,sum);gainItem(s,'herb',1*m,sum);if(Math.random()<(st==='bai'?.15:.06))gainItem(s,pick(['iron','lingzhi','hantie','yuntie']),1,sum);}
+ else if(d.path==='chuan'){const fm=Math.max(1,Math.round(3*(st==='xia'?1.5:1)*fameMult(s)));s.fame+=fm;}}
+const _tickRatesZL=tickRates;tickRates=function(s,sec,t,sum){_tickRatesZL(s,sec,t,sum);if(zl(s)){zlState(s);zlTick(s,sec,sum);zlEvRoll(s);}};
+/* 每日指點、贈禮 */
+function zlTeach(s,id){const d=zlFind(s,id);if(!d)return {err:'找不到弟子'};if(d.talk===gday(s))return {err:'今天已經指點過了'};if(s.stam<5)return {err:'體力不足（需 5）'};s.stam-=5;d.talk=gday(s);advTime(s,60);
+ d.xp+=zlNeed(d)*.25;d.mood=Math.min(100,d.mood+8);d.loyal=Math.min(100,d.loyal+3);const P=ZL_PATHS[d.path];zlStatUp(d,P.st[0],.2);
+ return {txt:'你親自指點'+d.name+'的'+P.n+'，'+pick(['他聽得很專心。','一個時辰過去，進步明顯。','練到最後，滿頭大汗，卻笑得很開心。']).replace('他',d.male?'他':'她')+'修為大進、心情 +8、忠誠 +3。'};}
+function zlGift(s,id,k){const d=zlFind(s,id);if(!d)return {err:'找不到弟子'};if(d.gift===gday(s))return {err:'今天已經送過了'};if(!has(s,k))return {err:'沒有這件東西'};useItems(s,{[k]:1});d.gift=gday(s);
+ const cat=ITEMS[k].cat,g=cat==='料理'?12:cat==='藥品'?8:6;d.mood=Math.min(100,d.mood+g);d.loyal=Math.min(100,d.loyal+g/2);return {txt:d.name+'收下了'+ITEMS[k].n+'，'+(g>=12?'開心得不得了。':'向你行了一禮。')+'心情 +'+g+'、忠誠 +'+Math.round(g/2)+'。'};}
+const zlFind=(s,id)=>{const f=zl(s);return f?f.disciples.find(d=>d.id===+id):null;};
+function zlSet(s,id,k,v){const d=zlFind(s,id);if(!d)return '找不到弟子';if(k==='path'&&ZL_PATHS[v])d.path=v;else if(k==='method'&&ZL_METHODS[v])d.method=v;else return '無效';return null;}
+/* 出師 */
+function zlGraduate(s,id,how){const f=zl(s),Z=zlState(s),d=zlFind(s,id);if(!d)return {err:'找不到弟子'};if(d.lv<ZL_LV_MAX)return {err:'修到真傳（'+ZL_LV_MAX+' 級）才能出師'};if(d.loyal<60)return {err:'忠誠需達 60'};
+ if(how==='elder'&&Z.elders.length>=3)return {err:'長老最多三位'};if(how==='heir'&&Z.heir)return {err:'衣缽只能傳一人'};
+ f.disciples=f.disciples.filter(x=>x!==d);const rec={name:d.name,male:d.male,por:d.por,path:d.path,lv:d.lv,apt:d.apt,trait:d.trait};
+ if(how==='elder'){Z.elders.push(rec);addJournal(s,'門派',d.name+'出師，留任門中長老。');}
+ else if(how==='heir'){Z.heir=rec;giveTitle(s,'zl_heir');addJournal(s,'門派','將衣缽傳給'+d.name+'。');}
+ else{Z.out.push(Object.assign(rec,{t:0}));addJournal(s,'門派',d.name+'出師下山，闖蕩江湖。');const fm=Math.round(30*fameMult(s));s.fame+=fm;}
+ s.stat.zlGrad=(s.stat.zlGrad||0)+1;if(s.stat.zlGrad>=5)giveTitle(s,'zl_grad5');return {d,how};}
+const ELDER_E={wu:{atkPct:3},yi:{hpPct:4},shang:{goldPct:5},tan:{expSpeed:5},chuan:{xpPct:4}};
+const _extStatModsZL=extStatMods;extStatMods=function(s,st){_extStatModsZL(s,st);const f=zl(s);if(!f||!f.zl)return;const Z=f.zl,S0=ZL_STYLES[Z.style];if(S0)for(const k in S0.e)st[k]=(st[k]||0)+S0.e[k];
+ const cb=1+(Z.build?Z.build.cang:0)*.1;for(const e of Z.elders||[]){const E=ELDER_E[e.path]||{};for(const k in E)st[k]=(st[k]||0)+E[k]*cb;}if(Z.heir){st.atkPct+=5;st.xpPct+=5;st.defPct+=3;}};
+/* 建設 */
+function zlBuild(s,k){const Z=zlState(s);if(!Z)return {err:'需自立門戶'};const B=ZL_BUILD[k];if(!B)return {err:'無效'};const l=Z.build[k];if(l>=B.max)return {err:'已達最高級'};const c=B.cost(l);if(s.silver<c)return {err:'銀兩不足（需 '+fmt(c)+'）'};
+ s.silver-=c;Z.build[k]++;addJournal(s,'門派',B.n+'擴建至第 '+Z.build[k]+' 級。');return {B,l:Z.build[k]};}
+/* 論劍大會：每七個江湖日一次，選三位弟子出戰 */
+const CUP_FOES=['青雲門','瑤華宮','天機閣','百草谷','綠林盟','青冥谷','九幽殘部','漕幫','威遠鏢局','唐門'];
+function zlCupInfo(s){const Z=zlState(s);if(!Z)return null;const w=Math.floor(gday(s)/7);if(Z.cup.week!==w)Z.cup={week:w,done:0,best:Z.cup.best||0};return Z.cup;}
+function zlCup(s,ids){const f=zl(s),Z=zlState(s),C=zlCupInfo(s);if(!f)return {err:'需自立門戶'};if(C.done)return {err:'本週論劍大會已經結束，下週再來'};
+ const team=(ids||[]).map(id=>zlFind(s,id)).filter(Boolean).slice(0,3);if(!team.length)return {err:'至少派一位弟子出戰'};
+ const pw=team.reduce((a,d)=>a+zlPower(d)*(d.path==='wu'?1.25:1),0);const lines=[];let wins=0;
+ for(let r=0;r<3;r++){const foe=CUP_FOES[(gday(s)+r*3)%CUP_FOES.length],fp=Math.round((260+r*180)*(1+f.rank*.3)*(.85+Math.random()*.3));const win=pw*(.9+Math.random()*.2)>=fp;
+  lines.push('第 '+(r+1)+' 輪對「'+foe+'」（戰力約 '+fmt(fp)+'）：'+(win?'勝！':'敗。'));if(!win)break;wins++;}
+ C.done=1;C.best=Math.max(C.best||0,wins);const mul=Z.style==='jian'?2:1,v=Math.round([200,800,2000,5000][wins]*mul*(1+f.rank*.3)),fm=Math.round([5,20,50,120][wins]*mul*fameMult(s));s.silver+=v;s.fame+=fm;
+ for(const d of team){d.mood=Math.min(100,d.mood+(wins?10:-5));d.xp+=zlNeed(d)*(.2+wins*.15);}if(wins>=3){giveTitle(s,'zl_cup');gainItem(s,'p_break',1);}
+ lines.push(['首輪落敗','止步第二輪','闖進決賽','奪得魁首！'][wins]+'銀兩 +'+fmt(v)+'、聲望 +'+fm+(wins>=3?'、破境丹 ×1':'')+'。');addJournal(s,'門派','論劍大會：'+['首輪落敗','止步第二輪','闖進決賽','奪魁'][wins]+'。');return {lines,wins};}
+/* 弟子事件 */
+const ZL_EV=[
+ {id:'lazy',n:'偷懶',t:'{n}練功時躲在樹下睡著了，被師兄弟抓個正著。',ch:[['罰抄門規一百遍',d=>{d.mood-=8;d.loyal+=3;d.xp+=zlNeed(d)*.1;return '{n}一邊抄一邊嘟囔，但之後練功認真多了。';}],['讓{h}睡吧，明天再說',d=>{d.mood+=10;d.loyal+=2;return '{n}醒來發現身上蓋著你的外袍，紅著臉跑去練功。';}]]},
+ {id:'insight',n:'頓悟',t:'{n}半夜在院子裡看月亮，忽然說有一招想通了。',ch:[['陪{h}練到天亮',d=>{d.xp+=zlNeed(d)*.6;d.loyal+=4;return '天亮時，{n}的招式已經完全不同了。修為大進。';}],['叫{h}先睡，明天再練',d=>{d.mood+=5;zlStatUp(d,'wu',.3);return '{n}躺在床上想了一夜，悟性有所長進。';}]]},
+ {id:'fight',n:'同門爭執',t:'{n}和另一位同門為了練武場的位置吵了起來，差點動手。',ch:[['讓兩人比一場',d=>{zlStatUp(d,'gen',.3);d.mood+=3;return '比完之後，兩人反而成了好朋友。根骨有所長進。';}],['兩個都罰去挑水',d=>{d.mood-=5;d.loyal+=4;zlStatUp(d,'xin',.3);return '挑了一天水，誰都沒力氣吵了。心性有所長進。';}]]},
+ {id:'home',n:'想家',t:'{n}收到一封家書，躲在後山偷偷哭。',ch:[['准{h}回家探親三天',d=>{d.away=gday(s_ZL)+1;d.mood=Math.min(100,d.mood+25);d.loyal+=8;return '{n}回家前給你磕了個頭。三天後回來，帶了一籃家鄉的點心。';}],['陪{h}坐一會兒',d=>{d.mood+=12;d.loyal+=5;return '你沒說什麼，只是陪著坐。{n}慢慢不哭了。';}]]},
+ {id:'hurt',n:'練功受傷',t:'{n}練功太急，扭傷了手腕。',ch:[['用金創藥替{h}包紮',d=>{if(!has(s_ZL,'m_wound'))return '你翻遍行囊，沒有金創藥。只好讓{n}先休息。';useItems(s_ZL,{m_wound:1});d.mood+=8;d.loyal+=5;return '{n}看著你替{h}包紮，眼眶有點紅。';},s=>has(s,'m_wound')?null:'需要 1 份金創藥'],['告訴{h}受傷也是修行',d=>{zlStatUp(d,'xin',.4);d.mood-=4;return '{n}咬著牙點頭。心性有所長進。';}]]},
+ {id:'meet',n:'奇遇',t:'{n}下山辦事，回來說在路上遇到一位怪老頭，教了{h}一套步法。',ch:[['讓{h}練給你看',d=>{zlStatUp(d,'shen',.6);return '步法確實精妙。身法大進。';}],['那老頭長什麼樣？',d=>{d.xp+=zlNeed(d)*.3;return '聽{n}描述完，你覺得那人很像青石鎮的說書人。';}]]},
+ {id:'love',n:'情竇初開',t:'有人看見{n}常常在山門口等一個賣花的姑娘（或少年）。',ch:[['睜一隻眼閉一隻眼',d=>{d.mood+=15;return '{n}最近笑容特別多，練功也更有精神。';}],['提醒{h}專心修行',d=>{d.mood-=6;d.xp+=zlNeed(d)*.2;return '{n}乖乖點頭，從此多練了一個時辰。';}]]},
+ {id:'rival',n:'挑釁',t:'別派弟子在山門口叫陣，指名要{n}出來比試。',ch:[['讓{h}去應戰',d=>{const w=Math.random()<.35+zlPower(d)/2000;if(w){d.mood+=12;s_ZL.fame+=Math.round(8*fameMult(s_ZL));return '{n}贏了！對方灰頭土臉地走了。聲望增加。';}d.mood-=10;zlStatUp(d,'gen',.3);return '{n}輸了，回來悶不吭聲地練到半夜。根骨有所長進。';}],['你親自出面打發',d=>{d.loyal+=4;return '你只出了一招，對方就跑了。{n}看你的眼神多了幾分敬佩。';}]]},
+ {id:'leave',n:'動了離意',t:'{n}最近悶悶不樂，聽說在收拾行李。',cond:d=>d.mood<25&&d.loyal<40,ch:[['好好談一次',d=>{d.mood+=25;d.loyal+=15;return '你們談了一整夜。{n}把行李放回了原處。';}],['強留無益，讓{h}走',d=>{d.gone=1;return '{n}向你磕了三個頭，下山去了。';}]]},
+ {id:'gift',n:'孝心',t:'{n}用自己攢的錢，給你買了一份禮物。',cond:d=>d.loyal>=60,ch:[['收下，好好誇{h}',d=>{d.mood+=10;gainItem(s_ZL,pick(['wine','tea','f_cake']),2);return '{n}高興得在院子裡翻了兩個跟頭。';}],['叫{h}把錢留著自己用',d=>{d.loyal+=6;return '{n}低著頭說：「師父，我只是想謝謝你。」';}]]},
+];
+let s_ZL=null;
+function zlEvRoll(s){const f=zl(s);if(!f)return;const d0=gday(s);let pend=f.disciples.filter(d=>d.ev).length;for(const d of f.disciples){if(pend>=2)break;if(d.away&&d0>=d.away+2)d.away=0;if(d.ev||d.away||d.evDay===d0)continue;d.evDay=d0;
+ const p=.18*(d.method==='fang'?1.6:1)*(d.trait==='pi'?1.3:1);if(Math.random()>=p)continue;const L=ZL_EV.filter(E=>!E.cond||E.cond(d));const lv=d.mood<25&&d.loyal<40?ZL_EV.find(E=>E.id==='leave'):null;d.ev=(lv||pick(L)).id;pend++;}}
+function zlEvResolve(s,id,ci){const f=zl(s),d=zlFind(s,id);if(!d||!d.ev)return {err:'沒有待處理的事'};const E=ZL_EV.find(x=>x.id===d.ev);const c=E&&E.ch[ci];if(!c)return {err:'選項無效'};if(c[2]){const e=c[2](s);if(e)return {err:e};}
+ s_ZL=s;const pr=d.male?'他':'她';let txt=c[1](d);s_ZL=null;d.ev=null;d.mood=Math.max(0,Math.min(100,d.mood));d.loyal=Math.max(0,Math.min(100,d.loyal));
+ if(d.gone){f.disciples=f.disciples.filter(x=>x!==d);addJournal(s,'門派','弟子'+d.name+'下山離去。');}
+ return {txt:txt.replace(/\{n\}/g,d.name).replace(/\{h\}/g,pr),E,d};}
+const zlEvText=(E,d)=>s=>s.replace(/\{n\}/g,d.name).replace(/\{h\}/g,d.male?'他':'她');
+Object.assign(TITLES,{zl_heir:{n:'衣缽有傳',src:'將門派衣缽傳給弟子',tier:7,e:{atkPct:5,xpPct:8}},zl_grad5:{n:'桃李滿門',src:'五位弟子出師',tier:6,e:{xpPct:6,goldPct:6,wis:2}},zl_cup:{n:'論劍魁首',src:'帶領弟子奪得論劍大會魁首',tier:6,e:{atkPct:4,crit:3}}});
+/* 開宗時選宗風 */
+const _joinFactionZL=joinFaction;joinFaction=function(s,id,name,rules,style){const e=_joinFactionZL(s,id,name,rules);if(!e&&id==='zili'){const Z=zlState(s);Z.style=ZL_STYLES[style]?style:'jian';}return e;};
+/* 舊存檔：舊弟子轉成新制度 */
+const _normalizeZL=normalize;normalize=function(raw,now){const s=_normalizeZL(raw,now);const f=zl(s);if(!f)return s;const R=raw.fac&&raw.fac.zl;f.zl=R&&typeof R==='object'?JSON.parse(JSON.stringify(R)):{};const Z=zlState(s);
+ const tk=Object.keys(ZL_TRAITS);f.disciples=f.disciples.map((d,i)=>{if(d.st&&d.id)return Object.assign({mood:60,loyal:50,path:'wu',method:'ci',talk:-1,gift:-1,ev:null},d,{job:null});
+  const apt=Math.max(1,Math.min(5,d.apt|0||2)),male=Math.random()<.5,st=()=>Math.max(1,Math.min(10,Math.round(apt*1.4+Math.random()*3)));
+  return {id:Z.seq++,name:d.name,male,por:(male?0:6)+(i%6),apt,trait:tk[i%tk.length],origin:ZL_ORIGINS[i%ZL_ORIGINS.length],st:{gen:st(),wu:st(),shen:st(),xin:st()},lv:Math.min(ZL_LV_MAX,(d.lv||1)*2),xp:0,mood:70,loyal:55,
+   path:d.job==='shop'?'shang':d.job==='explore'?'tan':'wu',method:'ci',talk:-1,gift:-1,ev:null,job:null};});return s;};
+
 </script>
 <script>
 'use strict';
@@ -8677,6 +8830,100 @@ const _vHomeUp=vHome;vHome=function(){let h=_vHomeUp();if(typeof HOUSES==='undef
  const k=h.indexOf('</div>',h.indexOf('<canvas id="room"'));return k<0?h:h.slice(0,k)+row+h.slice(k);};
 (function(){const st=document.createElement('style');st.textContent='.house-up{display:flex;gap:8px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(120,80,40,.35)}.house-up>div{flex:1;min-width:0;display:grid}.house-up .btn{width:auto;flex:none}';document.head.appendChild(st);})();
 (function(){const st=document.createElement('style');st.textContent='.stamp.lv-stamp{writing-mode:horizontal-tb!important;display:inline-flex!important;flex-direction:column;align-items:center;justify-content:center;width:auto!important;min-width:32px;padding:0 4px;line-height:1;font-size:14px}.stamp.lv-stamp small{font-size:10px;margin-top:1px}';document.head.appendChild(st);})();
+
+/* ================= 開宗立派 2.0 介面 ================= */
+ui.zlStyle=ui.zlStyle||'jian';ui.zlTeam=ui.zlTeam||[];
+const ZL_EMB={jian:'劍',yi:'醫',shang:'商',yin:'隱',xia:'俠',bai:'工'};
+const ZL_STY_C={jian:'#6f8fb8',yi:'#5f9c78',shang:'#c79a3e',yin:'#8a7bb0',xia:'#b8584a',bai:'#9a7a58'};
+const ZL_BUILD_GLYPH={yan:'武',yao:'藥',cang:'經',shan:'門'};
+function zlEmb(k,sz){const im=typeof ZL_EMB_IMG!=='undefined'&&ZL_EMB_IMG[k];sz=sz||44;
+ return im?`<img class="zl-emb" src="${im}" alt="" style="width:${sz}px;height:${sz}px">`:`<span class="zl-emb zl-emb-t" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.52)}px;--zc:${ZL_STY_C[k]}">${ZL_EMB[k]}</span>`;}
+function zlPor(d,sz){sz=sz||48;const im=typeof DISC_POR_IMG!=='undefined'&&DISC_POR_IMG['d'+d.por];
+ return im?`<img class="zl-por" src="${im}" alt="" style="width:${sz}px;height:${sz}px">`:`<span class="zl-por zl-por-t${d.male?'':' f'}" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.46)}px">${esc(d.name[0])}</span>`;}
+function zlBld(k,sz){const im=typeof ZL_BUILD_IMG!=='undefined'&&ZL_BUILD_IMG[k];sz=sz||40;
+ return im?`<img class="zl-bimg" src="${im}" alt="" style="width:${sz}px;height:${sz}px">`:`<span class="zl-emb zl-emb-t" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.5)}px;--zc:#7a6a52">${ZL_BUILD_GLYPH[k]}</span>`;}
+const zlStars=n=>`<span class="zl-star">${'★'.repeat(n)}</span>`;
+const ZL_STN={gen:'根骨',wu:'悟性',shen:'身法',xin:'心性'};
+const zlStats=st=>`<div class="zl-st">${Object.keys(ZL_STN).map(k=>`<span>${ZL_STN[k]}<b>${Math.floor(st[k])}</b></span>`).join('')}</div>`;
+const zlMoodN=m=>m>=80?'愉快':m>=55?'平和':m>=30?'低落':'鬱悶';
+function zlStyleCard(){const Z=S.fac.zl,T=ZL_STYLES[Z.style];return `<div class="zl-row">${zlEmb(Z.style,52)}<div style="min-width:0"><b>${T.n}・${T.t}</b><div class="sub">${T.d}</div></div></div>`;}
+function zlDiscRow(d){const R=zlRank(d),P=ZL_PATHS[d.path],M=ZL_METHODS[d.method];
+ return `<button class="zl-card" data-act="zlOpen" data-id="${d.id}">${zlPor(d,50)}<div class="zl-mid"><div><b>${esc(d.name)}</b> <span class="zl-rk">${R.n}</span>${d.ev?' <span class="zl-ev">有事</span>':''}${d.away?' <span class="zl-rk">探親中</span>':''}</div>
+  <div class="mini">${zlStars(d.apt)}・${ZL_TRAITS[d.trait].n}・${P.n}／${M.n}</div>${bar(d.lv>=ZL_LV_MAX?100:d.xp/zlNeed(d)*100,'gold')}<div class="mini">等級 ${d.lv}${d.lv>=ZL_LV_MAX?'（可出師）':''}・心情 ${zlMoodN(d.mood)}・忠誠 ${Math.round(d.loyal)}</div></div></button>`;}
+function zlCandCard(c,i){const Z=S.fac.zl,taken=Z.cand.taken.includes(i),cost=zlRecruitCost(S,c),full=S.fac.disciples.length>=zlDiscMax(S);
+ return `<div class="zl-cand${taken?' taken':''}"><div class="zl-row">${zlPor(c,56)}<div style="min-width:0"><b>${esc(c.name)}</b> ${zlStars(c.apt)}<div class="mini">${c.origin}・${c.male?'男':'女'}</div><div class="mini">性格「${ZL_TRAITS[c.trait].n}」：${ZL_TRAITS[c.trait].d}</div></div></div>${zlStats(c.st)}
+  ${taken?'<span class="mini">已收入門下</span>':`<button class="btn sm" data-act="zlRecruit" data-i="${i}" ${full||S.silver<cost?'disabled':''}>收為弟子<small>${full?'弟子已滿':fmt(cost)+' 兩'}</small></button>`}</div>`;}
+function zlSectHTML(){const f=S.fac,Z=zlState(S),C=zlCupInfo(S),L=zlCands(S);let h='';
+ h+=fold('zl_style','宗風・'+ZL_STYLES[Z.style].n,`<div class="card">${zlStyleCard()}</div>`);
+ h+=fold('zl_disc',`門下弟子 <span class="mini">${f.disciples.length}/${zlDiscMax(S)}</span>${f.disciples.some(d=>d.ev)?' <span class="zl-ev">有事</span>':''}`,`<div class="card zl-list">${f.disciples.map(zlDiscRow).join('')||'<span class="sub">尚未收徒。看看今天誰上門求師吧。</span>'}</div>`);
+ h+=fold('zl_cand','今日上門求師',`<div class="card"><div class="zl-cands">${L.map(zlCandCard).join('')}</div><button class="btn ghost sm" data-act="zlRefresh">另請一批<small>${fmt(500*(Z.cand.rf+1))} 兩</small></button><span class="mini">每個江湖日換一批。擴建山門、派弟子傳道，上門的人資質更好。</span></div>`);
+ const ou=Z.elders.length+Z.out.length+(Z.heir?1:0);
+ if(ou)h+=fold('zl_out','長老與出師弟子',`<div class="card">${Z.heir?lineRow(`<div class="zl-row">${zlPor(Z.heir,40)}<div><b>${esc(Z.heir.name)}</b> <span class="zl-rk">衣缽傳人</span><div class="mini">攻擊 +5%、修為 +5%、防禦 +3%</div></div></div>`,''):''}
+  ${Z.elders.map(e=>lineRow(`<div class="zl-row">${zlPor(e,40)}<div><b>${esc(e.name)}</b> <span class="zl-rk">${ZL_PATHS[e.path].n}長老</span><div class="mini">${Object.entries(ELDER_E[e.path]).map(([k,v])=>(STAT_NAMES[k]||k)+' +'+(v*(1+Z.build.cang*.1)).toFixed(1)+'%').join('、')}</div></div></div>`,'')).join('')}
+  ${Z.out.map(e=>lineRow(`<div class="zl-row">${zlPor(e,40)}<div><b>${esc(e.name)}</b> <span class="zl-rk">下山歷練</span><div class="mini">不時寄回謝禮</div></div></div>`,'')).join('')}</div>`);
+ h+=fold('zl_build','門派建設',`<div class="card">${Object.entries(ZL_BUILD).map(([k,B])=>{const l=Z.build[k],mx=l>=B.max,c=mx?0:B.cost(l);
+  return lineRow(`<div class="zl-row">${zlBld(k)}<div style="min-width:0"><b>${B.n}</b> <span class="zl-rk">${l}/${B.max}</span><div class="mini">${B.d}</div></div></div>`,mx?'<span class="mini">已滿</span>':`<button class="btn sm" data-act="zlBuild" data-k="${k}" ${S.silver<c?'disabled':''}>擴建<small>${fmt(c)} 兩</small></button>`);}).join('')}</div>`);
+ const team=ui.zlTeam.filter(id=>f.disciples.some(d=>d.id===id&&!d.away));ui.zlTeam=team;
+ h+=fold('zl_cup','論劍大會'+(C.done?' <span class="mini">本週已比</span>':''),`<div class="card"><span class="sub">每七個江湖日一屆。派最多三位弟子出戰，連勝三輪奪魁。武道弟子戰力 +25%。歷屆最佳：${['—','首輪','第二輪','決賽','魁首'][C.best?C.best+1:0]}</span>
+  ${C.done?'<span class="mini">本屆已結束，下屆再戰。</span>':`<div class="chips">${f.disciples.filter(d=>!d.away).map(d=>`<button class="chip" data-act="zlTeam" data-id="${d.id}" aria-pressed="${team.includes(d.id)}">${esc(d.name)} ${fmt(Math.round(zlPower(d)*(d.path==='wu'?1.25:1)))}</button>`).join('')||'<span class="mini">沒有弟子可以出戰。</span>'}</div>
+  <button class="btn red" data-act="zlCup" ${team.length?'':'disabled'}>出戰論劍大會<small>已選 ${team.length}/3</small></button>`}</div>`);
+ return h;}
+/* 單一弟子 */
+function zlDiscModal(id){const d=zlFind(S,id);if(!d){closeModal();return;}const R=zlRank(d),T=ZL_TRAITS[d.trait],today=gday(S);
+ let h=`${backRow('門下弟子')}<div class="zl-row">${zlPor(d,84)}<div style="min-width:0"><h3 style="margin:0">${esc(d.name)} <span class="zl-rk">${R.n}</span></h3><div class="mini">${d.origin}・${d.male?'男':'女'}・資質 ${zlStars(d.apt)}</div><div class="mini">性格「${T.n}」：${T.d}</div></div></div>
+  ${zlStats(d.st)}${bar(d.lv>=ZL_LV_MAX?100:d.xp/zlNeed(d)*100,'gold')}<div class="mini">等級 ${d.lv}/${ZL_LV_MAX}・戰力 ${fmt(zlPower(d))}</div>
+  <div class="zl-two"><div><span class="mini">心情 ${zlMoodN(d.mood)}</span>${bar(d.mood,'')}</div><div><span class="mini">忠誠 ${Math.round(d.loyal)}</span>${bar(d.loyal,'red')}</div></div>`;
+ if(d.ev){const E=ZL_EV.find(x=>x.id===d.ev),tx=zlEvText(E,d);h+=`<div class="card hi zl-evc"><b>${E.n}</b><div class="sub">${tx(E.t)}</div><div class="zl-ch">${E.ch.map((c,i)=>{const no=c[2]&&c[2](S);return `<button class="btn sm${i?' ghost':''}" data-act="zlEv" data-id="${d.id}" data-c="${i}" ${no?'disabled':''}>${tx(c[0])}${no?`<small>${no}</small>`:''}</button>`;}).join('')}</div></div>`;}
+ h+=`<div class="lbl">修行方向</div><div class="chips">${Object.entries(ZL_PATHS).map(([k,P])=>`<button class="chip" data-act="zlSet" data-id="${d.id}" data-k="path" data-v="${k}" aria-pressed="${d.path===k}">${P.n}</button>`).join('')}</div><span class="mini">${ZL_PATHS[d.path].d}</span>
+  <div class="lbl">栽培方式</div><div class="chips">${Object.entries(ZL_METHODS).map(([k,M])=>`<button class="chip" data-act="zlSet" data-id="${d.id}" data-k="method" data-v="${k}" aria-pressed="${d.method===k}">${M.n}${T.like===k?' ♡':T.hate===k?' ✕':''}</button>`).join('')}</div><span class="mini">${ZL_METHODS[d.method].d}${T.like===d.method?'（'+T.n+'的弟子喜歡這樣）':T.hate===d.method?'（'+T.n+'的弟子會不服）':''}</span>
+  <div class="lbl">今日相處</div><div class="row"><button class="btn sm" data-act="zlTeach" data-id="${d.id}" ${d.talk===today||d.away?'disabled':''}>親自指點<small>${d.talk===today?'今天已指點':'體力 5'}</small></button></div>`;
+ const gifts=Object.keys(S.mat).filter(k=>S.mat[k]>=1&&ITEMS[k]&&['料理','藥品'].includes(ITEMS[k].cat)).slice(0,8);
+ h+=d.gift===today?'<span class="mini">今天已經送過禮了。</span>':gifts.length?`<span class="mini">送一件東西（料理最討喜）：</span><div class="chips">${gifts.map(k=>`<button class="chip" data-act="zlGift" data-id="${d.id}" data-k="${k}">${ITEMS[k].n} ×${Math.floor(S.mat[k])}</button>`).join('')}</div>`:'<span class="mini">行囊裡沒有料理或藥品可送。</span>';
+ if(d.lv>=ZL_LV_MAX){const Z=S.fac.zl,lo=d.loyal<60;h+=`<div class="lbl">出師</div><span class="sub">${esc(d.name)}已修成真傳${lo?'，但忠誠未滿 60，還不肯出師。':'，可以出師了。'}</span><div class="zl-ch">
+  <button class="btn sm" data-act="zlGrad" data-id="${d.id}" data-h="elder" ${lo||Z.elders.length>=3?'disabled':''}>留任長老<small>永久加成・${Z.elders.length}/3</small></button>
+  <button class="btn sm ghost" data-act="zlGrad" data-id="${d.id}" data-h="out" ${lo?'disabled':''}>下山歷練<small>聲望＋定期寄回謝禮</small></button>
+  <button class="btn sm red" data-act="zlGrad" data-id="${d.id}" data-h="heir" ${lo||Z.heir?'disabled':''}>傳承衣缽<small>${Z.heir?'已有傳人':'稱號＋大幅加成'}</small></button></div>`;}
+ h+=`<div class="row" style="margin-top:10px">${ui.zlFire===d.id?`<button class="btn sm red" data-act="zlFire" data-id="${d.id}">確定逐出師門</button><button class="btn sm ghost" data-act="zlFireAsk" data-id="0">取消</button>`:`<button class="btn sm ghost" data-act="zlFireAsk" data-id="${d.id}">逐出師門</button>`}<button class="btn sm ghost" data-act="closeModal">關閉</button></div>`;
+ $('#sheet').innerHTML=h;}
+function zlOpen(id){ui.zlCur=id;ui.zlFire=0;openModal('',undefined,()=>zlDiscModal(ui.zlCur));zlDiscModal(id);}
+Object.assign(ACT,{
+ zlStyle:d=>{ui.zlStyle=d.k;const n=$('#sectName');ui.sectName=n?n.value:'';render();const n2=$('#sectName');if(n2)n2.value=ui.sectName||'';},
+ zlOpen:d=>zlOpen(+d.id),
+ zlRecruit:d=>{const r=zlRecruit(S,+d.i);if(r.err)return toast(r.err);SFX.story();done(null,'收「'+r.d.name+'」為弟子');},
+ zlRefresh:()=>{const r=zlRefresh(S);done(r.err,r.err?null:'又有三位年輕人上門求師');},
+ zlSet:d=>{done(zlSet(S,d.id,d.k,d.v),null,true);render();},
+ zlTeach:d=>{const r=zlTeach(S,d.id);done(r.err,r.txt,true);},
+ zlGift:d=>{const r=zlGift(S,d.id,d.k);done(r.err,r.txt,true);},
+ zlEv:d=>{const r=zlEvResolve(S,d.id,+d.c);if(r.err)return toast(r.err);save();render();renderTop();if(!zlFind(S,d.id)){openModal(`<h3>${r.E.n}</h3><p class="sub">${r.txt}</p><button class="btn" data-act="closeModal">好</button>`);return;}
+  refreshModal();const s=$('#sheet');if(s)s.insertAdjacentHTML('afterbegin',`<div class="card hi"><b>${r.E.n}</b><div class="sub">${r.txt}</div></div>`);},
+ zlGrad:d=>{const r=zlGraduate(S,d.id,d.h);if(r.err)return toast(r.err);SFX.story();save();render();renderTop();
+  openModal(`<div class="zl-row">${zlPor(r.d,72)}<div><h3 style="margin:0">${esc(r.d.name)}出師</h3><span class="sub">${{elder:'留在門中做長老，往後替你帶新弟子。',out:'背起行囊下山去了，臨走前回頭向你深深一拜。',heir:'跪在祖師像前，接過了你的衣缽。'}[r.how]}</span></div></div><button class="btn" data-act="closeModal">好</button>`);},
+ zlFireAsk:d=>{ui.zlFire=+d.id;refreshModal();},
+ zlFire:d=>{const f=S.fac,x=zlFind(S,d.id);if(!x)return;f.disciples=f.disciples.filter(y=>y!==x);addJournal(S,'門派','將'+x.name+'逐出師門。');closeModal();done(null,x.name+'下山去了');},
+ zlBuild:d=>{const r=zlBuild(S,d.k);if(r.err)return toast(r.err);SFX.story();done(null,r.B.n+'擴建至第 '+r.l+' 級');},
+ zlTeam:d=>{const id=+d.id,L=ui.zlTeam,i=L.indexOf(id);if(i>=0)L.splice(i,1);else{if(L.length>=3)return toast('最多三位');L.push(id);}render();},
+ zlCup:()=>{const r=zlCup(S,ui.zlTeam);if(r.err)return toast(r.err);if(r.wins>=3)SFX.story();save();render();renderTop();
+  openModal(`<h3>論劍大會</h3>${r.lines.map((l,i)=>`<p class="${i===r.lines.length-1?'eff':'sub'}">${l}</p>`).join('')}<button class="btn" data-act="closeModal">好</button>`);},
+});
+/* 開宗立派：加入宗風選擇；門派頁換成新的弟子系統 */
+const _facJoinZL=ACT.facJoin;ACT.facJoin=d=>{if(d.f!=='zili')return _facJoinZL(d);const _j=joinFaction;joinFaction=(s,id,nm,rules)=>_j(s,id,nm,rules,ui.zlStyle);try{_facJoinZL(d);}finally{joinFaction=_j;}};
+const _vFactionZL=vFaction;vFaction=function(){let h=_vFactionZL();const f=S.fac;
+ if(!f){const k='<span class="mini">選兩條門規';const i=h.indexOf(k);if(i>=0){const T=ZL_STYLES[ui.zlStyle];
+   h=h.slice(0,i)+`<span class="mini">選擇宗風（開宗後不能更改）：</span><div class="chips">${Object.entries(ZL_STYLES).map(([k,S0])=>`<button class="chip" data-act="zlStyle" data-k="${k}" aria-pressed="${ui.zlStyle===k}">${S0.n}</button>`).join('')}</div><div class="zl-row zl-pick">${zlEmb(ui.zlStyle,44)}<div><b>${T.n}・${T.t}</b><div class="mini">${T.d}</div></div></div>`+h.slice(i);}
+  return h;}
+ if(f.id!=='zili')return h;const a=h.indexOf('<div class="lbl">門下弟子</div>'),b=h.indexOf('<div class="lbl">門規</div>');if(a<0||b<0)return h;
+ return h.slice(0,a)+zlSectHTML()+h.slice(b);};
+(function(){const st=document.createElement('style');st.textContent=`
+.zl-row{display:flex;gap:10px;align-items:center}.zl-pick{margin:6px 0;padding:8px;border:2px dashed var(--rule);border-radius:8px}
+.zl-emb{flex:none;border-radius:50%;object-fit:cover}.zl-emb-t{display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--zc) 70%,#fff),var(--zc));color:#fff8e8;font-family:var(--f-title);border:2px solid var(--gold);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.zl-por{flex:none;border-radius:10px;object-fit:cover;border:2px solid var(--gold2)}.zl-por-t{display:grid;place-items:center;background:linear-gradient(160deg,#3d3a6e,#7d5a7a 60%,#e9b48c);color:#fff8e8;font-family:var(--f-title)}.zl-por-t.f{background:linear-gradient(160deg,#4a3a6e,#a0607a 60%,#f0c09a)}
+.zl-bimg{flex:none;border-radius:8px;object-fit:cover}
+.zl-list{display:grid;gap:8px}.zl-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;border:2px solid var(--rule);width:100%}
+.zl-card:active{transform:translateY(1px)}.zl-mid{min-width:0;flex:1}.zl-rk{font-size:11.5px;padding:1px 6px;border-radius:6px;background:var(--gold2);color:#1d1a2e;white-space:nowrap}
+.zl-ev{font-size:11.5px;padding:1px 6px;border-radius:6px;background:var(--red2);color:#fff;animation:zlp 1.4s ease-in-out infinite}@keyframes zlp{50%{opacity:.55}}
+.zl-star{color:var(--gold);letter-spacing:-1px}.zl-st{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}.zl-st span{font-size:12px;text-align:center;border:1px solid var(--rule);border-radius:6px;padding:3px 0}.zl-st b{display:block;font-size:15px}
+.zl-cands{display:grid;gap:10px;margin-bottom:8px}.zl-cand{padding:8px;border:2px solid var(--rule);border-radius:10px;display:grid;gap:4px}.zl-cand.taken{opacity:.5}
+.zl-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.zl-ch{display:grid;gap:6px;margin-top:6px}.zl-evc{margin:8px 0}`;document.head.appendChild(st);})();
 
 </script>
 <script>
