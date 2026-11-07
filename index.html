@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-201327";</script>
+<script>window.XY_BUILD="20261107-201712";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5059,6 +5059,48 @@ if(typeof DEF_TALE!=='undefined'){const n=MAIN.length;DEF_TALE['ch'+(n-5)]='門�
 Object.assign(TITLES,{m_zc21:{n:'開山祖師',src:'第二十一章・院中有人',tier:7,e:{xpPct:8,goldPct:6}},m_zc22:{n:'護雛',src:'第二十二章・玉珮',tier:7,e:{defPct:6,hpPct:6}},m_zc23:{n:'論劍名師',src:'第二十三章・少年論劍',tier:7,e:{atkPct:6,crit:3}},
  m_zc24:{n:'桃李下山',src:'第二十四章・出師',tier:7,e:{xpPct:10,stamRegen:6}},m_zc25:{n:'傳燈',src:'第二十五章・傳燈',tier:7,e:{atkPct:10,defPct:8,xpPct:15,goldPct:10}}});
 
+/* ================= 伏筆：還沒開宗立派之前，就先在江湖上遇見未來的弟子 ================= */
+const ZL_PRE=[
+ {p:0,loc:'bamboo',n:'砍柴的少年',text:'翠竹林裡，一個瘦小的少年揮著比他還高的柴刀，一刀一刀砍著竹子。砍幾下，他就停下來對著空氣出拳，嘴裡唸著：「一、二、三……陸捕頭說要打一千下。」',
+  a:'教他一招扎馬步',b:'買下他的柴',ra:'你教他把腳站穩、腰放低。他練得滿頭大汗，抬頭問你叫什麼名字。「石小樵，我叫石小樵！」他說，「等你哪天開宗立派，我第一個去拜師！」',rb:'你多給了他幾文錢。他愣了一下，認真地鞠了一躬：「我記住你了。以後我一定要變得跟陸捕頭、跟你一樣強。」'},
+ {p:1,loc:'tianji',n:'被鵝追的書生',text:'天機閣後山的小路上，一個書生抱著一疊書沒命地跑，後面一隻大白鵝伸長了脖子窮追不捨。',
+  a:'一把抓住那隻鵝',b:'教他怎麼閃',ra:'你單手拎起大白鵝的脖子。書生扶著樹喘氣：「多、多謝……在下溫知遠。讀了十年書，打不過一隻鵝。」他看著你，眼睛發亮：「閣下若肯收徒，在下願意從挑水做起。」',rb:'你教他「看鵝的頭，不要看鵝的嘴」。他居然真的閃開了，高興得把書都扔了：「原來兵法跟打鵝是一樣的！」他說，總有一天要拜一位真正的江湖人為師。'},
+ {p:2,loc:'jiangnan',n:'偷魚的小子',text:'渡口的魚攤前，一個臉上帶疤的野小子一把抓起兩條魚就跑，魚販在後面破口大罵。',
+  a:'追上去攔住他',b:'替他付魚錢',ra:'你在巷口截住他。他倒也不跑了，咧嘴一笑：「江大哥說我水性比他好，就是手腳不乾淨。」他把魚還了回去，「你功夫真俊。哪天你要收徒弟，算我江小浪一個！」',rb:'你替他付了魚錢。那小子躲在船後偷看你很久，最後喊了一句：「喂！我叫江小浪！我欠你一條魚，以後拜你為師還你！」'},
+ {p:3,loc:'qingyun',n:'山門外的少年劍客',text:'青雲門山門外的石階上，一個少年對著空氣一遍又一遍地練同一招。他的劍很快，可每次收劍，劍尖都偏了一寸。',
+  a:'指出他收劍的毛病',b:'不打擾，默默看完',ra:'少年冷冷地看你一眼，又試了一次——這一次，劍尖穩穩地停住了。他收劍入鞘，低聲說：「……沈孤鴻。這個人情，我記下了。」',rb:'練到天黑，他才發現你一直在看。「看什麼？」他別過臉，「我叫沈孤鴻。總有一天，我要贏回來。」'},
+ {p:4,loc:'luoyang',n:'饅頭攤前的胖小子',text:'洛陽武市的饅頭攤前，一個胖小子一口氣吃了九個饅頭，摸著肚子說：「再來一個！」掌櫃卻說他錢不夠了。',
+  a:'替他付第十個',b:'跟他比誰吃得多',ra:'胖小子感動得眼淚都快掉下來：「我叫韓大寶，威遠鏢局的！以後你開門派，我給你們做飯！」',rb:'你們比到第八個你就認輸了。韓大寶笑得在地上打滾：「你是第一個敢跟我比的！以後你去哪，我就跟去哪！」'},
+ {p:5,loc:'hanshan',n:'掃雪的小沙彌',text:'寒山古寺門口，一個小沙彌拿著比他還高的掃帚掃雪。看見你，他眼睛一亮：「施主是江湖上的大俠嗎？可以……可以使一招給小僧看看嗎？」',
+  a:'使一招給他看',b:'陪他把雪掃完',ra:'你一劍削落了屋簷上的冰柱，冰柱落地時碎成一朵花。小沙彌看呆了，雙手合十：「小僧了塵。等小僧長大，一定要拜施主為師！」慧明在門後笑著搖頭。',rb:'你們一起把山門掃得乾乾淨淨。他從懷裡掏出一塊玉珮給你看：「師父說，這是我爹娘留下的。施主，你認得這個字嗎？」你不認得。他有點失望，卻還是說：「下次你來，我還想跟你說話。」'},
+ {p:6,loc:'bamboo',n:'怕血的小藥童',text:'翠竹林的小路邊，一個背著藥簍的小姑娘蹲在地上，面前是一隻腿受傷的兔子。她拿著草藥的手一直在抖：「我、我不敢看……」',
+  a:'握住她的手一起包紮',b:'替她包紮好兔子',ra:'你握著她的手，一圈一圈把傷口包好。兔子一瘸一拐地跑走了。她小聲說：「我叫白芷，是蘇姐姐的藥童……謝謝你。下次，我想自己試試。」',rb:'你三兩下就包好了。小姑娘看著你，眼睛紅紅的：「我叫白芷。我想變得跟你一樣，不怕血。」'},
+ {p:7,loc:'town',n:'擺攤的小姑娘',text:'青石鎮的市集上，一個梳著雙髻的小姑娘擺了個兵器攤，算盤打得劈啪響：「唐家好刀，買一送一！」可惜沒人停下來。',
+  a:'買一把她的刀',b:'教她怎麼吆喝',ra:'你買下一把短刀。她數錢數得眉開眼笑：「我叫唐小棠，唐小滿是我堂姐！以後你要是開門派，兵器全包在我身上！」',rb:'你教她「先試刀，再談價」。她當場砍斷了一根木樁，圍觀的人一下子多了起來。她朝你眨眨眼：「師父，這招好！……啊，我是說，大俠。」'},
+ {p:8,loc:'chaoyin',n:'浪裡的漁家女',text:'潮音港的浪很大，一個背著漁網的姑娘從浪裡鑽出來，手裡抓著一條大魚，衝著岸上的船幫漢子大喊：「我哥呢？跟他說我不回家！」',
+  a:'幫她把魚拖上岸',b:'問她為什麼不回家',ra:'你們合力把大魚拖上礁石。她甩甩頭髮：「鄭小潮，鄭孤帆是我哥。他什麼都不讓我做！」她看著你，「你功夫好嗎？好的話，我拜你當師父！」',rb:'「我哥說女孩子不能出海。」她踢了一腳浪花，「我偏要學武功，學得比他還好。」她上下打量你，「喂，你收不收徒弟？」'},
+ {p:9,loc:'jing',n:'迷路的小宮女',text:'京城的巷子裡，一個穿紫衣的姑娘提著燈籠四處張望，看見你就低下頭：「請問……王府怎麼走？我、我不是從宮裡逃出來的。」',
+  a:'送她到王府門口',b:'假裝沒看出她是宮女',ra:'到了王府門口，一個拿著摺扇的「公子」衝出來抱住她——是趙明璃。紫衣姑娘轉頭向你行禮：「奴婢秋棠。大俠的恩情，秋棠記著。」',rb:'你只是替她指了路。她走了幾步又回頭，認真地說：「謝謝你沒拆穿我。我叫秋棠——以後，我想學會保護郡主。」'},
+ {p:10,loc:'yaohua',n:'樹上的小師妹',text:'瑤華仙境的桃樹上，一個綁著橘色髮帶的小姑娘倒掛在樹枝上，朝你做了個鬼臉：「你也是來抓我回去的嗎？」',
+  a:'跟她比輕功',b:'假裝沒看見她',ra:'你們從桃樹比到山崖，你只贏了半步。她氣喘吁吁地坐在石頭上：「花小鈴！花見月是我師姐！」她眨眨眼，「你要是收我做徒弟，我就不用回去被師姐罵啦！」',rb:'你轉身就走。她反而追了上來：「喂！你怎麼不抓我？……你這人真有意思。我叫花小鈴，以後我要跟著你闖江湖！」'},
+ {p:11,loc:'kunlun',n:'雪坡上的弓箭手',text:'崑崙的雪坡上，一個短髮的少女拉滿了弓，對準百步外一隻雪鴞。她屏住呼吸，很久很久都沒有放箭。',
+  a:'等她射完這一箭',b:'問她為什麼不射',ra:'箭離弦，正中雪鴞尾巴上的一根羽毛——鳥飛走了，羽毛飄下來。她把羽毛遞給你：「賀蘭鳶。義父說，射鳥不如射羽。」她頓了頓，「你的刀，比義父快。」',rb:'「我不殺牠。」她放下弓，「我只想知道，能不能射中牠的羽毛。」她看了你一眼，「義父說，總有一天我要下山。到時候，我想跟一個比他還強的人學。」'},
+];
+for(const P of ZL_PRE){const N=zlNamed(P.p);const hit=s=>{s.flags['zlpre'+P.p]=1;addJournal(s,'奇遇','在'+(LOCS[P.loc]?LOCS[P.loc].n:'江湖')+'遇見了'+N.name+'。'+(zl(s)?'':'也許有一天，你可以收'+(N.male?'他':'她')+'為徒。'),'zlpre'+P.p);};
+ ENCOUNTERS.push({id:'zlpre'+P.p,loc:P.loc,zlPre:P.p,n:P.n,text:P.text,cond:s=>!s.flags['zlpre'+P.p]&&!(zl(s)&&zlState(s).named.includes(P.p)),
+  ch:[{t:P.a,fn:s=>{hit(s);return P.ra+'（聲望 +'+fameBit(s,3)+'）';}},{t:P.b,fn:s=>{hit(s);return P.rb+'（感悟 +'+insBit(s,5)+'）';}}]});}
+/* 奇遇抽選：條件不合的不出現；在對應地點時，較容易遇見未來的弟子 */
+{const _ea=encAdd;encAdd=function(s,n){const hide=ENCOUNTERS.filter(e=>e.cond&&!e.cond(s));for(const e of hide)ENCOUNTERS.splice(ENCOUNTERS.indexOf(e),1);
+  try{for(let i=0;i<n;i++){const L=encState(s);if(L.length>=ENC_MAX)break;const pre=ENCOUNTERS.find(e=>e.zlPre!=null&&e.loc===s.loc&&!L.includes(e.id));if(pre&&Math.random()<.35)L.push(pre.id);else _ea(s,1);}}
+  finally{for(const e of hide)ENCOUNTERS.push(e);}};}
+/* 收到當年遇過的孩子：忠誠更高 */
+{const _r=zlRecruit;zlRecruit=function(s,i){const r=_r(s,i);if(!r.err&&r.d.nid!=null&&s.flags['zlpre'+r.d.nid]){r.d.loyal=Math.min(100,r.d.loyal+15);r.d.mood=Math.min(100,r.d.mood+10);r.met=1;
+  addJournal(s,'門派',r.d.name+'一進山門就認出了你：「我說過，我一定會來拜師的！」');}return r;};}
+/* 等級里程碑：提醒玩家開宗立派這個目標 */
+{const _tr=tickRates;tickRates=function(s,sec,t,sum){_tr(s,sec,t,sum);if(!s.started)return;const F=s.flags;
+  if(s.g>=40&&!F.zlHint40){F.zlHint40=1;addJournal(s,'江湖傳聞','說書人講到一段舊事：「自古一代大宗師，皆可開宗立派、廣收門徒。」你心裡動了一下。');if(sum&&sum.ext)sumLine(sum,'江湖傳聞：一代大宗師可以開宗立派、收徒傳藝。');}
+  if(s.g>=70&&!F.zlHint70){F.zlHint70=1;addJournal(s,'門派','你已是一代大宗師，可以開宗立派了（人物 › 門派）。');addLog(s,'你已是一代大宗師——可以開宗立派、收徒傳藝了！');if(sum&&sum.ext)sumLine(sum,'晉升一代大宗師：可以開宗立派、收徒傳藝了！');}};}
+
 </script>
 <script>
 'use strict';
@@ -9029,10 +9071,10 @@ Object.assign(ACT,{
 /* 開宗立派：加入宗風選擇；門派頁換成新的弟子系統 */
 const _facJoinZL=ACT.facJoin;ACT.facJoin=d=>{if(d.f!=='zili')return _facJoinZL(d);const _j=joinFaction;joinFaction=(s,id,nm,rules)=>_j(s,id,nm,rules,ui.zlStyle);try{_facJoinZL(d);}finally{joinFaction=_j;}};
 const _vFactionZL=vFaction;vFaction=function(){let h=_vFactionZL();const f=S.fac;
- if(!f){const k='<span class="mini">選兩條門規';const i=h.indexOf(k);if(i>=0){const T=ZL_STYLES[ui.zlStyle];
+ if(!f){h=zlTeaser()+h;const k='<span class="mini">選兩條門規';const i=h.indexOf(k);if(i>=0){const T=ZL_STYLES[ui.zlStyle];
    h=h.slice(0,i)+`<span class="mini">選擇宗風（開宗後不能更改）：</span><div class="chips">${Object.entries(ZL_STYLES).map(([k,S0])=>`<button class="chip" data-act="zlStyle" data-k="${k}" aria-pressed="${ui.zlStyle===k}">${S0.n}</button>`).join('')}</div><div class="zl-row zl-pick">${zlEmb(ui.zlStyle,60)}<div><b>${T.n}・${T.t}</b><div class="mini">${T.d}</div></div></div>`+h.slice(i);}
   return h;}
- if(f.id!=='zili')return h;const a=h.indexOf('<div class="lbl">門下弟子</div>'),b=h.indexOf('<div class="lbl">門規</div>');if(a<0||b<0)return h;
+ if(f.id!=='zili')return h+zlTeaser();const a=h.indexOf('<div class="lbl">門下弟子</div>'),b=h.indexOf('<div class="lbl">門規</div>');if(a<0||b<0)return h;
  return h.slice(0,a)+zlSectHTML()+h.slice(b);};
 (function(){const st=document.createElement('style');st.textContent=`
 .zl-row{display:flex;gap:10px;align-items:center}.zl-pick{margin:6px 0;padding:8px;border:2px dashed var(--rule);border-radius:8px}
@@ -9052,6 +9094,13 @@ SCENE_DEFS.zlhall={n:'門派大殿',player:[128,150],base:()=>{}};SCENE_NAMES.zl
 if(typeof OUTDOOR!=='undefined')OUTDOOR.add('zlhall');
 /* 弟子頭像也供主線章節使用 */
 if(typeof DISC_POR_IMG!=='undefined'&&typeof PORTRAIT_IMG!=='undefined'){for(const k in DISC_POR_IMG){PORTRAIT_IMG[k]=DISC_POR_IMG[k];const im=new Image();im.src=DISC_POR_IMG[k];POR_IMG[k]=im;const N=zlNamed(+k.slice(1));if(N&&typeof POR_NAME!=='undefined')POR_NAME[k]=N.name;}}
+/* 未開派前：預告開宗立派與十二位少年 */
+if(ui.homeOpen.zl_teaser==null)ui.homeOpen.zl_teaser=1;
+function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,can=S.g>=70;
+ return fold('zl_teaser',`開宗立派 <span class="mini">${can?'可以開派了！':'等級 70 解鎖'}</span>`,`<div class="card"><span class="sub">晉升一代大宗師後，就能自創門派：選擇宗風、親自挑選上門求師的少年，決定他們的修行與栽培，看著他們出師下山。開派後還會展開江湖風雲錄第二部「傳燈」。</span>
+  <div class="zl-tz">${ZL_NAMED.map(N=>{const m=S.flags['zlpre'+N.por];return `<div class="zl-tzi${m?'':' unk'}">${zlPor({por:N.por,name:N.name,male:N.male},44)}<span>${m?N.name:'？'}</span></div>`;}).join('')}</div>
+  <span class="mini">江湖各地有些少年，正等著遇見你。已結識 ${met}/12・在各地的奇遇中遇見他們，日後收徒時會更親近你。</span>${can?'':bar(S.g/70*100,'gold')+`<span class="mini">等級 ${S.g} / 70</span>`}</div>`);}
+(function(){const st=document.createElement('style');st.textContent='.zl-tz{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}.zl-tzi{display:grid;justify-items:center;gap:2px;font-size:11px}.zl-tzi.unk .zl-por{filter:grayscale(1) brightness(.35) blur(1px)}.zl-tzi.unk span{opacity:.6}';document.head.appendChild(st);})();
 
 </script>
 <script>
