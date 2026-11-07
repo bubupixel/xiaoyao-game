@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-181445";</script>
+<script>window.XY_BUILD="20261107-183550";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8620,6 +8620,12 @@ const _npcModalBag=npcModal;npcModal=function(id){_npcModalBag(id);const sh=$('#
 .bag-it{border-bottom:2px dotted var(--rule);padding:4px 0}.bag-it:last-child{border-bottom:0}.bag-it summary{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;min-height:34px}.bag-it summary::-webkit-details-marker{display:none}
 .bag-it summary b{flex:1;min-width:0}.bag-n{font-variant-numeric:tabular-nums;color:#6a4626;margin-right:4px}.bag-it summary .btn{width:auto;flex:none}.bag-it .sub{margin:2px 0 4px 30px}
 .gift-g{margin-top:6px}.gift-h{display:block;font-family:var(--f-title);font-size:14px;color:#7a2a1a;cursor:pointer;margin:2px 0}.gift-g .chips{margin-top:2px}details.gift-g>summary{list-style:none}details.gift-g>summary::-webkit-details-marker{display:none}details.gift-g>summary::before{content:'▸ '}details.gift-g[open]>summary::before{content:'▾ '}.bag-it summary::after{content:'▸';color:#a08060;font-size:12px}.bag-it[open] summary::after{content:'▾'}`;document.head.appendChild(st);})();
+
+/* 家園頁直接顯示「翻修居所」 */
+const _vHomeUp=vHome;vHome=function(){let h=_vHomeUp();if(typeof HOUSES==='undefined')return h;const cur=S.house||0,N=HOUSES[cur+1];
+ const row=`<div class="house-up">${N?`<div><b>翻修成「${N.n}」</b><span class="sub">${N.d||'房間更大，可以擺更多擺設，住客也更多。'}</span></div><button class="btn sm" data-act="houseUp" ${S.silver<N.cost?'disabled':''}>${fmt(N.cost)} 兩</button>`:'<span class="mini">已是江湖上最好的住所。</span>'}</div>`;
+ const k=h.indexOf('</div>',h.indexOf('<canvas id="room"'));return k<0?h:h.slice(0,k)+row+h.slice(k);};
+(function(){const st=document.createElement('style');st.textContent='.house-up{display:flex;gap:8px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed rgba(120,80,40,.35)}.house-up>div{flex:1;min-width:0;display:grid}.house-up .btn{width:auto;flex:none}';document.head.appendChild(st);})();
 
 </script>
 <script>
