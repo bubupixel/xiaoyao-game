@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-200721";</script>
+<script>window.XY_BUILD="20261107-201327";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4955,6 +4955,110 @@ const _normalizeZL=normalize;normalize=function(raw,now){const s=_normalizeZL(ra
 /* 等級跳升修正的提示 */
 {const _nG=normalize;normalize=function(raw,now){const s=_nG(raw,now);if(s.gfixFrom){addLog(s,'【修正】等級曾因錯誤跳升至 '+s.gfixFrom+'，已還原為等級 '+s.g+'。');addJournal(s,'修行','等級錯誤跳升已修正：還原為等級 '+s.g+'。');delete s.gfixFrom;}return s;};}
 
+/* ================= 十二位有名有姓的弟子：各自與江湖人物有淵源 ================= */
+const ZL_NAMED=[
+ {por:0,name:'石小樵',male:1,apt:3,trait:'qin',origin:'青石鎮樵夫之子',npc:'lz',rel:'陸昭查連環失蹤案時，從玄蛇會地牢裡背出來的孩子。從那天起，他每天天沒亮就上山砍柴、練拳，說要變得跟恩人一樣強。'},
+ {por:1,name:'溫知遠',male:1,apt:4,trait:'hui',origin:'天機閣書生',npc:'wr',rel:'溫如晦的姪孫。讀遍天機閣的藏書，卻打不贏一隻鵝，被老閣主一腳踢下山：「去跟真正的江湖人學。」'},
+ {por:2,name:'江小浪',male:1,apt:3,trait:'pi',origin:'臨江渡口野孩子',npc:'jy',rel:'在漕幫碼頭偷魚長大，臉上的疤是跟野狗搶食留下的。江映川說他「水性比我還好，就是手腳不乾淨」。'},
+ {por:3,name:'沈孤鴻',male:1,apt:5,trait:'ao',origin:'青雲門落選弟子',npc:'sq',rel:'沈青霜的堂弟。入門試劍那天輸給了堂姐，一氣之下摔劍離開青雲門，發誓總有一天要贏回來。'},
+ {por:4,name:'韓大寶',male:1,apt:2,trait:'hao',origin:'威遠鏢局廚子之子',npc:'ht',rel:'鏢局大廚的兒子，從小跟著韓鐵衣跑鏢。最大的本事是一頓吃十個饅頭，第二大的本事是被人打了也笑得出來。'},
+ {por:5,name:'了塵',male:1,apt:4,trait:'wen',origin:'寒山古寺小沙彌',npc:'hm',rel:'十二年前被人放在寒山古寺門口的棄嬰，由慧明一手帶大。襁褓裡有一塊玉珮，刻著一個看不懂的字。'},
+ {por:6,name:'白芷',male:0,apt:3,trait:'hou',origin:'翠竹林藥童',npc:'sw',rel:'蘇晚晴藥廬裡的小藥童，認得三百種草藥，卻一見血就發抖。蘇晚晴說：「醫者要先學會不怕。」就把她送來了。'},
+ {por:7,name:'唐小棠',male:0,apt:3,trait:'ling',origin:'鑄劍世家旁支',npc:'tx',rel:'唐小滿的堂妹。打鐵總是燙到手，算盤卻打得比誰都快，一心想把唐家的兵器賣遍天下。'},
+ {por:8,name:'鄭小潮',male:0,apt:3,trait:'hao',origin:'潮音港漁家女',npc:'zgf',rel:'鄭孤帆的妹妹，能在浪裡憋氣一炷香。嫌哥哥管得太多，背著漁網偷偷跑來拜師。'},
+ {por:9,name:'秋棠',male:0,apt:4,trait:'wen',origin:'宮中逃出的小宮女',npc:'zml',rel:'趙明璃的貼身侍女。郡主溜出宮那晚她也跟著溜了，從此回不去，只好跟著郡主學會了說謊和摺扇。'},
+ {por:10,name:'花小鈴',male:0,apt:4,trait:'pi',origin:'瑤華宮小師妹',npc:'hy',rel:'花見月最頭痛的小師妹，偷了瑤華宮的輕功秘笈跑下山，說要「見識真正的江湖」。'},
+ {por:11,name:'賀蘭鳶',male:0,apt:5,trait:'ao',origin:'崑崙獵戶之女',npc:'hls',rel:'崑崙山下的獵戶孤女，賀蘭朔收養了她，教她射箭。百步之外，能射落雪鴞尾巴上的一根羽毛。'},
+];
+const zlNamed=p=>ZL_NAMED.find(N=>N.por===p);
+const zlNmIn=(s,p)=>{const f=zl(s);return f?f.disciples.find(d=>d.nid===p):null;};
+function zlMakeNamed(s,N,seed){const R=(()=>{let x=seed>>>0;return ()=>{x=(x+0x6D2B79F5)>>>0;let t=Math.imul(x^(x>>>15),x|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};})();
+ const stat=()=>Math.max(1,Math.min(10,Math.round(N.apt*1.4+R()*4-1)));return {nid:N.por,male:!!N.male,por:N.por,name:N.name,apt:N.apt,trait:N.trait,origin:N.origin,st:{gen:stat(),wu:stat(),shen:stat(),xin:stat()}};}
+/* 這一章需要誰，誰就一定會上門 */
+function zlForced(s){const Z=zlState(s);if(!Z.named.includes(5))return 5;const i=mainCur(s),C=MAIN[i];if(C&&C.zlNeed!=null&&!Z.named.includes(C.zlNeed))return C.zlNeed;return null;}
+function zlBuildList(s,d,rf){const Z=zlState(s),base=(s.created|0)%100000+rf*977;const av=ZL_NAMED.filter(N=>!Z.named.includes(N.por));
+ const R=zlHash(d*13+rf,base);const sh=av.slice().sort((a,b)=>zlHash(a.por+R%1000,R)-zlHash(b.por+R%1000,R));const fp=zlForced(s);
+ let pick3=sh.slice(0,3);if(fp!=null)pick3=[zlNamed(fp)].concat(sh.filter(N=>N.por!==fp)).slice(0,3);
+ const L=pick3.map((N,i)=>zlMakeNamed(s,N,zlHash(d*7+i+rf*31,base+N.por)));for(let i=L.length;i<3;i++)L.push(zlMakeCand(s,zlHash(d*7+i+rf*31,base)));return L;}
+zlCands=function(s){const Z=zlState(s);if(!Z)return [];const d=gday(s);if(Z.cand.day!==d){Z.cand={day:d,rf:0,taken:[],list:zlBuildList(s,d,0)};}
+ const fp=zlForced(s);if(fp!=null&&!Z.cand.list.some(c=>c.nid===fp)){Z.cand.list[0]=zlMakeNamed(s,zlNamed(fp),zlHash(d,fp+1));Z.cand.taken=Z.cand.taken.filter(i=>i!==0);}
+ return Z.cand.list;};
+zlRefresh=function(s){const Z=zlState(s);if(!Z)return {err:'需自立門戶'};zlCands(s);const c=500*(Z.cand.rf+1);if(s.silver<c)return {err:'銀兩不足（需 '+fmt(c)+'）'};s.silver-=c;Z.cand.rf++;Z.cand.taken=[];Z.cand.list=zlBuildList(s,gday(s),Z.cand.rf);return {};};
+{const _st=zlState;zlState=function(s){const Z=_st(s);if(Z&&!Array.isArray(Z.named))Z.named=[];return Z;};}
+{const _r=zlRecruit;zlRecruit=function(s,i){const L=zlCands(s),c=L[i];if(c&&c.nid!=null&&zlState(s).named.includes(c.nid))return {err:'已經在門下了'};const r=_r(s,i);if(r.err||r.d.nid==null)return r;
+ const Z=zlState(s),N=zlNamed(r.d.nid);Z.named.push(N.por);const nm=NPCS[N.npc]&&NPCS[N.npc].n;
+ if(s.npc[N.npc]&&s.npc[N.npc].met){addRel(s,N.npc,5);if(aff(s,N.npc)>=100)r.d.loyal=Math.min(100,r.d.loyal+20);r.note=nm+'聽說後，特地託人送來一封信：「這孩子，就拜託你了。」';}
+ return r;};}
+/* 弟子離開：可以再回來 */
+function zlForget(s,d){const Z=zlState(s);if(d&&d.nid!=null)Z.named=Z.named.filter(p=>p!==d.nid);}
+{const _e=zlEvResolve;zlEvResolve=function(s,id,ci){const d=zlFind(s,id);const r=_e(s,id,ci);if(!r.err&&d&&d.gone)zlForget(s,d);return r;};}
+
+/* ================= 江湖風雲錄・第二部：傳燈（第二十一至二十五章） ================= */
+const zlCnt=s=>{const f=zl(s);return f?f.disciples.length:0;};
+const zlNm=(s,p,alt)=>{const d=zlNmIn(s,p);return d?d.name:alt;};
+const zlLine=(s,p,t)=>zlNmIn(s,p)?t:null;
+const zlGradName=s=>{const Z=zl(s)&&zlState(s);if(!Z)return '你的弟子';const L=[].concat(Z.heir?[Z.heir]:[],Z.elders,Z.out);return L.length?L[L.length-1].name:'你的弟子';};
+MAIN.push(
+ {n:'第二十一章・院中有人',por:'d5',zlPart:1,intro:'說書人把醒木推給你的第二天早上，你推開家門，院子裡站著一個小和尚。慧明站在他身後，雙手合十：「這孩子叫了塵。寺裡留不住他了——他說，要拜一位真正的大俠為師。」',
+  goal:'開宗立派（需等級 70，若已在其他門派要先離開），收下了塵與另外兩位弟子',prog:s=>'弟子：'+Math.min(3,zlCnt(s))+' / 3'+(zlNmIn(s,5)?'・了塵已入門':'・了塵未入門'),
+  boss:{n:'九幽秋使',L:46,realm:7,loc:'town',btn:'夜守山門',need:s=>!zl(s)?'需要先開宗立派（人物 › 門派）':!zlNmIn(s,5)?'需要收了塵為弟子':zlCnt(s)<3?'需要 3 位弟子（目前 '+zlCnt(s)+' 位）':null,
+   win:s=>{s.flags.zc21=true;giveTitle(s,'m_zc21');addJournal(s,'主線','門派初立，九幽秋使夜襲山門，被你和弟子們擊退。她臨走前說：「冬使在找一個帶著玉珮的孩子。」','zc21');
+    return ['門派開張的第三個晚上，山門外起了霧。霧裡走出一個穿秋香色衣裳的女人，手裡拿著一把滴著露水的團扇。','「慕容大人走了，九幽還在。」她笑著說，「聽說這裡新開了一家門派，我來看看，能不能順手收了。」',
+     zlLine(s,5,'了塵擋在其他弟子前面，小小的身子抖得厲害，卻一步也沒退。')||'你的弟子們擋在門前，誰都沒有退。',
+     '你只出了三招。秋使的團扇裂成兩半，她退進霧裡，聲音遠遠傳來：「冬使在找一個帶著玉珮的孩子……你最好看緊你的小和尚。」'].filter(Boolean);},
+   lose:'秋使的團扇像秋風一樣捉摸不定。你的弟子們把你扶回大殿，誰都沒說話，只是默默去練功了。沒有任何損失。'},
+  done:s=>!!s.flags.zc21,rew:{silver:30000,item:['p_break',2]}},
+ {n:'第二十二章・玉珮',por:'d5',zlNeed:5,intro:'了塵襁褓裡的玉珮，慧明看了十二年也沒認出那個字。溫如晦只看了一眼，手就抖了：「這是天機閣的篆法——這是一個『玄』字。」',
+  goal:'了塵的忠誠達到 60，帶他回寒山古寺問清身世',prog:s=>{const d=zlNmIn(s,5);return d?'了塵忠誠：'+Math.round(d.loyal)+' / 60':'了塵不在門下';},
+  boss:{n:'九幽冬使',L:48,realm:7,loc:'hanshan',btn:'陪了塵回寺',need:s=>{const d=zlNmIn(s,5);return !d?'了塵需要在門下':d.loyal<60?'了塵的忠誠需達 60（目前 '+Math.round(d.loyal)+'）':null;},
+   win:s=>{s.flags.zc22=true;const d=zlNmIn(s,5);if(d){d.loyal=Math.min(100,d.loyal+10);d.mood=Math.min(100,d.mood+15);}if(s.npc.hm&&s.npc.hm.met)addRel(s,'hm',8);giveTitle(s,'m_zc22');
+    addJournal(s,'主線','寒山古寺擊退九幽冬使。了塵的玉珮刻著「玄」字——他是慕容玄的兒子。','zc22');
+    return ['寒山古寺的雪下得很大。冬使站在大雄寶殿的屋簷上，白衣、白髮、白色的劍，幾乎看不見他。','「把孩子交出來。」他說，「九幽需要一位新的主人。慕容大人的骨血，理當繼承。」','了塵抓著你的衣角，抬頭看你：「師父，他說的……是真的嗎？」',
+     '你沒有回答，只是拔出了兵器。冬使的劍很冷，可你身後有一個孩子，你的手很穩。','冬使跌進雪裡的時候，慧明走過來，把了塵抱進懷裡：「是誰的孩子不重要。你是寒山的孩子，也是你師父的徒弟。」','了塵哭了很久。哭完，他把玉珮掛回脖子上：「師父，我想學真正的武功——不是為了九幽，是為了不讓別人再被欺負。」'];},
+   lose:'冬使的劍冷得像寒山的雪。慧明把你們藏進藏經閣：「明天再來，雪會停的。」沒有任何損失。'},
+  done:s=>!!s.flags.zc22,rew:{silver:36000,item:['yuntie',3],gear:true}},
+ {n:'第二十三章・少年論劍',por:'d3',zlNeed:3,intro:'論劍大會的帖子送到了門派。帖子背面有人用劍尖刻了一行字：「沈孤鴻，我在決賽等你。——沈青霜」',
+  goal:'收沈孤鴻為弟子，帶弟子們在論劍大會闖進決賽（人物 › 門派 › 論劍大會）',prog:s=>{const Z=zl(s)&&zlState(s);const b=Z?zlCupInfo(s).best||0:0;return (zlNmIn(s,3)?'沈孤鴻已入門':'沈孤鴻未入門')+'・歷屆最佳：'+['未參賽／首輪','第二輪','決賽','魁首'][Math.min(3,b)];},
+  boss:{n:'九幽夏使・假面劍客',L:50,realm:7,loc:'luoyang',btn:'登上論劍台',need:s=>!zlNmIn(s,3)?'需要收沈孤鴻為弟子':(zlCupInfo(s).best||0)<2?'需要在論劍大會闖進決賽':null,
+   win:s=>{s.flags.zc23=true;const d=zlNmIn(s,3);if(d){d.loyal=Math.min(100,d.loyal+12);zlStatUp(d,'gen',1);}if(s.npc.sq&&s.npc.sq.met)addRel(s,'sq',8);giveTitle(s,'m_zc23');
+    addJournal(s,'主線','論劍大會決賽，揭穿假面劍客是九幽夏使。沈孤鴻與沈青霜和好。','zc23');
+    return ['決賽的對手戴著一張銀面具，用的是青雲門的劍法——用得比沈青霜還像。台下一片嘩然。','沈孤鴻第一個看出不對：「青雲劍法收劍時劍尖朝下。他朝上——他在劍上抹了毒。」',
+     zlLine(s,6,'白芷捧著藥箱衝上台，手還在抖，卻穩穩地替中了毒的同門敷上了解藥。蘇晚晴在台下看著，笑了。'),
+     '你接過了這一戰。面具裂開的時候，底下是一張被烈日曬黑的臉——九幽夏使。他想冒充青雲門，在天下人面前毀掉青雲門的名聲。',
+     '散場後，沈青霜站在台下等。沈孤鴻走過去，兩個人誰都沒說話。最後沈青霜伸手，揉亂了他的頭髮：「劍練得不錯。」沈孤鴻別過臉去，耳朵紅了。'].filter(Boolean);},
+   lose:'假面劍客的劍上有毒，你一時大意中了招。弟子們把你抬下台，大會說等你傷好再比。沒有任何損失。'},
+  done:s=>!!s.flags.zc23,rew:{silver:42000,item:['p_break',3]}},
+ {n:'第二十四章・出師',por:'d11',intro:'弟子總有一天要下山。可是江湖傳來消息：九幽春使在各條官道上埋伏，專挑剛出師的年輕人下手——「九幽要讓天下人知道，跟著這位大俠，是沒有好下場的。」',
+  goal:'讓一位弟子修成真傳並出師，再前往崑崙雪域接應',prog:s=>'已出師弟子：'+Math.min(1,s.stat.zlGrad||0)+' / 1',
+  boss:{n:'九幽春使',L:52,realm:7,loc:'kunlun',btn:'接應出師弟子',need:s=>(s.stat.zlGrad||0)<1?'需要有一位弟子出師':null,
+   win:s=>{s.flags.zc24=true;if(s.npc.hls&&s.npc.hls.met)addRel(s,'hls',8);giveTitle(s,'m_zc24');addJournal(s,'主線','崑崙雪域擊退九幽春使，救下出師的'+zlGradName(s)+'。','zc24');
+    const g=zlGradName(s);
+    return [g+'下山的第七天，在崑崙山腳被一群穿桃紅衣裳的人圍住了。春使坐在轎子裡，笑得像三月的桃花。','你趕到的時候，'+g+'已經受了傷，卻還護著一個路過的獵戶小孩。',
+     zlLine(s,11,'一支羽箭從百步外的雪坡上射來，正中春使的轎簾——賀蘭鳶趴在雪裡，第二支箭已經搭在弦上。賀蘭朔站在她身後，難得地點了點頭。')||'賀蘭朔扛著斬馬刀從雪坡上衝下來：「崑崙的地界，不許撒野。」',
+     '春使的轎子翻倒在雪裡。她爬出來，第一次不笑了：「你們……為什麼不怕？」',''+g+'擦掉嘴角的血：「因為師父教過我，下山不是一個人。」'].filter(Boolean);},
+   lose:'春使的桃花瘴讓你頭暈目眩。賀蘭朔把你們拖進守山人的石屋：「雪停了再去。」沒有任何損失。'},
+  done:s=>!!s.flags.zc24,rew:{silver:50000,item:['yuntie',4],gear:true}},
+ {n:'第二十五章・傳燈',por:'d5',intro:'九幽四使都敗了。那天晚上，門派的大殿裡亮著一盞燈，燈下坐著一個人——慕容玄。他瘦了很多，手裡拿著兩半卷《長生訣》。「我來接我的兒子。」他說。',
+  goal:'門下有 6 位弟子，其中 3 位修到核心弟子（20 級）以上，了塵也在門下',prog:s=>{const f=zl(s);const c=f?f.disciples.filter(d=>d.lv>=20).length:0;return '弟子：'+Math.min(6,zlCnt(s))+' / 6・核心以上：'+Math.min(3,c)+' / 3';},
+  boss:{n:'歸來的慕容玄',L:55,realm:7,loc:'town',btn:'在大殿見慕容玄',need:s=>{const f=zl(s);if(!f)return '需要自創門派';if(!zlNmIn(s,5))return '了塵需要在門下';if(zlCnt(s)<6)return '需要 6 位弟子';if(f.disciples.filter(d=>d.lv>=20).length<3)return '需要 3 位核心弟子（20 級）';return null;},
+   win:s=>{s.flags.zc25=true;giveTitle(s,'m_zc25');const f=zl(s);if(f)for(const d of f.disciples){d.loyal=Math.min(100,d.loyal+10);d.mood=Math.min(100,d.mood+10);}addJournal(s,'主線','第二部完：慕容玄放下《長生訣》，讓了塵留在門派。「心不死」，原來是傳承。','zc25');
+    return ['慕容玄沒有拔劍。他把棋盤擺在大殿中央，說：「我們下一盤。你贏了，孩子留下。」','可是每當你落子，總有一個弟子在旁邊忍不住出聲——'+zlNm(s,1,'有人')+'說這步太險，'+zlNm(s,2,'有人')+'說那步太慢，'+zlNm(s,4,'有人')+'在後面偷吃供桌上的點心。',
+     '慕容玄看著這一屋子吵吵鬧鬧的年輕人，手停在半空，很久都沒有落下。','最後他用掌力把棋盤震成了碎片——你接下了這一掌，也接下了第二掌、第三掌。到第十掌，他收手了。',
+     '「三十年，」他看著了塵，「我想要長生，想要一個不會死的自己。」他把兩半卷《長生訣》放在了塵手裡，「原來不死的不是人，是傳下去的東西。」',
+     '說書人不知什麼時候站在門口，搖著摺扇：「徒兒，你總算讀懂了最後一行。」慕容玄跪了下來，像一個很老很老的孩子。','那天晚上，大殿的燈一直亮到天明。了塵說，他想把這盞燈一直點下去。'];},
+   lose:'慕容玄只用了三分力。他看著你，又看著你的弟子們：「還不夠。等他們再長大一些。」說完就消失在夜色裡。沒有任何損失。'},
+  done:s=>!!s.flags.zc25,rew:{silver:80000,item:['yuntie',6],gear:true}});
+if(typeof NOVEL!=='undefined'){const n=MAIN.length;
+ NOVEL[n-5]={pre:['說書人收了攤子，悅來客棧的二樓空了下來。{name}以為江湖的故事就這樣講完了。','可是第二天早上，院子裡多了一個小和尚，光著腳，捧著一碗冷掉的粥，等{name}起床。'],boss:n-5,end:'門派的牌匾是{name}自己寫的，字不怎麼好看，弟子們卻搶著擦。\n秋使說的話一直在{name}心裡轉：帶著玉珮的孩子。\n了塵睡著的時候，手裡總是握著那塊玉珮。'};
+ NOVEL[n-4]={pre:['溫如晦把玉珮翻來覆去看了一夜，第二天早上只說了一句話：「帶他回寒山，讓慧明自己告訴他。」','了塵一路上都很安靜。快到山門時，他忽然問：「師父，如果我爹是壞人，我也會變成壞人嗎？」'],boss:n-4,end:'回程的路上，了塵走在最前面，一路踢著雪。\n「師父，」他頭也不回地說，「我還是叫了塵，對吧？」\n{name}說對。他就笑了，笑得像十二歲的孩子該有的樣子。'};
+ NOVEL[n-3]={pre:['沈孤鴻收到帖子的那天，把劍磨了一整夜。','{name}半夜起來，看見他坐在院子裡，對著月亮比劃同一招——那是青雲劍法的第一式，入門試劍那天，他就輸在這一招上。'],boss:n-3,end:'從洛陽回來之後，沈孤鴻每天多練一個時辰。\n有人問他為什麼，他說：「堂姐說我的劍不錯。不錯不夠，要很好。」\n說完他又補了一句：「……別告訴她我這樣說。」'};
+ NOVEL[n-2]={pre:['出師那天，門派裡擺了一桌菜。韓大寶做的，鹹了。','大家都說好吃。下山的弟子吃了三碗，臨走前在山門口回頭，深深地拜了三拜。'],boss:n-2,end:'回到門派，{name}在大殿的牆上掛了一塊木牌，寫著出師弟子的名字。\n牆上還空著很多位置。\n弟子們每天經過，都會偷偷看一眼。'};
+ NOVEL[n-1]={pre:['九幽四使，秋、冬、夏、春，一個一個都敗了。江湖上開始有人說，這家新門派的弟子，個個都不怕死。','{name}知道不是這樣。他們都很怕，只是不肯退。'],boss:n-1,end:'慕容玄沒有留下來。他說要回天機閣，把三十年前讀錯的書，重新讀一遍。\n了塵送他到山門口，把玉珮還給了他：「爹，這個給你。我有師父了。」\n慕容玄握著玉珮，很久很久，才轉身下山。\n大殿裡的燈還亮著。江湖風雲錄・第二部・傳燈，完。'};}
+if(typeof DEF_TALE!=='undefined'){const n=MAIN.length;DEF_TALE['ch'+(n-5)]='門派初立，秋使在霧裡說：冬使在找一個帶著玉珮的孩子。';DEF_TALE['ch'+(n-4)]='玉珮上刻著「玄」字。慧明說：你是寒山的孩子，也是你師父的徒弟。';
+ DEF_TALE['ch'+(n-3)]='假面劍客是九幽夏使。沈青霜揉亂了堂弟的頭髮：「劍練得不錯。」';DEF_TALE['ch'+(n-2)]='出師的弟子說：師父教過我，下山不是一個人。';DEF_TALE['ch'+(n-1)]='慕容玄說：不死的不是人，是傳下去的東西。';}
+Object.assign(TITLES,{m_zc21:{n:'開山祖師',src:'第二十一章・院中有人',tier:7,e:{xpPct:8,goldPct:6}},m_zc22:{n:'護雛',src:'第二十二章・玉珮',tier:7,e:{defPct:6,hpPct:6}},m_zc23:{n:'論劍名師',src:'第二十三章・少年論劍',tier:7,e:{atkPct:6,crit:3}},
+ m_zc24:{n:'桃李下山',src:'第二十四章・出師',tier:7,e:{xpPct:10,stamRegen:6}},m_zc25:{n:'傳燈',src:'第二十五章・傳燈',tier:7,e:{atkPct:10,defPct:8,xpPct:15,goldPct:10}}});
+
 </script>
 <script>
 'use strict';
@@ -8866,8 +8970,9 @@ function zlStyleCard(){const Z=S.fac.zl,T=ZL_STYLES[Z.style];return `<div class=
 function zlDiscRow(d){const R=zlRank(d),P=ZL_PATHS[d.path],M=ZL_METHODS[d.method];
  return `<button class="zl-card" data-act="zlOpen" data-id="${d.id}">${zlPor(d,50)}<div class="zl-mid"><div><b>${esc(d.name)}</b> <span class="zl-rk">${R.n}</span>${d.ev?' <span class="zl-ev">有事</span>':''}${d.away?' <span class="zl-rk">探親中</span>':''}</div>
   <div class="mini">${zlStars(d.apt)}・${ZL_TRAITS[d.trait].n}・${P.n}／${M.n}</div>${bar(d.lv>=ZL_LV_MAX?100:d.xp/zlNeed(d)*100,'gold')}<div class="mini">等級 ${d.lv}${d.lv>=ZL_LV_MAX?'（可出師）':''}・心情 ${zlMoodN(d.mood)}・忠誠 ${Math.round(d.loyal)}</div></div></button>`;}
+function zlRel(nid,open){const N=nid!=null&&zlNamed(nid);if(!N)return '';const P=NPCS[N.npc];return `<details class="zl-rel"${open?' open':''}><summary>淵源・${P?P.n:''}</summary><span class="mini">${N.rel}</span></details>`;}
 function zlCandCard(c,i){const Z=S.fac.zl,taken=Z.cand.taken.includes(i),cost=zlRecruitCost(S,c),full=S.fac.disciples.length>=zlDiscMax(S);
- return `<div class="zl-cand${taken?' taken':''}"><div class="zl-row">${zlPor(c,56)}<div style="min-width:0"><b>${esc(c.name)}</b> ${zlStars(c.apt)}<div class="mini">${c.origin}・${c.male?'男':'女'}</div><div class="mini">性格「${ZL_TRAITS[c.trait].n}」：${ZL_TRAITS[c.trait].d}</div></div></div>${zlStats(c.st)}
+ return `<div class="zl-cand${taken?' taken':''}"><div class="zl-row">${zlPor(c,56)}<div style="min-width:0"><b>${esc(c.name)}</b> ${zlStars(c.apt)}<div class="mini">${c.origin}・${c.male?'男':'女'}</div><div class="mini">性格「${ZL_TRAITS[c.trait].n}」：${ZL_TRAITS[c.trait].d}</div></div></div>${zlRel(c.nid)}${zlStats(c.st)}
   ${taken?'<span class="mini">已收入門下</span>':`<button class="btn sm" data-act="zlRecruit" data-i="${i}" ${full||S.silver<cost?'disabled':''}>收為弟子<small>${full?'弟子已滿':fmt(cost)+' 兩'}</small></button>`}</div>`;}
 function zlSectHTML(){const f=S.fac,Z=zlState(S),C=zlCupInfo(S),L=zlCands(S);let h='';
  h+=fold('zl_style','宗風・'+ZL_STYLES[Z.style].n,`<div class="card">${zlStyleCard()}</div>`);
@@ -8887,7 +8992,7 @@ function zlSectHTML(){const f=S.fac,Z=zlState(S),C=zlCupInfo(S),L=zlCands(S);let
 /* 單一弟子 */
 function zlDiscModal(id){const d=zlFind(S,id);if(!d){closeModal();return;}const R=zlRank(d),T=ZL_TRAITS[d.trait],today=gday(S);
  let h=`${backRow('門下弟子')}<div class="zl-row">${zlPor(d,84)}<div style="min-width:0"><h3 style="margin:0">${esc(d.name)} <span class="zl-rk">${R.n}</span></h3><div class="mini">${d.origin}・${d.male?'男':'女'}・資質 ${zlStars(d.apt)}</div><div class="mini">性格「${T.n}」：${T.d}</div></div></div>
-  ${zlStats(d.st)}${bar(d.lv>=ZL_LV_MAX?100:d.xp/zlNeed(d)*100,'gold')}<div class="mini">等級 ${d.lv}/${ZL_LV_MAX}・戰力 ${fmt(zlPower(d))}</div>
+  ${zlRel(d.nid,1)}${zlStats(d.st)}${bar(d.lv>=ZL_LV_MAX?100:d.xp/zlNeed(d)*100,'gold')}<div class="mini">等級 ${d.lv}/${ZL_LV_MAX}・戰力 ${fmt(zlPower(d))}</div>
   <div class="zl-two"><div><span class="mini">心情 ${zlMoodN(d.mood)}</span>${bar(d.mood,'')}</div><div><span class="mini">忠誠 ${Math.round(d.loyal)}</span>${bar(d.loyal,'red')}</div></div>`;
  if(d.ev){const E=ZL_EV.find(x=>x.id===d.ev),tx=zlEvText(E,d);h+=`<div class="card hi zl-evc"><b>${E.n}</b><div class="sub">${tx(E.t)}</div><div class="zl-ch">${E.ch.map((c,i)=>{const no=c[2]&&c[2](S);return `<button class="btn sm${i?' ghost':''}" data-act="zlEv" data-id="${d.id}" data-c="${i}" ${no?'disabled':''}>${tx(c[0])}${no?`<small>${no}</small>`:''}</button>`;}).join('')}</div></div>`;}
  h+=`<div class="lbl">修行方向</div><div class="chips">${Object.entries(ZL_PATHS).map(([k,P])=>`<button class="chip" data-act="zlSet" data-id="${d.id}" data-k="path" data-v="${k}" aria-pressed="${d.path===k}">${P.n}</button>`).join('')}</div><span class="mini">${ZL_PATHS[d.path].d}</span>
@@ -8905,7 +9010,7 @@ function zlOpen(id){ui.zlCur=id;ui.zlFire=0;openModal('',undefined,()=>zlDiscMod
 Object.assign(ACT,{
  zlStyle:d=>{ui.zlStyle=d.k;const n=$('#sectName');ui.sectName=n?n.value:'';render();const n2=$('#sectName');if(n2)n2.value=ui.sectName||'';},
  zlOpen:d=>zlOpen(+d.id),
- zlRecruit:d=>{const r=zlRecruit(S,+d.i);if(r.err)return toast(r.err);SFX.story();done(null,'收「'+r.d.name+'」為弟子');},
+ zlRecruit:d=>{const r=zlRecruit(S,+d.i);if(r.err)return toast(r.err);SFX.story();done(null,'收「'+r.d.name+'」為弟子');if(r.note)setTimeout(()=>toast(r.note),900);},
  zlRefresh:()=>{const r=zlRefresh(S);done(r.err,r.err?null:'又有三位年輕人上門求師');},
  zlSet:d=>{done(zlSet(S,d.id,d.k,d.v),null,true);render();},
  zlTeach:d=>{const r=zlTeach(S,d.id);done(r.err,r.txt,true);},
@@ -8915,7 +9020,7 @@ Object.assign(ACT,{
  zlGrad:d=>{const r=zlGraduate(S,d.id,d.h);if(r.err)return toast(r.err);SFX.story();save();render();renderTop();
   openModal(`<div class="zl-row">${zlPor(r.d,72)}<div><h3 style="margin:0">${esc(r.d.name)}出師</h3><span class="sub">${{elder:'留在門中做長老，往後替你帶新弟子。',out:'背起行囊下山去了，臨走前回頭向你深深一拜。',heir:'跪在祖師像前，接過了你的衣缽。'}[r.how]}</span></div></div><button class="btn" data-act="closeModal">好</button>`);},
  zlFireAsk:d=>{ui.zlFire=+d.id;refreshModal();},
- zlFire:d=>{const f=S.fac,x=zlFind(S,d.id);if(!x)return;f.disciples=f.disciples.filter(y=>y!==x);addJournal(S,'門派','將'+x.name+'逐出師門。');closeModal();done(null,x.name+'下山去了');},
+ zlFire:d=>{const f=S.fac,x=zlFind(S,d.id);if(!x)return;f.disciples=f.disciples.filter(y=>y!==x);zlForget(S,x);addJournal(S,'門派','將'+x.name+'逐出師門。');closeModal();done(null,x.name+'下山去了');},
  zlBuild:d=>{const r=zlBuild(S,d.k);if(r.err)return toast(r.err);SFX.story();done(null,r.B.n+'擴建至第 '+r.l+' 級');},
  zlTeam:d=>{const id=+d.id,L=ui.zlTeam,i=L.indexOf(id);if(i>=0)L.splice(i,1);else{if(L.length>=3)return toast('最多三位');L.push(id);}render();},
  zlCup:()=>{const r=zlCup(S,ui.zlTeam);if(r.err)return toast(r.err);if(r.wins>=3)SFX.story();save();render();renderTop();
@@ -8939,12 +9044,14 @@ const _vFactionZL=vFaction;vFaction=function(){let h=_vFactionZL();const f=S.fac
 .zl-ev{font-size:11.5px;padding:1px 6px;border-radius:6px;background:var(--red2);color:#fff;animation:zlp 1.4s ease-in-out infinite}@keyframes zlp{50%{opacity:.55}}
 .zl-star{color:var(--gold);letter-spacing:-1px}.zl-st{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}.zl-st span{font-size:12px;text-align:center;border:1px solid var(--rule);border-radius:6px;padding:3px 0}.zl-st b{display:block;font-size:15px}
 .zl-cands{display:grid;gap:10px;margin-bottom:8px}.zl-cand{padding:8px;border:2px solid var(--rule);border-radius:10px;display:grid;gap:4px}.zl-cand.taken{opacity:.5}
-.zl-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.zl-ch{display:grid;gap:6px;margin-top:6px}.zl-evc{margin:8px 0}`;document.head.appendChild(st);})();
+.zl-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.zl-ch{display:grid;gap:6px;margin-top:6px}.zl-evc{margin:8px 0}.zl-rel{margin:4px 0}.zl-rel>summary{cursor:pointer;font-size:12.5px;color:var(--red2);list-style:none}.zl-rel>summary::before{content:'▸ '}.zl-rel[open]>summary::before{content:'▾ '}`;document.head.appendChild(st);})();
 /* 門派大殿場景：在自創門派頁時顯示 */
 SCENE_DEFS.zlhall={n:'門派大殿',player:[128,150],base:()=>{}};SCENE_NAMES.zlhall='門派大殿';
 {const im=new Image();im.onload=()=>{ENG.sig='';};im.src=ZL_HALL_SRC;SCENE_IMG.zlhall=im;}
 {const _sk=sceneKey;sceneKey=function(){if(S&&!ui.sceneOverride&&!ui.creating&&Date.now()>=ui.travelUntil&&ui.tab==='people'&&ui.seg.people==='fac'&&S.fac&&S.fac.id==='zili'){SCENE_NAMES.zlhall=S.fac.name||'門派大殿';return 'zlhall';}return _sk();};}
 if(typeof OUTDOOR!=='undefined')OUTDOOR.add('zlhall');
+/* 弟子頭像也供主線章節使用 */
+if(typeof DISC_POR_IMG!=='undefined'&&typeof PORTRAIT_IMG!=='undefined'){for(const k in DISC_POR_IMG){PORTRAIT_IMG[k]=DISC_POR_IMG[k];const im=new Image();im.src=DISC_POR_IMG[k];POR_IMG[k]=im;const N=zlNamed(+k.slice(1));if(N&&typeof POR_NAME!=='undefined')POR_NAME[k]=N.name;}}
 
 </script>
 <script>
