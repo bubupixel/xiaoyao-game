@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-215237";</script>
+<script>window.XY_BUILD="20261107-215818";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5195,6 +5195,50 @@ Object.assign(TITLES,{zl_top:{n:'天下第一門',src:'門派月榜第一名',ti
 {const RN={'唐小棠':'唐如意','秋棠':'素心'};const fix=o=>{if(o&&RN[o.name])o.name=RN[o.name];};
  const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const f=zl(s);if(f){f.disciples.forEach(fix);const Z=zlState(s);Z.elders.forEach(fix);Z.out.forEach(fix);fix(Z.heir);if(Z.cand&&Z.cand.list)Z.cand.list.forEach(fix);}return s;};}
 
+/* ================= 庭院互動 2.0：挑選作伴的人，每項互動都是一個小玩法 ================= */
+const HOME2={
+ qin:{n:'撫琴',ic:'🎼',game:'simon',d:'跟著旋律彈一遍，彈得越準，內功熟練越多。'},
+ chess:{n:'對弈',ic:'♟',game:'nim',d:'取子棋：輪流取 1 到 3 枚，取走最後一枚的人勝。'},
+ fish:{n:'餵金魚',ic:'🐟',game:'fish',d:'金魚冒出水面時點一下餵食，八秒內餵得越多越好。'},
+ tea:{n:'煮茶',ic:'🍵',game:'tea',d:'看準火候，在水溫剛好時提壺。下雨天煮茶效果加倍。'},
+ moon:{n:'庭院賞月',ic:'🌕',game:'talk',d:'夜裡和作伴的人聊聊。',night:1,opts:[['談心事','好感大增'],['數星星','感悟提升'],['一起吟詩','好感與感悟']]},
+ read:{n:'書房夜讀',ic:'📖',game:'talk',d:'選一本書，一起讀到深夜。',opts:[['劍譜','武功熟練'],['心法','內功熟練'],['遊記','感悟提升']]},
+ fire:{n:'圍爐夜話',ic:'🔥',game:'talk',d:'生起小爐，說說話。',night:1,opts:[['說往事','所有住客好感'],['聊江湖傳聞','聲望提升'],['談將來','感悟提升']]},
+};
+function homeMates(s){const out=[],add=id=>{if(id&&NPCS[id]&&!out.includes(id))out.push(id);};for(const id of (s.residents||[]))add(id);for(const g of homeGuests(s))add(g.id);
+ Object.keys(NPCS).filter(id=>typeof npcMet==='function'&&npcMet(s,id)&&aff(s,id)>=35).sort((a,b)=>aff(s,b)-aff(s,a)).forEach(add);return out.slice(0,6);}
+function home2Why(s,id){const A=HOME2[id];if(!A)return '沒有這項';const H=homeState(s);if(H.inter[id]===gday(s))return '今天已經做過了';if(A.night&&gameHour(s)<18&&gameHour(s)>=5)return '要等入夜';return null;}
+function home2Do(s,id,mate,score,choice){const A=HOME2[id],w=home2Why(s,id);if(w)return {err:w};const H=homeState(s);H.inter[id]=gday(s);score=Math.max(0,Math.min(1,+score||0));
+ const m=.5+score,r=realmOf(s),got=[];const c=mate&&NPCS[mate]?mate:null;let rel=Math.round(3+score*5);
+ const ins=n=>{const a=Math.min(100-s.insight,Math.round(n));s.insight+=a;got.push('感悟 +'+a);};
+ if(id==='qin'){addProf(s,s.mainInner,150*(1+r)*m,null);got.push('內功熟練 +'+Math.round(150*(1+r)*m));}
+ else if(id==='chess'){ins(10*m);if(score>=1)rel+=3;}
+ else if(id==='fish'){const v=Math.round(15*m);s.stam=Math.min(100,s.stam+v);got.push('體力 +'+v);}
+ else if(id==='tea'){const v=Math.round(20*m*(['rain','storm','snow'].includes(wxToday(s))?2:1));s.stam=Math.min(100,s.stam+v);got.push('體力 +'+v);}
+ else if(id==='moon'){if(choice===0)rel+=6;else if(choice===1)ins(12);else{rel+=3;ins(6);}}
+ else if(id==='read'){if(choice===0){addProf(s,s.mainMartial,150*(1+r),null);got.push('武功熟練 +'+150*(1+r));}else if(choice===1){addProf(s,s.mainInner,150*(1+r),null);got.push('內功熟練 +'+150*(1+r));}else ins(12);}
+ else if(id==='fire'){if(choice===0){for(const x of (s.residents||[]))if(s.npc[x])addRel(s,x,4);got.push('所有住客好感 +4');}else if(choice===1){const f=Math.round(10*fameMult(s));s.fame+=f;got.push('聲望 +'+f);}else ins(12);}
+ if(c){addRel(s,c,rel);s.npc[c].seen=gday(s);got.push(NPCS[c].n+'好感 +'+rel);}
+ s.stat.homeActs=(s.stat.homeActs||0)+1;if(s.stat.homeActs>=30)giveTitle(s,'h_life');return {A,c,got:got.join('、')};}
+
+/* ================= 據點 2.0：每日巡店，處理店裡的大小事 ================= */
+const EST_EV=[
+ {n:'鬧事的酒客',t:'一個喝醉的大漢拍著桌子，說茶太淡、菜太鹹，要掌櫃賠錢。',ch:[['親自把他請出去','fame'],['請他喝一壺好酒，化干戈為玉帛','silver']]},
+ {n:'賒帳的書生',t:'一個窮書生吃完飯，紅著臉說身上沒帶錢，願意寫一幅字抵帳。',ch:[['收下那幅字','fame'],['讓他以後來店裡記帳','silver']]},
+ {n:'走江湖的賣藝人',t:'一對賣藝的父女想在門口表演，說會把客人都吸引過來。',ch:[['讓他們表演，賞錢歸他們','fame'],['請他們表演，跟他們分帳','silver']]},
+ {n:'神秘的客人',t:'角落裡坐著一個戴斗笠的人，點了一壺茶，坐了一整天，什麼都沒說。',ch:[['過去攀談','intel'],['不去打擾，替他續茶','fame']]},
+ {n:'商隊路過',t:'一支西域商隊在門口歇腳，問能不能包下整間店。',ch:[['包場給他們，大賺一筆','silver'],['留幾張桌子給熟客','fame']]},
+ {n:'夥計吵架',t:'兩個夥計為了誰多做事吵了起來，客人都在看熱鬧。',ch:[['各打五十大板','silver'],['請他們吃頓好的，談開了','fame']]},
+ {n:'同行來探',t:'對街新開了一家店，老闆親自上門「拜訪」，眼睛一直往廚房瞄。',ch:[['大方帶他參觀','fame'],['拿出看家本領，讓他知難而退','silver']]},
+];
+function estPatrolInfo(s){const e=s.estate;if(!e||!e.type)return null;const d=gday(s);if(!e.pt||e.pt.day!==d){const L=[0,1,2].map(i=>(hash32(d*5+i,777+(s.created|0)%999)%EST_EV.length));e.pt={day:d,ev:[...new Set(L)].slice(0,2),done:[]};}return e.pt;}
+function estPatrol(s,i,ci){const e=s.estate,P=estPatrolInfo(s);if(!P)return {err:'還沒開設據點'};const k=P.ev[i];if(k==null)return {err:'沒有這件事'};if(P.done.includes(i))return {err:'已經處理過了'};const E=EST_EV[k],c=E.ch[ci];if(!c)return {err:'選項無效'};
+ P.done.push(i);const r=estateRates(s),hr=Math.max(80,(r.silver||0)*3600);let got;
+ if(c[1]==='silver'){const v=Math.round(hr*1.5);s.silver+=v;e.earned+=v;got='銀兩 +'+fmt(v);}
+ else if(c[1]==='fame'){const f=Math.round((6+e.lvl*2)*fameMult(s));s.fame+=f;got='聲望 +'+f;}
+ else{if(e.type==='teahouse'){e.intel+=3;got='情報 +3';}else{const v=Math.round(hr);s.silver+=v;got='銀兩 +'+fmt(v);}}
+ e.log.push({m:E.n+'：'+c[0]+'。'+got});if(e.log.length>30)e.log.splice(0,e.log.length-30);return {E,c,got};}
+
 </script>
 <script>
 'use strict';
@@ -9282,10 +9326,10 @@ function bonusRows(){const R=[];const T=TITLES[S.title];if(T)R.push(['稱號「'
    ${bonusRows().map(([a,b])=>`<div class="bn-row"><b>${a}</b><span class="sub">${b}</span></div>`).join('')}<span class="mini">稱號只計算佩戴中的一個。</span></div>`;
   h=h.replace(/<div class="lbl">(稱號 [^<]*)<\/div>(<div class="card">[\s\S]*)$/,(m,a,b)=>sum+fold('titles',a+'・更換稱號',b));return h;};}
 /* 5/6. 生活頁：只留「家園・行囊・烹飪」；據點與善舉併入家園；外觀改由主角頁「換裝」進入 */
-{const NS=[['home','家園'],['bag','行囊'],['cook','烹飪']];
- const _vl=vLife;vLife=function(){if(ui.seg.life==='estate')ui.seg.life='home';let h=_vl();h=h.replace(/<div class="seg">[\s\S]*?<\/div>/,seg('life',NS));
+{const NS=[['home','家園'],['estate','據點'],['bag','行囊'],['cook','烹飪']];
+ const _vl=vLife;vLife=function(){let h=_vl();h=h.replace(/<div class="seg">[\s\S]*?<\/div>/,seg('life',NS));
   if(ui.seg.life==='look')h=h.replace(seg('life',NS),seg('life',NS)+`<button class="btn ghost sm" data-act="goTo" data-t="people" data-k="people" data-v="me">← 回到主角</button>`);return h;};
- const _vh=vHome;vHome=function(){return _vh()+fold('estate','據點與善舉',vEstate());};}
+}
 /* 7. 收藏頁：每一類收起來，只顯示進度 */
 {const _cs=colSection;colSection=function(title,all,owned,rend){const h=_cs(title,all,owned,rend);if(!h)return h;return h.replace(/^<div class="lbl">([^<]*)<\/div>([\s\S]*)$/,(m,a,b)=>fold('col_'+title,a,b));};
  const _mc=mileCard;mileCard=function(){const h=_mc();const n=mileList(S).filter(m=>m.done&&!m.got).length;return fold('mile',`🏆 收藏里程碑${n?` <b class="cnt">${n}</b>`:''}`,h);};}
@@ -9311,6 +9355,81 @@ const zlSprImg=(d,h)=>SPRITE_IMG_SRC[zlSprKey(d)]?`<img class="zl-spr" src="${SP
    q.push({key,flip:dir<0,cx:pl.cx+spots[i][0]+dx,fy:pl.fy+spots[i][1]-Math.max(0,Math.sin(t/160+i))*(Math.abs(dir)>.3?1.5:0),f:ph/SPR[key].naturalHeight,seed:3+i});});};}
 {const _cup=ACT.zlCup;ACT.zlCup=()=>{const team=ui.zlTeam.map(id=>zlFind(S,id)).filter(Boolean);_cup();const s=$('#sheet h3');if(s&&team.length)s.insertAdjacentHTML('afterend',`<div class="zl-team">${team.map(d=>`<div>${zlSprImg(d,96)}<span class="mini">${esc(d.name)}</span></div>`).join('')}</div>`);};}
 (function(){const st=document.createElement('style');st.textContent='.zl-spr{object-fit:contain;margin-left:auto;flex:none}.zl-team{display:flex;justify-content:center;gap:14px;margin:6px 0}.zl-team>div{display:grid;justify-items:center}';document.head.appendChild(st);})();
+
+/* ================= 庭院互動 2.0 與據點 2.0 介面 ================= */
+/* ---------- 家園：庭院互動清單 ---------- */
+function home2HTML(){const H=homeState(S),d=gday(S);const L=Object.entries(HOME2);const left=L.filter(([k])=>!home2Why(S,k)).length;
+ return fold('act',`🏡 庭院互動 <b class="cnt">${left}</b>`,`<div class="card h2-grid">${L.map(([k,A])=>{const w=home2Why(S,k),done=H.inter[k]===d;
+  return `<button class="h2-it${w?' off':''}" data-act="h2Open" data-k="${k}" ${w?'aria-disabled="true"':''}><span class="h2-ic">${A.ic}</span><b>${A.n}</b><small>${done?'今天做過了':w||'一起'}</small></button>`;}).join('')}</div>`);}
+{const _vh=vHome;vHome=function(){let h=_vh();h=h.replace(/<details class="hm-sec" data-fold="act"[\s\S]*?<\/details>/,home2HTML());
+  const e=S.estate;const est=e&&e.type?`<button class="h2-est" data-act="goTo" data-t="life" data-k="life" data-v="estate"><span>🏮</span><div><b>${esc(S.name)}的${ESTATE_TYPES[e.type].n}・${e.lvl} 級</b><small>每時約 +${fmt(perHr(estateRates(S).silver||0))} 兩${estPatrolLeft()?`・今日巡店還有 ${estPatrolLeft()} 件事`:''}</small></div><i>›</i></button>`
+   :`<button class="h2-est" data-act="goTo" data-t="life" data-k="life" data-v="estate"><span>🏮</span><div><b>開設據點</b><small>把庭院經營成茶館、醫館或藥園，掛機也有收入</small></div><i>›</i></button>`;
+  return est+h;};}
+/* ---------- 開始互動：挑選作伴的人 ---------- */
+function h2Modal(k){const A=HOME2[k],w=home2Why(S,k);if(w)return toast(w);const M=homeMates(S);if(ui.h2Mate==null||!M.includes(ui.h2Mate))ui.h2Mate=M[0]||'';
+ openModal(`${backRow(A.ic+' '+A.n)}<p class="sub">${A.d}</p><div class="lbl">找誰作伴</div>
+  ${M.length?`<div class="h2-mates">${M.map(id=>`<button class="h2-mate" data-act="h2Mate" data-k="${k}" data-n="${id}" aria-pressed="${ui.h2Mate===id}"><canvas width="46" height="46" data-npc="${id}"></canvas><span>${NPCS[id].n}</span><small>好感 ${aff(S,id)}</small></button>`).join('')}</div>`:'<p class="mini">還沒有熟絡的朋友（好感 35 以上），先一個人也可以。</p>'}
+  <div id="h2Game" class="h2-game">${h2Intro(k)}</div>`,'courtyard');}
+function h2Intro(k){const A=HOME2[k];if(A.game==='talk')return `<div class="h2-opts">${A.opts.map(([t,d],i)=>`<button class="btn" data-act="h2Talk" data-k="${k}" data-c="${i}">${t}<small>${d}</small></button>`).join('')}</div>`;
+ return `<button class="btn" data-act="h2Start" data-k="${k}">開始</button>`;}
+function h2Finish(k,score,choice,line){const r=home2Do(S,k,ui.h2Mate,score,choice);if(r.err)return toast(r.err);save();SFX.story&&SFX.story();render();renderTop();
+ const c=r.c?NPCS[r.c].n:'';const g=$('#h2Game');ui.modalFn=null;
+ if(g)g.innerHTML=`<div class="h2-res"><p>${line.replace(/\{c\}/g,c||'你自己')}</p><p class="eff">${r.got}</p><button class="btn" data-act="closeModal">好</button></div>`;}
+const H2_LINES={
+ qin:s=>s>=1?'一曲彈完，一個音都沒錯。{c}愣了好一會兒，才輕輕鼓掌。':s>=.6?'彈錯了一兩個音，{c}卻聽得很認真。':'彈得七零八落，{c}笑得直不起腰：「再練練吧。」',
+ chess:s=>s>=1?'你取走了最後一枚棋子。{c}瞪著棋盤：「再來一局！」':'{c}取走了最後一枚，得意地朝你眨眨眼。',
+ fish:s=>s>=1?'金魚們吃得圓滾滾的，{c}趴在缸邊看得入迷。':s>=.5?'你們撒了一把又一把魚食，{c}笑出了聲。':'金魚太快了，魚食大多沉到缸底。{c}說：「沒關係，牠們晚點會吃的。」',
+ tea:s=>s>=.85?'水溫剛好，茶香滿室。{c}喝了一口，閉上眼睛：「好茶。」':s>=.5?'茶有點澀，{c}還是喝完了。':'水燒過頭了，茶苦得{c}皺起了眉頭，你們都笑了。',
+ moon:['你們聊了很久很久，說了很多平時不會說的話。','你們躺在石凳上數星星，數到一百就亂了，又從頭數起。','你起了一句，{c}接了一句，一首詩就這樣湊成了。'],
+ read:['燈下翻開劍譜，{c}看得比你還入迷，拿起筷子比劃起來。','你念著心法口訣，{c}在一旁替你研墨，墨香混著燈油味。','遊記裡寫著天下名山，{c}說：「總有一天，我們一起去。」'],
+ fire:['小爐劈啪作響，大家說起各自的往事，說著說著就笑了。','{c}說起最近江湖上的新鮮事，說得活靈活現。','你們說起往後想過的日子，{c}說：「只要大家都在就好。」'],
+};
+/* ---------- 小玩法 ---------- */
+let H2T=[];const h2Clear=()=>{H2T.forEach(t=>{clearTimeout(t);clearInterval(t);});H2T=[];};
+const NOTES=[['宮',523],['商',587],['角',659],['徵',784],['羽',880]];
+function h2Simon(k){const seq=Array.from({length:5},()=>Math.floor(Math.random()*5));let pos=0,ready=false;const g=$('#h2Game');
+ g.innerHTML=`<p class="sub" id="smMsg">仔細聽……</p><div class="sm-keys">${NOTES.map(([n],i)=>`<button class="sm-k" data-i="${i}">${n}</button>`).join('')}</div>`;
+ const keys=[...g.querySelectorAll('.sm-k')],flash=i=>{keys[i].classList.add('on');tone(NOTES[i][1],.45,'triangle',.07);H2T.push(setTimeout(()=>keys[i].classList.remove('on'),320));};
+ seq.forEach((n,i)=>H2T.push(setTimeout(()=>flash(n),500+i*620)));H2T.push(setTimeout(()=>{ready=true;$('#smMsg').textContent='輪到你了：照著彈一遍';},500+seq.length*620));
+ keys.forEach((b,i)=>b.onclick=()=>{if(!ready)return;flash(i);if(i===seq[pos]){pos++;if(pos>=seq.length){ready=false;H2T.push(setTimeout(()=>h2Finish(k,1,null,H2_LINES.qin(1)),400));}}
+  else{ready=false;const sc=pos/seq.length;H2T.push(setTimeout(()=>h2Finish(k,sc,null,H2_LINES.qin(sc)),400));}});}
+function h2Nim(k){let n=13,turn='me';const g=$('#h2Game');
+ const draw=msg=>{g.innerHTML=`<p class="sub">${msg}</p><div class="nim">${'<i></i>'.repeat(n)}</div><div class="row">${[1,2,3].map(x=>`<button class="btn sm" data-x="${x}" ${turn!=='me'||x>n?'disabled':''}>取 ${x} 枚</button>`).join('')}</div>`;
+  g.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>take(+b.dataset.x,'me'));};
+ const take=(x,who)=>{n-=x;if(n<=0){h2Finish(k,who==='me'?1:.3,null,H2_LINES.chess(who==='me'?1:0));return;}
+  if(who==='me'){turn='ai';draw('你取了 '+x+' 枚，輪到對方想一想……');H2T.push(setTimeout(()=>{let y=n%4||(1+Math.floor(Math.random()*Math.min(3,n)));if(Math.random()<.3)y=1+Math.floor(Math.random()*Math.min(3,n));y=Math.min(y,n);turn='me';take(y,'ai');if(n>0)draw('對方取了 '+y+' 枚。還剩 '+n+' 枚，輪到你。');},900));}};
+ draw('棋盤上有 13 枚棋子。你先手。');}
+function h2Fish(k){const g=$('#h2Game');let fed=0,left=8;g.innerHTML=`<p class="sub">剩 <b id="fsT">8</b> 秒・餵了 <b id="fsN">0</b> 條</p><div class="pond" id="pond"></div>`;
+ const pond=$('#pond'),spawn=()=>{const f=document.createElement('button');f.className='fishy';f.textContent='🐟';f.style.left=(8+Math.random()*78)+'%';f.style.top=(10+Math.random()*70)+'%';
+  f.onclick=()=>{fed++;$('#fsN').textContent=fed;f.classList.add('ate');tone(1100,.06,'sine',.04);setTimeout(()=>f.remove(),200);};pond.appendChild(f);H2T.push(setTimeout(()=>f.remove(),1100));};
+ H2T.push(setInterval(spawn,520));H2T.push(setInterval(()=>{left--;const t=$('#fsT');if(t)t.textContent=left;if(left<=0){h2Clear();const sc=Math.min(1,fed/9);h2Finish(k,sc,null,H2_LINES.fish(sc));}},1000));spawn();}
+function h2Tea(k){const g=$('#h2Game');let p=0,dir=1;g.innerHTML=`<p class="sub">水溫在綠色範圍時提壺</p><div class="tea-bar"><i class="ok"></i><b id="teaP"></b></div><button class="btn" id="teaGo">提壺</button>`;
+ const P=$('#teaP');H2T.push(setInterval(()=>{p+=dir*.022;if(p>=1){p=1;dir=-1;}if(p<=0){p=0;dir=1;}P.style.left=(p*100)+'%';},16));
+ $('#teaGo').onclick=()=>{h2Clear();const sc=Math.max(0,Math.min(1,1-Math.abs(p-.62)*4));h2Finish(k,sc,null,H2_LINES.tea(sc));};}
+Object.assign(ACT,{
+ h2Open:d=>{h2Clear();h2Modal(d.k);},
+ h2Mate:d=>{ui.h2Mate=d.n;document.querySelectorAll('#sheet .h2-mate').forEach(b=>b.setAttribute('aria-pressed',b.dataset.n===d.n));},
+ h2Start:d=>{h2Clear();const G=HOME2[d.k].game;({simon:h2Simon,nim:h2Nim,fish:h2Fish,tea:h2Tea})[G](d.k);},
+ h2Talk:d=>{const c=+d.c;h2Finish(d.k,1,c,H2_LINES[d.k][c]);},
+});
+{const _cm=closeModal;closeModal=function(){h2Clear();return _cm.apply(this,arguments);};}
+/* ---------- 據點：巡店 ---------- */
+const estPatrolLeft=()=>{const P=estPatrolInfo(S);return P?P.ev.length-P.done.length:0;};
+function patrolCard(){const P=estPatrolInfo(S);if(!P)return '';return `<div class="card hi"><h3>🏮 今日巡店 <span class="stage-pill">${P.ev.length-P.done.length} 件</span></h3>${P.ev.map((k,i)=>{const E=EST_EV[k],dn=P.done.includes(i);
+  return `<div class="pt-ev${dn?' done':''}"><b>${E.n}</b><span class="sub">${E.t}</span>${dn?'<span class="mini">已處理</span>':`<div class="zl-ch">${E.ch.map((c,j)=>`<button class="btn sm${j?' ghost':''}" data-act="estPatrol" data-i="${i}" data-c="${j}">${c[0]}<small>${{silver:'多賺銀兩',fame:'聲望',intel:S.estate.type==='teahouse'?'情報':'銀兩'}[c[1]]}</small></button>`).join('')}</div>`}</div>`;}).join('')}<span class="mini">每個江湖日都有新的事，處理得好，店裡更興旺。</span></div>`;}
+{const _ve=vEstate;vEstate=function(){const h=_ve();if(!S.estate.type)return h;const i=h.indexOf('<div class="lbl">');return i<0?h+patrolCard():h.slice(0,i)+patrolCard()+h.slice(i);};}
+ACT.estPatrol=d=>{const r=estPatrol(S,+d.i,+d.c);if(r.err)return toast(r.err);save();SFX.coin();toast(r.E.n+'：'+r.got);render();renderTop();};
+{const _tl=todayList;todayList=function(){const L=_tl();const n=S&&S.started?estPatrolLeft():0;if(n)L.push(['🏮','據點今日巡店還有 '+n+' 件事','data-act="goTo" data-t="life" data-k="life" data-v="estate"']);return L;};}
+(function(){const st=document.createElement('style');st.textContent=`.h2-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.h2-it{all:unset;box-sizing:border-box;cursor:pointer;display:grid;justify-items:center;gap:2px;padding:8px 2px;border:2px solid var(--rule);border-radius:10px;text-align:center}
+.h2-it b{font-size:13px}.h2-it small{font-size:10.5px;opacity:.75}.h2-it.off{opacity:.45}.h2-ic{font-size:24px;line-height:1.2}.h2-ic img{width:30px;height:30px}
+.h2-est{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;width:100%;padding:10px 12px;margin:6px 0;border-radius:10px;background:linear-gradient(90deg,rgba(200,60,40,.22),rgba(212,160,60,.18));border:2px solid var(--gold2)}.h2-est span{font-size:24px}.h2-est small{display:block;font-size:12px;opacity:.85}.h2-est i{font-style:normal;font-size:20px;opacity:.7}
+.h2-mates{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}.h2-mate{all:unset;cursor:pointer;display:grid;justify-items:center;gap:2px;padding:6px;border-radius:10px;border:2px solid transparent;min-width:62px}.h2-mate[aria-pressed=true]{border-color:var(--gold2);background:rgba(212,160,60,.15)}.h2-mate canvas{width:46px;height:46px;border-radius:8px}.h2-mate small{font-size:10.5px;opacity:.7}
+.h2-game{margin-top:8px;display:grid;gap:8px}.h2-opts{display:grid;gap:8px}.h2-res p{margin:6px 0}
+.sm-keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.sm-k{all:unset;cursor:pointer;text-align:center;padding:18px 0;border-radius:10px;border:2px solid var(--gold2);font-family:var(--f-title);font-size:20px;background:rgba(120,80,40,.15);transition:background .1s}.sm-k.on{background:var(--gold);color:#2a1a0a;transform:scale(1.06)}
+.nim{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px}.nim i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#bbb 60%,#777)}
+.pond{position:relative;height:200px;border-radius:50% / 40%;background:radial-gradient(ellipse,#5fa8a0,#2e6a72);overflow:hidden;border:3px solid #7a6040}.fishy{all:unset;position:absolute;cursor:pointer;font-size:30px;transform:translate(-50%,-50%);animation:fsIn .25s}.fishy.ate{transform:translate(-50%,-50%) scale(1.5);opacity:0;transition:.2s}@keyframes fsIn{from{transform:translate(-50%,-30%);opacity:0}}
+.tea-bar{position:relative;height:26px;border-radius:13px;background:linear-gradient(90deg,#6aa0c8,#e8d070 50%,#d0503a);border:2px solid var(--gold2)}.tea-bar .ok{position:absolute;left:50%;width:24%;top:-4px;bottom:-4px;border:2px solid #3a8a3a;border-radius:6px;background:rgba(80,200,80,.25)}.tea-bar b{position:absolute;top:-6px;width:6px;height:34px;margin-left:-3px;background:#2a1a0a;border-radius:3px}
+.pt-ev{display:grid;gap:4px;padding:8px 0;border-bottom:2px dotted var(--rule)}.pt-ev.done{opacity:.55}`;document.head.appendChild(st);})();
 
 </script>
 <script>
