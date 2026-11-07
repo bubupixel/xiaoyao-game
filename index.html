@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-205209";</script>
+<script>window.XY_BUILD="20261107-210948";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -846,13 +846,13 @@ function fight(P,E){
     if(Math.random()*100<Math.min(60,Math.max(0,def.dodge||0))){push(def.name+'身形一晃，閃過'+att.name+'的攻勢。','mute');continue;}
     const base=att.atk*(.9+Math.random()*.2),ed=def.def*(1-Math.min(80,att.pierce||0)/100);
     let dmg=base*base/(base+ed);const crit=Math.random()*100<(att.crit||0);if(crit)dmg*=1+(att.critDmg||50)/100;
-    if(round===1&&att.opening)dmg*=1+att.opening/100;dmg=Math.max(1,Math.round(dmg));def.cur-=dmg;
+    if(round===1&&att.opening)dmg*=1+att.opening/100;dmg=Math.max(1,Math.round(dmg));if(def.isP&&def.pet&&def.pet.sk==='guard'&&Math.random()<def.pet.p2){dmg=Math.max(1,Math.round(dmg*.5));push(def.pet.n+'撲上前，替你擋下一半的傷害！','heal');}def.cur-=dmg;
     let txt=att.name+(h?'乘勢再出一招':(round===1&&att.opening&&att.isP?'先發暗器':'出手'))+'，'+(crit?'暴擊！':'')+'造成 '+dmg+' 傷害';
     if(att.lifesteal){const hl=Math.round(dmg*att.lifesteal/100);att.cur=Math.min(att.hp,att.cur+hl);if(hl)txt+='，吸血 '+hl;}
     if(def.reflect&&def.cur>0){const rf=Math.round(dmg*def.reflect/100);if(rf){att.cur-=rf;txt+='，被反震 '+rf;}}
     if(att.stun&&def.cur>0&&Math.random()*100<att.stun){def.stunned=true;txt+='，對手被擊暈';}
     push(txt+'。',att.isP?(crit?'crit':'pl'):'en');
-    if(def.isP&&def.cur>0&&def.cur<def.hp*.3&&def.potions>0&&!def.healed){def.healed=true;def.potions--;used++;const hl=Math.round(def.hp*.3);def.cur+=hl;push(def.name+'服下金創藥，回復 '+hl+' 氣血。','heal');}}}
+    if(def.isP&&def.cur>0&&def.cur<def.hp*.3&&def.potions>0&&!def.healed){def.healed=true;def.potions--;used++;const hl=Math.round(def.hp*.3);def.cur+=hl;push(def.name+'服下金創藥，回復 '+hl+' 氣血。','heal');}}if(att.isP&&att.pet&&def.cur>0&&typeof petAct==='function')petAct(att,def,push,round);}
   if(a.cur<=0||b.cur<=0)break;}
  const win=b.cur<=0&&a.cur>0;if(!win&&a.cur>0&&b.cur>0)push('久戰未分勝負，你審時度勢，抽身而退。','mute');
  return {win,log,rounds,pHp:Math.max(0,a.cur),eHp:Math.max(0,b.cur),potionsUsed:used};}
@@ -5114,6 +5114,54 @@ if(typeof HOME_ACTS!=='undefined')for(const A of HOME_ACTS){const w=A.why;A.why=
 if(typeof plant==='function')plant=function(){return {err:'花園已經關閉'};};
 if(typeof landUp==='function')landUp=function(){return {err:'花園已經關閉'};};
 
+/* ================= 寵物 2.0：可以升級，只帶一隻在身邊，並一起戰鬥 ================= */
+const PET_LV_MAX=30;
+const PET_SK={
+ cat:{sk:'double',sn:'連環爪',sd:'出手時有機會連撲兩次'},
+ dog:{sk:'guard',sn:'護主',sd:'敵人攻擊你時，有機會撲上前擋下一半傷害'},
+ rabbit:{sk:'heal',sn:'靈草',sd:'每回合有機會叼來草藥，替你回復氣血'},
+ fox:{sk:'gold',sn:'狐火',sd:'狐火灼敵；打贏後有機會叼回額外銀兩'},
+ crane:{sk:'pierce',sn:'鶴唳',sd:'長喙直刺，無視對手的防禦'},
+ redpanda:{sk:'stun',sn:'翻滾',sd:'滾到敵人腳下，有機會讓對手錯失出手'},
+ squirrel:{sk:'opening',sn:'松果雨',sd:'開場一陣松果雨，第一回合造成大量傷害'},
+ tiger:{sk:'maul',sn:'虎嘯',sd:'猛撲撕咬，傷害最高'},
+};
+const PET_STAGE=lv=>lv>=20?'靈獸':lv>=10?'成獸':'幼崽';
+const petNeed=lv=>Math.round(20*Math.pow(lv,1.35))+40;
+function petOn(s){const H=homeState(s);if(H.petOn&&H.pets[H.petOn])return H.petOn;return null;}
+function petP(s,k){const p=homeState(s).pets[k];if(!p)return null;if(!(p.lv>=1))p.lv=1;if(!(p.xp>=0))p.xp=0;return p;}
+const petMul=lv=>.6+lv*.08;
+function petFighter(s){const k=petOn(s);if(!k)return null;const p=petP(s,k),P=PETS[k],K=PET_SK[k]||{sk:'maul',sn:'撲擊'};
+ return {k,n:P.n,lv:p.lv,sk:K.sk,sn:K.sn,pr:(.12+p.lv*.008)*(K.sk==='maul'?1.5:K.sk==='pierce'?1.1:1),p2:Math.min(.55,.15+p.lv*.012)};}
+function petAct(att,def,push,round){const Q=att.pet;let r=Q.pr;if(Q.sk==='opening'&&round===1)r*=4;
+ const hit=(mul,tag)=>{const base=att.atk*r*mul*(.9+Math.random()*.2),ed=Q.sk==='pierce'?0:def.def*.5;let d=Math.max(1,Math.round(base*base/(base+ed)));def.cur-=d;push(Q.n+(tag||'撲上去')+'，造成 '+d+' 傷害。','pl');};
+ if(Q.sk==='heal'){if(Math.random()<Q.p2&&att.cur<att.hp){const h=Math.round(att.hp*(.04+Q.lv*.002));att.cur=Math.min(att.hp,att.cur+h);push(Q.n+'叼來一株靈草，你回復 '+h+' 氣血。','heal');}else hit(.6);return;}
+ hit(1,{double:'伸爪一撲',gold:'噴出一團狐火',pierce:'長喙直刺',stun:'滾到對手腳下',opening:round===1?'灑下一陣松果雨':'丟出松果',maul:'猛撲撕咬',guard:'撲上去咬'}[Q.sk]);
+ if(def.cur<=0)return;if(Q.sk==='double'&&Math.random()<Q.p2)hit(1,'再撲一次');
+ if(Q.sk==='stun'&&Math.random()<Q.p2*.6){def.stunned=true;push('對手被'+Q.n+'絆倒，錯失下一次出手。','mute');}}
+function petGainXp(s,k,n){const p=petP(s,k);if(!p||p.lv>=PET_LV_MAX)return 0;p.xp+=n;let up=0;while(p.lv<PET_LV_MAX&&p.xp>=petNeed(p.lv)){p.xp-=petNeed(p.lv);p.lv++;up++;
+  if(p.lv===10||p.lv===20)addJournal(s,'寵物',PETS[k].n+'長成了「'+PET_STAGE(p.lv)+'」！','pet_'+k+'_'+p.lv);if(p.lv>=PET_LV_MAX)giveTitle(s,'p_max');}
+ if(p.lv>=PET_LV_MAX)p.xp=0;return up;}
+/* 帶在身邊的寵物：一起戰鬥、累積經驗 */
+{const _pf=playerFighter;playerFighter=function(s,mod){const P=_pf(s,mod);const Q=petFighter(s);if(Q)P.pet=Q;return P;};}
+{const _f=fight;fight=function(P,E){const r=_f(P,E);const s=P&&P._s,Q=P&&P.pet;if(s&&Q){petGainXp(s,Q.k,r.win?12:3);
+  if(r.win&&Q.sk==='gold'&&Math.random()<Q.p2){const v=Math.round(20+Q.lv*8);s.silver+=v;r.log.push({txt:Q.n+'從對手身上叼回 '+v+' 兩銀子。',cls:'heal',p:r.pHp,e:0});}}return r;};}
+{const _tr=tickRates;tickRates=function(s,sec,t,sum){_tr(s,sec,t,sum);const k=s.started&&petOn(s);if(!k)return;s.acc.petx=(s.acc.petx||0)+sec/90;const n=Math.floor(s.acc.petx);if(n){s.acc.petx-=n;const up=petGainXp(s,k,n);if(up&&sum&&sum.ext)sumLine(sum,PETS[k].n+'升到 '+petP(s,k).lv+' 級！');}};}
+/* 只有身邊的寵物提供加成，並隨等級成長 */
+{const _em=extStatMods;extStatMods=function(s,st){const H=s.home2,saved=H?H.pets:null;if(H)H.pets={};try{_em(s,st);}finally{if(H)H.pets=saved;}
+  const k=petOn(s);if(!k)return;const P=PETS[k],p=petP(s,k),m=petMul(p.lv);for(const e in P.e)st[e]=(st[e]||0)+P.e[e]*m;};}
+petAdopt=function(s,k){const H=homeState(s),P=PETS[k];if(!P)return {err:'沒有這種寵物'};if(H.pets[k])return {err:'已經養了'};if(s.silver<P.price)return {err:'銀兩不足（需 '+fmt(P.price)+'）'};
+ s.silver-=P.price;H.pets[k]={bond:20,fed:-1,lv:1,xp:0};if(!petOn(s))H.petOn=k;addJournal(s,'寵物','領養了一隻'+P.n+'。','pet_'+k);return {P};};
+{const _fd=petFeed;petFeed=function(s,k){const r=_fd(s,k);if(r.err)return r;const up=petGainXp(s,k,60);r.up=up;r.lv=petP(s,k).lv;return r;};}
+function petSet(s,k){const H=homeState(s);if(!H.pets[k])return '沒有這隻寵物';H.petOn=k;return null;}
+function petPlay(s,k){const H=homeState(s),p=petP(s,k);if(!p)return {err:'沒有這隻寵物'};if(p.play===gday(s))return {err:'今天已經陪牠玩過了'};if(s.stam<3)return {err:'體力不足（需 3）'};
+ s.stam-=3;p.play=gday(s);advTime(s,30);p.bond=Math.min(100,(p.bond||0)+5);const up=petGainXp(s,k,40);return {P:PETS[k],up,lv:p.lv};}
+Object.assign(TITLES,{p_max:{n:'靈獸之主',src:'任一寵物升到 30 級',tier:6,e:{atkPct:4,stamRegen:6}}});
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const R=raw.home2&&raw.home2.pets||{},H=s.home2;let best=null;
+  for(const k in H.pets){const r=R[k]||{},p=H.pets[k];p.lv=Math.max(1,Math.min(PET_LV_MAX,Number.isFinite(r.lv)?r.lv|0:1+Math.floor((p.bond||0)/10)));p.xp=Number.isFinite(r.xp)?Math.max(0,r.xp):0;p.play=Number.isFinite(r.play)?r.play|0:-1;
+   if(!best||p.bond>H.pets[best].bond)best=k;}
+  const on=raw.home2&&raw.home2.petOn;H.petOn=on&&H.pets[on]?on:best;return s;};}
+
 </script>
 <script>
 'use strict';
@@ -7247,8 +7295,8 @@ function vEstate(){const e=S.estate;let h='';
 
 /* ---------- 人物分頁：主角／江湖人物／門派／閱歷 ---------- */
 const _vPeople=vPeople;
-vPeople=function(){const h=seg('people',[['me','主角'],['npc','江湖人物'],['fac','門派'],['jr','閱歷']]);
- const v=ui.seg.people;if(v==='npc')return h+vNpcs();if(v==='fac')return h+vFaction();if(v==='jr')return h+vJournal();
+vPeople=function(){const h=seg('people',[['me','主角'],['npc','江湖人物'],['fac','門派'],['pet','寵物']]);
+ const v=ui.seg.people;if(v==='npc')return h+vNpcs();if(v==='fac')return h+vFaction();if(v==='pet')return h+vPet();
  const old=_vPeople();const cut=old.indexOf('<div class="lbl">江湖人物</div>');return h+(cut>0?old.slice(0,cut):old)+vTitles();};
 function vTitles(){const T=TITLES[S.title];const EN={xpPct:'修為',goldPct:'銀兩',expSpeed:'探索速度',herbBonus:'採藥'};const eff=o=>Object.entries(o).map(([k,v])=>(EN[k]||STAT_NAMES[k]||k)+' +'+v+(PCT_KEYS.has(k)?'%':'')).join('、')||'—';
  let h=`<div class="card"><div class="npc-head">${avatarHTML(true)}<div style="min-width:0"><h3>${T.n}</h3><span class="sub">頭像框：${FRAME_TIERS[T.tier].n}・聲望 ${fmt(S.fame)}</span><span class="eff">稱號加成：${eff(T.e)}</span></div></div></div>`;
@@ -7419,7 +7467,7 @@ function letterNotice(){const n=unreadLetters(S);if(!n)return '';const L=S.lette
  return `<div class="card story letter-n"><h3>✉ 江湖書信：${n} 封未讀</h3><span class="sub">最新一封來自${esc(L.sender)}「${esc(L.title)}」${L.gift?'，信封鼓鼓的，好像夾了東西':''}。</span><button class="btn" data-act="openLetter" data-id="${L.id}">拆信</button></div>`;}
 const _vJianghu3=vJianghu;vJianghu=function(){return letterNotice()+goalsCard()+_vJianghu3();};
 const _vPeople3=vPeople;
-vPeople=function(){const n=unreadLetters(S);const base=[['me','主角'],['npc','江湖人物'],['fac','門派'],['jr','閱歷']];const full=base.concat([['mail','書信'+(n?'・'+n:'')]]);
+vPeople=function(){const n=unreadLetters(S);const base=[['me','主角'],['npc','江湖人物'],['fac','門派'],['pet','寵物']];const full=base.concat([['mail','書信'+(n?'・'+n:'')]]);
  if(ui.seg.people==='mail')return seg('people',full)+vMail();return _vPeople3().replace(seg('people',base),seg('people',full));};
 function vMail(){const L=S.letters.slice().reverse();
  return `<div class="card hi"><h3>江湖書信</h3><span class="sub">你不在的時候，結識的江湖人物會寄信給你（離線也會），有時還會夾帶小禮物。回信能增進情誼。最多保留 ${LETTER_KEEP} 封，未讀最多累積 ${LETTER_MAX_UNREAD} 封。</span>
@@ -8682,7 +8730,7 @@ const _engFrameSP=engFrame;engFrame=function(now){if(!S)return _engFrameSP(now);
  const c=sprLayer(),sc=document.getElementById('scene');if(!c||!sc)return r;const W=sc.offsetWidth,H=sc.offsetHeight;if(!W){c.hidden=true;return r;}c.hidden=false;
  const dpr=Math.min(3,window.devicePixelRatio||1),pw=Math.round(W*dpr),ph=Math.round(H*dpr);if(c.width!==pw||c.height!==ph){c.width=pw;c.height=ph;}
  const st=c.style;st.left=sc.offsetLeft+'px';st.top=sc.offsetTop+'px';st.width=W+'px';st.height=H+'px';
- const x=c.getContext('2d');x.clearRect(0,0,pw,ph);const k=pw/SW;q.sort((A,B)=>A.fy-B.fy);
+ const x=c.getContext('2d');x.clearRect(0,0,pw,ph);const k=pw/SW;if(typeof petScene==='function')petScene(q);q.sort((A,B)=>A.fy-B.fy);
  const prac=!ui.sceneOverride&&!ui.creating&&S.mode==='practice'&&Date.now()>=(ui.travelUntil||0),ph4=Math.floor(now/170)%4;
  for(const s of q){const pl=isPlayerKey(s.key)&&prac;drawSpr(x,s.key,s.flip,s.cx*k,s.fy*k,s.f*k,now,s.seed,pl?[-.05,.02,.08,.03][ph4]:0);
   if(pl&&(ph4===1||ph4===2)){/* 練功：一道刀光 */const cx=s.cx*k+18*k*s.f*4,cy=(s.fy-34)*k,R=26*k;x.save();x.globalAlpha=ph4===1?.75:.4;x.strokeStyle='#fffbe8';x.lineWidth=2.2*k*.6;x.shadowColor='#bfe8ff';x.shadowBlur=6*k*.5;
@@ -9120,6 +9168,47 @@ function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,
 {const _vh=vHome;vHome=function(){return _vh().replace(/<details class="hm-sec" data-fold="garden"[\s\S]*?<\/details>/,'');};}
 {const _hc=homeCard;homeCard=function(){return _hc().replace(/<button class="btn jade" data-act="openLux">[\s\S]*?<\/button>/,'').replace(/<span class="mini">每點溫馨度[\s\S]*?<\/span><\/div>$/,'</div>');};}
 {const _mm=marketModal;marketModal=function(){if(ui.mkTab==='misc')ui.mkTab='food';_mm();const t=$('#sheet .shop-tab[data-t="misc"]');if(t)t.remove();};}
+
+/* ================= 寵物 2.0 介面（人物 › 寵物） ================= */
+if(ui.seg.people==='jr')ui.seg.people='me';
+function petImgSrc(k,lv){const evo=typeof PET_EVO_IMG!=='undefined'&&lv>=20&&PET_EVO_IMG[k];return evo||SPRITE_IMG_SRC['pet_'+k]||'';}
+function petPic(k,lv,sz){const src=petImgSrc(k,lv);return src?`<img class="pt-img${lv>=20?' evo':''}" src="${src}" alt="" style="height:${sz}px">`:`<span style="font-size:${sz*.6}px">${PETS[k].ic}</span>`;}
+function vPet(){const H=homeState(S),own=Object.keys(H.pets),on=petOn(S),d=gday(S);let h='';
+ if(!own.length)h+=`<div class="card hi"><h3>寵物</h3><span class="sub">領養一隻寵物帶在身邊：牠會陪你戰鬥、跟著你一起變強，還會長成靈獸。</span></div>`;
+ if(on){const P=PETS[on],p=petP(S,on),K=PET_SK[on],Q=petFighter(S),mx=p.lv>=PET_LV_MAX;
+  h+=`<div class="card hi pt-main"><div class="pt-stage">${petPic(on,p.lv,120)}</div><div class="pt-info"><h3>${P.n} <span class="stage-pill">${PET_STAGE(p.lv)}</span></h3>
+   <div class="mini">等級 ${p.lv}/${PET_LV_MAX}・親密 ${p.bond||0}</div>${bar(mx?100:p.xp/petNeed(p.lv)*100,'gold')}<div class="mini">${mx?'已達最高等級':'經驗 '+Math.floor(p.xp)+' / '+petNeed(p.lv)}</div></div>
+   <div class="pt-sk"><b>${K.sn}</b><span class="sub">${K.sd}（觸發率 ${Math.round(Q.p2*100)}%・攻擊力為你的 ${Math.round(Q.pr*100)}%）</span></div>
+   <span class="eff">隨身加成：${fmtEff(P.e,petMul(p.lv))}</span>
+   <div class="row"><button class="btn sm" data-act="petFeed" data-k="${on}" ${p.fed===d?'disabled':''}>${p.fed===d?'今天餵過了':'餵食'}<small>經驗 +60</small></button>
+   <button class="btn sm jade" data-act="petPlay" data-k="${on}" ${p.play===d||S.stam<3?'disabled':''}>${p.play===d?'今天玩過了':'陪牠玩'}<small>體力 3・經驗 +40</small></button></div>
+   <span class="mini">帶在身邊的寵物每次戰鬥都會出手；打贏、餵食、陪玩和放置都能累積經驗。10 級成獸、20 級化為靈獸。</span></div>`;}
+ const rest=own.filter(k=>k!==on);
+ if(rest.length)h+=`<div class="lbl">其他寵物</div><div class="card">${rest.map(k=>{const p=petP(S,k);return lineRow(`<div class="pt-row">${petPic(k,p.lv,40)}<div><b>${PETS[k].n}</b> <span class="mini">等級 ${p.lv}・${PET_STAGE(p.lv)}</span><div class="mini">${PET_SK[k].sn}：${PET_SK[k].sd}</div></div></div>`,`<button class="btn sm" data-act="petSet" data-k="${k}">帶在身邊</button>`);}).join('')}<span class="mini">只能帶一隻在身邊；其他的會留在家裡，不提供加成。</span></div>`;
+ const can=Object.keys(PETS).filter(k=>!H.pets[k]);
+ if(can.length)h+=fold('pet_adopt',`領養寵物 <span class="mini">${own.length}/${Object.keys(PETS).length}</span>`,`<div class="card">${can.map(k=>{const P=PETS[k];return lineRow(`<div class="pt-row">${petPic(k,1,40)}<div><b>${P.n}</b><div class="mini">${PET_SK[k].sn}：${PET_SK[k].sd}</div><div class="mini">隨身：${fmtEff(P.e,petMul(1))}</div></div></div>`,`<button class="btn sm ghost" data-act="petAdopt" data-k="${k}" ${S.silver<P.price?'disabled':''}>${fmt(P.price)} 兩</button>`);}).join('')}</div>`);
+ return h;}
+if(ui.homeOpen.pet_adopt==null)ui.homeOpen.pet_adopt=1;
+Object.assign(ACT,{
+ petSet:d=>{const e=petSet(S,d.k);if(e)return toast(e);save();toast(PETS[d.k].n+'跳到你身邊');render();renderTop();},
+ petPlay:d=>{const r=petPlay(S,d.k);if(r.err)return toast(r.err);save();toast('你陪'+r.P.n+'玩了一會兒'+(r.up?'，牠升到 '+r.lv+' 級！':'。'));render();renderTop();},
+ petFeed:d=>{const r=petFeed(S,d.k);if(r.err)return toast(r.err);save();toast(r.P.n+r.P.line+'。'+(r.up?'升到 '+r.lv+' 級！':'經驗 +60'));render();renderTop();},
+ petAdopt:d=>{const r=petAdopt(S,d.k);if(r.err)return toast(r.err);save();SFX.coin();toast('領養了'+r.P.n+'！');ui.seg.people='pet';render();renderTop();},
+});
+/* 家園頁不再顯示寵物區 */
+{const _vh=vHome;vHome=function(){return _vh().replace(/<details class="hm-sec" data-fold="pet"[\s\S]*?<\/details>(?=\s*$|<details|<div)/,'');};}
+/* 場景：身邊的寵物跟在主角旁邊 */
+function petScene(q){const k=S&&S.started&&petOn(S);if(!k)return;const pl=q.find(s=>isPlayerKey(s.key));if(!pl)return;const p=petP(S,k);
+ const key=p.lv>=20&&typeof PET_EVO_IMG!=='undefined'&&PET_EVO_IMG[k]?'pete_'+k:'pet_'+k;if(!sprOk(key))return;const ph=pl.f*SPR[pl.key].naturalHeight*(PET_H[k]||.36)*(p.lv>=20?1.15:1);
+ q.push({key,flip:pl.flip,cx:pl.cx+(pl.flip?22:-22),fy:pl.fy+1,f:ph/SPR[key].naturalHeight,seed:7.7});}
+/* 戰鬥畫面：寵物站在主角旁邊 */
+{const _bm=battleModal;battleModal=function(title,out){_bm(title,out);const k=S&&petOn(S);const c=document.querySelector('#sheet [data-btp]');if(!k||!c)return;const p=petP(S,k);
+  const im=document.createElement('img');im.src=petImgSrc(k,p.lv);im.className='bt-pet';im.alt='';c.insertAdjacentElement('afterend',im);};}
+(function(){const st=document.createElement('style');st.textContent=`.pt-main{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center}.pt-main>.pt-sk,.pt-main>.eff,.pt-main>.row,.pt-main>.mini{grid-column:1/-1}
+.pt-stage{width:120px;height:130px;display:grid;place-items:end center;background:radial-gradient(ellipse at 50% 88%,rgba(0,0,0,.18) 0 28%,transparent 30%),radial-gradient(circle at 50% 45%,rgba(255,230,160,.35),transparent 70%);border-radius:12px}
+.pt-img{object-fit:contain;max-width:120px}.pt-img.evo{filter:drop-shadow(0 0 6px rgba(255,220,120,.9))}.pt-info{min-width:0}.pt-info h3{margin:0}
+.pt-sk{display:grid;gap:2px;padding:8px;border:2px dashed var(--rule);border-radius:8px}.pt-row{display:flex;gap:10px;align-items:center}.pt-row img{width:44px;object-fit:contain}
+.bt-pet{position:absolute;height:54px;margin-left:-26px;align-self:flex-end;object-fit:contain;pointer-events:none}`;document.head.appendChild(st);})();
 
 </script>
 <script>
