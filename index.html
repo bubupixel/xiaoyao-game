@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-212715";</script>
+<script>window.XY_BUILD="20261107-213416";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -384,7 +384,7 @@ const G_MAX=8*STAGE_N-1;
 const realmOfG=g=>Math.floor(g/STAGE_N);
 const gEq=g=>g*4/STAGE_N; /* 換算成舊四階刻度，屬性與修為曲線保持連續 */
 const realmOf=s=>realmOfG(s.g);
-const REALM_HARD=[1,1,1,1,1.8,3,5,8]; /* 後天高手起，每級所需修為逐步加重 */
+const REALM_HARD=[1,1,1,1,1.4,2.4,4.2,7]; /* 後天高手起，每級所需修為逐步加重 */
 const stageReq=g=>Math.round(120*Math.pow(1.56,gEq(g))*8/STAGE_N*REALM_HARD[Math.min(7,realmOfG(g))]);
 const xpBase=g=>0.5*Math.pow(1.30,gEq(g));
 const isGate=g=>g<G_MAX&&g%STAGE_N===STAGE_N-1;
@@ -5162,6 +5162,36 @@ Object.assign(TITLES,{p_max:{n:'靈獸之主',src:'任一寵物升到 30 級',ti
    if(!best||p.bond>H.pets[best].bond)best=k;}
   const on=raw.home2&&raw.home2.petOn;H.petOn=on&&H.pets[on]?on:best;return s;};}
 
+/* ================= 全面優化（第一批） ================= */
+/* 1. 銀兩：後期花費降為三分之一；閉關、練武也有少量銀兩；主動玩法獎勵提高 */
+for(const k in ZL_BUILD){const B=ZL_BUILD[k],c0=B.cost;B.cost=l=>Math.round(c0(l)/3);}
+if(typeof HOUSES!=='undefined')for(const H of HOUSES)if(H&&H.cost)H.cost=Math.round(H.cost/3/100)*100;
+{const _tr=tickRates;tickRates=function(s,sec,t,sum){_tr(s,sec,t,sum);if(!s.started||(s.mode!=='practice'&&s.mode!=='neigong'))return;const r=realmOf(s);s.acc.idleSv=(s.acc.idleSv||0)+sec*(.02+.015*r);const n=Math.floor(s.acc.idleSv);if(n){s.acc.idleSv-=n;s.silver+=n;if(sum)sum.silver+=n;}};}
+{const _ft=facTask;facTask=function(s,id){const r=_ft(s,id);if(r&&!r.err&&!r.fail&&s.fac){const v=Math.round((150+realmOf(s)*80)*(1+(s.fac.rank||0)*.25));s.silver+=v;if(Array.isArray(r.lines))r.lines.push('門務津貼：銀兩 +'+fmt(v)+'。');r.bonusSilver=v;}return r;};}
+{const _c=zlCup;zlCup=function(s,ids){const before=s.silver;const r=_c(s,ids);if(!r.err){const add=s.silver-before;s.silver+=add;r.lines[r.lines.length-1]=r.lines[r.lines.length-1].replace(/銀兩 \+[\d,]+/,'銀兩 +'+fmt(add*2));}return r;};}
+/* 2. 主動加速：陪寵物玩、指點弟子，掌門也有少許修為 */
+{const _pp=petPlay;petPlay=function(s,k){const r=_pp(s,k);if(!r.err){const sum=newSummary();addXp(s,stageReq(s.g)*.01,sum);}return r;};}
+{const _zt=zlTeach;zlTeach=function(s,id){const r=_zt(s,id);if(!r.err){const sum=newSummary();addXp(s,stageReq(s.g)*.01,sum);r.txt+='（教學相長，你的修為也有所精進）';}return r;};}
+/* 9. 護山神獸：身邊的寵物化為靈獸（20 級）後，守護門派 */
+const zlBeast=s=>{const k=zl(s)&&petOn(s);return k&&petP(s,k).lv>=20?k:null;};
+{const _zk=zlTick;zlTick=function(s,sec,sum){_zk(s,sec*(zlBeast(s)?1.1:1),sum);};}
+{const _zp=zlPower;zlPower=function(d){return Math.round(_zp(d)*(typeof S!=='undefined'&&S&&zlBeast(S)?1.1:1));};}
+/* 10a. 分舵：下山歷練的弟子在各地開設分舵，寄回的謝禮提高 */
+const ZL_BRANCH_LOCS=['jiangnan','luoyang','hanshan','chaoyin','jing','damo','miao','kunlun','persia','plateau','tianji','yaohua'];
+function zlBranchLoc(s,o){if(o.loc&&LOCS[o.loc])return o.loc;const Z=zlState(s),used=new Set(Z.out.map(x=>x.loc).filter(Boolean));o.loc=ZL_BRANCH_LOCS.find(l=>!used.has(l)&&LOCS[l])||'town';return o.loc;}
+{const _g=zlGraduate;zlGraduate=function(s,id,how){const r=_g(s,id,how);if(!r.err&&how==='out'){const Z=zlState(s),o=Z.out[Z.out.length-1];const l=zlBranchLoc(s,o);addJournal(s,'門派',o.name+'在'+LOCS[l].n+'開設了分舵。');}return r;};}
+{const _zk2=zlTick;zlTick=function(s,sec,sum){const Z=zl(s)&&zlState(s);if(Z)for(const o of Z.out){zlBranchLoc(s,o);o.t2=(o.t2||0)+sec;if(o.t2>=3*3600){o.t2=0;const v=Math.round(200*(1+o.lv*.1));s.silver+=v;if(sum)sum.silver+=v;}}_zk2(s,sec,sum);};}
+/* 10b. 門派月榜：每 30 個江湖日結算一次（只在本機計分） */
+const ZL_RIVALS=['青雲門','瑤華宮','天機閣','百草谷','唐門','威遠鏢局','漕幫','綠林盟','青冥谷'];
+function zlMonth(s){const Z=zlState(s);if(!Z)return null;const m=Math.floor(gday(s)/30);if(!Z.mon||Z.mon.m!==m){const prev=Z.mon;Z.mon={m,fame0:s.fame,cup:0,grad:s.stat.zlGrad||0,res:null};
+  if(prev&&prev.m===m-1){const R=zlRankCalc(s,prev);if(R){Z.mon.res={rank:R.rank,n:R.list.length};const rw=[30000,15000,8000,4000][Math.min(3,R.rank-1)];s.silver+=rw;if(R.rank===1)giveTitle(s,'zl_top');
+   addJournal(s,'門派','上月門派排行第 '+R.rank+' 名，獲得獎勵銀兩 '+fmt(rw)+'。');}}}return Z.mon;}
+function zlScore(s,M){const f=zl(s);return Math.max(0,Math.round((s.fame-M.fame0)*1+M.cup*60+((s.stat.zlGrad||0)-M.grad)*120+f.disciples.length*15+f.disciples.reduce((a,d)=>a+d.lv,0)*2));}
+function zlRankCalc(s,M){if(!zl(s))return null;const me={n:s.fac.name||'你的門派',sc:zlScore(s,M),me:1};const L=ZL_RIVALS.map((n,i)=>({n,sc:Math.round((180+i*35)*(1+M.m*.04)*(.7+(zlHash(M.m,i+3)%600)/1000))}));L.push(me);L.sort((a,b)=>b.sc-a.sc);return {list:L,rank:L.indexOf(me)+1};}
+{const _c2=zlCup;zlCup=function(s,ids){const r=_c2(s,ids);if(!r.err){const M=zlMonth(s);if(M)M.cup+=r.wins;}return r;};}
+{const _tr2=tickRates;tickRates=function(s,sec,t,sum){_tr2(s,sec,t,sum);if(zl(s))zlMonth(s);};}
+Object.assign(TITLES,{zl_top:{n:'天下第一門',src:'門派月榜第一名',tier:7,e:{goldPct:10,xpPct:8,atkPct:4}}});
+
 </script>
 <script>
 'use strict';
@@ -9219,6 +9249,55 @@ function petScene(q){const k=S&&S.started&&petOn(S);if(!k)return;const pl=q.find
 .pt-img{object-fit:contain;max-width:120px}.pt-img.evo{filter:drop-shadow(0 0 6px rgba(255,220,120,.9))}.pt-info{min-width:0}.pt-info h3{margin:0}
 .pt-sk{display:grid;gap:2px;padding:8px;border:2px dashed var(--rule);border-radius:8px}.pt-row{display:flex;gap:10px;align-items:center}.pt-row img{width:44px;object-fit:contain}
 .bt-pet{position:absolute;bottom:6px;height:52px;width:auto;object-fit:contain;pointer-events:none;transform:scaleX(-1);transform-origin:center bottom;animation:btPetHop 1.6s ease-in-out infinite;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}@keyframes btPetHop{0%,40%,100%{transform:scaleX(-1) translateY(0)}10%{transform:scaleX(-1) translateY(-9px)}20%{transform:scaleX(-1) translateY(0)}28%{transform:scaleX(-1) translateY(-5px)}}`;document.head.appendChild(st);})();
+
+/* ================= 全面優化：介面 ================= */
+/* 8. 江湖頁頂部「今日」卡：把散落各頁的待辦集中在一處 */
+function todayList(){if(!S||!S.started)return [];const L=[],d=gday(S),go=(t,k,v)=>`data-act="goTo" data-t="${t}"${k?` data-k="${k}" data-v="${v}"`:''}`;
+ if(typeof signToday==='function'&&!signToday(S))L.push(['📅','今天還沒簽到','data-act="signIn"']);
+ const i=mainCur(S);if(i<MAIN.length&&(MAIN[i].done(S)||mainBossReady(S)))L.push(['📜','主線「'+MAIN[i].n.split('・')[1]+'」可以推進',go('quest')]);
+ if(S.enc&&S.enc.length)L.push(['✨','有 '+S.enc.length+' 件奇遇','data-act="encOpen"']);
+ const ul=typeof unreadLetters==='function'?unreadLetters(S):0;if(ul)L.push(['✉','有 '+ul+' 封未讀書信',go('people','people','mail')]);
+ if(S.fac){const n=facTasks(S).filter(T=>!S.fac.tasks.done[T.id]).length;if(n)L.push(['🏯','門務還有 '+n+' 件',go('cultivate','cult','fac')]);}
+ if(zl(S)){const f=S.fac,ev=f.disciples.filter(x=>x.ev).length;if(ev)L.push(['🧒',ev+' 位弟子有事找你',go('cultivate','cult','fac')]);
+  const C=zlCupInfo(S);if(!C.done&&f.disciples.length)L.push(['⚔','本週論劍大會還沒參加',go('cultivate','cult','fac')]);
+  const t=f.disciples.filter(x=>x.talk!==d&&!x.away).length;if(t)L.push(['📖',t+' 位弟子今天還沒指點',go('cultivate','cult','fac')]);}
+ const pk=petOn(S);if(pk){const p=petP(S,pk);if(p.fed!==d||p.play!==d)L.push(['🐾',PETS[pk].n+'今天還沒'+(p.fed!==d?'餵食':'陪玩'),go('people','people','pet')]);}
+ return L;}
+function todayCard(){const L=todayList();if(!L.length)return '';ui.homeOpen.today=ui.homeOpen.today??1;
+ return fold('today',`今日待辦 <b class="cnt">${L.length}</b>`,`<div class="card today">${L.map(([ic,t,a])=>`<button class="td-row" ${a}><span>${ic}</span><span>${t}</span><i>›</i></button>`).join('')}</div>`);}
+{const _vj=vJianghu;vJianghu=function(){return todayCard()+_vj();};}
+ACT.goTo=d=>{ui.tab=d.t;if(d.k)ui.seg[d.k]=d.v;render();renderTop();const v=$('#view');if(v)v.scrollTop=0;};
+/* 3/4. 主角頁：加成總覽；稱號清單收起來 */
+function bonusRows(){const R=[];const T=TITLES[S.title];if(T)R.push(['稱號「'+T.n+'」',fmtEff(T.e)]);
+ const pk=petOn(S);if(pk)R.push(['寵物・'+PETS[pk].n+'（'+petP(S,pk).lv+' 級）',fmtEff(PETS[pk].e,petMul(petP(S,pk).lv))]);
+ const h=S.house||0;if(h)R.push(['居所・'+HOUSES[h].n,'修為 +'+2*h+'%、體力回復 +'+4*h+'%、財運 +'+h+'%']);
+ if(S.fac){const rk=facRank(S);if(rk>0)R.push(['門派職位','攻擊、防禦 +'+(1.5*rk).toFixed(1)+'%、修為 +'+2*rk+'%']);
+  if(zl(S)){const Z=zlState(S);R.push(['宗風・'+ZL_STYLES[Z.style].n,fmtEff(ZL_STYLES[Z.style].e)]);if(Z.elders.length)R.push(['長老 '+Z.elders.length+' 位',Z.elders.map(e=>ZL_PATHS[e.path].n).join('、')+'方面加成']);if(Z.heir)R.push(['衣缽傳人','攻擊 +5%、修為 +5%、防禦 +3%']);}}
+ return R;}
+{const _vt=vTitles;vTitles=function(){let h=_vt();const st=computeStats(S);
+  const sum=`<div class="card bonus"><h3>加成總覽</h3><div class="kv"><div><span>攻擊</span><b>${fmt(st.atk)}</b></div><div><span>防禦</span><b>${fmt(st.def)}</b></div><div><span>氣血</span><b>${fmt(st.hp)}</b></div><div><span>修為加成</span><b>+${r1(st.xpPct||0)}%</b></div><div><span>財運</span><b>+${r1(st.goldPct||0)}%</b></div><div><span>體力回復</span><b>+${r1(st.stamRegen||0)}%</b></div></div>
+   ${bonusRows().map(([a,b])=>`<div class="bn-row"><b>${a}</b><span class="sub">${b}</span></div>`).join('')}<span class="mini">稱號只計算佩戴中的一個。</span></div>`;
+  h=h.replace(/<div class="lbl">(稱號 [^<]*)<\/div>(<div class="card">[\s\S]*)$/,(m,a,b)=>sum+fold('titles',a+'・更換稱號',b));return h;};}
+/* 5/6. 生活頁：只留「家園・行囊・烹飪」；據點與善舉併入家園；外觀改由主角頁「換裝」進入 */
+{const NS=[['home','家園'],['bag','行囊'],['cook','烹飪']];
+ const _vl=vLife;vLife=function(){if(ui.seg.life==='estate')ui.seg.life='home';let h=_vl();h=h.replace(/<div class="seg">[\s\S]*?<\/div>/,seg('life',NS));
+  if(ui.seg.life==='look')h=h.replace(seg('life',NS),seg('life',NS)+`<button class="btn ghost sm" data-act="goTo" data-t="people" data-k="people" data-v="me">← 回到主角</button>`);return h;};
+ const _vh=vHome;vHome=function(){return _vh()+fold('estate','據點與善舉',vEstate());};}
+/* 7. 收藏頁：每一類收起來，只顯示進度 */
+{const _cs=colSection;colSection=function(title,all,owned,rend){const h=_cs(title,all,owned,rend);if(!h)return h;return h.replace(/^<div class="lbl">([^<]*)<\/div>([\s\S]*)$/,(m,a,b)=>fold('col_'+title,a,b));};
+ const _mc=mileCard;mileCard=function(){const h=_mc();const n=mileList(S).filter(m=>m.done&&!m.got).length;return fold('mile',`🏆 收藏里程碑${n?` <b class="cnt">${n}</b>`:''}`,h);};}
+/* 9/10. 門派頁：護山神獸、分舵、月榜 */
+{const _zs=zlStyleCard;zlStyleCard=function(){const bk=zlBeast(S);return _zs()+(bk?`<div class="eff">護山神獸：${PETS[bk].n}守護山門——弟子修為、論劍戰力 +10%</div>`:`<div class="mini">把身邊的寵物養到 20 級化為靈獸，就能成為護山神獸（弟子修為、論劍戰力 +10%）。</div>`);};}
+{const _ss=zlSectHTML;zlSectHTML=function(){let h=_ss();const Z=zlState(S),bk=zlBeast(S);
+  h=h.replace(/<span class="zl-rk">下山歷練<\/span><div class="mini">不時寄回謝禮<\/div>/g,()=>'<span class="zl-rk">分舵主</span><div class="mini">不時寄回謝禮</div>');
+  for(const o of Z.out){const l=zlBranchLoc(S,o);h=h.replace(`<b>${esc(o.name)}</b> <span class="zl-rk">分舵主</span><div class="mini">不時寄回謝禮</div>`,`<b>${esc(o.name)}</b> <span class="zl-rk">${LOCS[l].n}分舵</span><div class="mini">每三個時辰寄回銀兩</div>`);}
+  const M=zlMonth(S),R=zlRankCalc(S,M),left=30-gday(S)%30;
+  h+=fold('zl_rank',`門派月榜 <span class="mini">第 ${R.rank} 名</span>`,`<div class="card">${R.list.slice(0,6).map((x,i)=>`<div class="rk-row${x.me?' me':''}"><b>${i+1}</b><span>${esc(x.n)}</span><i>${fmt(x.sc)}</i></div>`).join('')}${R.rank>6?`<div class="rk-row me"><b>${R.rank}</b><span>${esc(S.fac.name)}</span><i>${fmt(R.list[R.rank-1].sc)}</i></div>`:''}
+   <span class="mini">本月還有 ${left} 個江湖日結算。聲望、論劍勝場、弟子成長和出師都會加分。第 1 名銀兩 30,000 和稱號「天下第一門」，第 2、3 名也有獎勵。${M.res?'上月排第 '+M.res.rank+' 名。':''}</span></div>`);
+  return h;};}
+(function(){const st=document.createElement('style');st.textContent=`.today{display:grid;gap:0;padding:4px 10px}.td-row{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:6px;padding:9px 2px;border-bottom:2px dotted var(--rule);font-size:15px}.td-row:last-child{border-bottom:0}.td-row i{opacity:.6;font-style:normal}
+.bonus .kv{grid-template-columns:repeat(3,1fr)}.bn-row{display:grid;gap:0;padding:5px 0;border-bottom:1px dotted var(--rule)}.bn-row:last-of-type{border-bottom:0}
+.rk-row{display:grid;grid-template-columns:28px 1fr auto;gap:6px;padding:6px 4px;border-bottom:1px dotted var(--rule)}.rk-row.me{background:rgba(212,160,60,.18);border-radius:6px;font-weight:700}.rk-row i{font-style:normal}`;document.head.appendChild(st);})();
 
 </script>
 <script>
