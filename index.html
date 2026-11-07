@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-190303";</script>
+<script>window.XY_BUILD="20261107-191611";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4772,6 +4772,11 @@ const _normalizeTW2=normalize;normalize=function(raw,now){const s=_normalizeTW2(
  if(Number.isFinite(R.swDay)){T.swDay=R.swDay;T.swN=R.swN|0;}
  /* 舊存檔：已經打過的守關，補發信物 */
  for(let f=10;f<=T.best;f+=10){const B=towerBossOf(f);T.tok[B.tok]=1;}}return s;};
+
+/* ---------- 平衡：挑戰強敵的銀兩獎勵降為十分之一 ---------- */
+const _challengeBAL=challenge;challenge=function(s,id){const before=s.silver;const o=_challengeBAL(s,id);const g=s.silver-before;
+ if(o&&!o.err&&g>0){const keep=Math.max(1,Math.round(g/10));s.silver=before+keep;if(o.sum)o.sum.silver=Math.max(0,(o.sum.silver||0)-(g-keep));
+  if(o.lines)o.lines=o.lines.map(l=>l.replace('銀兩 +'+g,'銀兩 +'+keep));}return o;};
 
 </script>
 <script>
