@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-134815";</script>
+<script>window.XY_BUILD="20261107-134828";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -400,7 +400,7 @@ function artCoef(t,wt){
  if(t==='fist')return (wt==='gauntlet'||wt==='none')?1:.3;
  if(t==='pole')return (wt==='spear'||wt==='staff')?1:.3;
  return 1;}
-const STAT_NAMES={atk:'攻擊',def:'防禦',hp:'氣血',spd:'速度',crit:'暴擊',critDmg:'暴擊傷害',dodge:'閃避',dbl:'連擊',stun:'擊暈',pierce:'破甲',reflect:'反震',lifesteal:'吸血',opening:'首回合增傷',xpPct:'修為加成',profPct:'熟練加成',wis:'悟性',stamRegen:'體力回復',expSpeed:'探索加速',atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',goldPct:'財運'};
+const STAT_NAMES={atk:'攻擊',def:'防禦',hp:'氣血',spd:'速度',crit:'暴擊',critDmg:'暴擊傷害',dodge:'閃避',dbl:'連擊',stun:'擊暈',pierce:'破甲',reflect:'反震',lifesteal:'吸血',opening:'首回合增傷',xpPct:'修為加成',profPct:'熟練加成',wis:'悟性',stamRegen:'體力回復',expSpeed:'探索加速',atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',goldPct:'財運',herbBonus:'採藥'};
 const PCT_KEYS=new Set(['crit','critDmg','dodge','dbl','stun','pierce','reflect','lifesteal','opening','xpPct','profPct','stamRegen','expSpeed','atkPct','defPct','hpPct','goldPct']);
 const r1=v=>Math.round(v*10)/10;
 function fmtEff(e,coef){coef=coef??1;return Object.entries(e).map(([k,v])=>STAT_NAMES[k]+(v<0?' ':' +')+r1(v*coef)+(PCT_KEYS.has(k)?'%':'')).join('、');}
@@ -6888,7 +6888,7 @@ const _vPeople=vPeople;
 vPeople=function(){const h=seg('people',[['me','主角'],['npc','江湖人物'],['fac','門派'],['jr','閱歷']]);
  const v=ui.seg.people;if(v==='npc')return h+vNpcs();if(v==='fac')return h+vFaction();if(v==='jr')return h+vJournal();
  const old=_vPeople();const cut=old.indexOf('<div class="lbl">江湖人物</div>');return h+(cut>0?old.slice(0,cut):old)+vTitles();};
-function vTitles(){const T=TITLES[S.title];const EN={xpPct:'修為',goldPct:'銀兩',expSpeed:'探索速度'};const eff=o=>Object.entries(o).map(([k,v])=>(EN[k]||STAT_NAMES[k]||k)+' +'+v+(PCT_KEYS.has(k)?'%':'')).join('、')||'—';
+function vTitles(){const T=TITLES[S.title];const EN={xpPct:'修為',goldPct:'銀兩',expSpeed:'探索速度',herbBonus:'採藥'};const eff=o=>Object.entries(o).map(([k,v])=>(EN[k]||STAT_NAMES[k]||k)+' +'+v+(PCT_KEYS.has(k)?'%':'')).join('、')||'—';
  let h=`<div class="card"><div class="npc-head">${avatarHTML(true)}<div style="min-width:0"><h3>${T.n}</h3><span class="sub">頭像框：${FRAME_TIERS[T.tier].n}・聲望 ${fmt(S.fame)}</span><span class="eff">稱號加成：${eff(T.e)}</span></div></div></div>`;
  h+=`<div class="lbl">稱號 ${S.titles.length}/${Object.keys(TITLES).length}</div><div class="card">${Object.entries(TITLES).map(([id,t])=>{const own=S.titles.includes(id);
   return lineRow(`<b${own?'':' style="color:var(--rice2)"'}>${own?t.n:'？？？'}</b> <span class="mini">${FRAME_TIERS[t.tier].n}</span><div class="sub">${t.realm!=null?'晉升「'+REALM_NAMES[t.realm]+'」':t.src}・${eff(t.e)}</div>`,own?(S.title===id?'<span class="stage-pill">使用中</span>':`<button class="btn sm ghost" data-act="setTitle" data-id="${id}">佩戴</button>`):'');}).join('')}</div>`;
