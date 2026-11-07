@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-222012";</script>
+<script>window.XY_BUILD="20261107-231336";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5244,6 +5244,46 @@ delete HOME2.fish;
   const E=ENCOUNTERS.find(e=>e.zlPre!=null&&e.loc===s.loc&&(!e.cond||e.cond(s)));s.flags[k]=d;if(!E)return;const L=encState(s);if(L.includes(E.id))return;if(Math.random()>=.6)return;
   if(L.length>=ENC_MAX)L.pop();L.unshift(E.id);if(sum&&sum.ext)sumLine(sum,'奇遇：'+E.n+'。');};}
 
+/* ================= 江湖傳聞 2.0：更多有用的傳聞，聽完還有每日閒談 ================= */
+/* 舊的「後續擴充預告」改成實際內容 */
+(function(){const R=id=>RUMORS.find(r=>r.id===id);const set=(id,o)=>{const r=R(id);if(r)Object.assign(r,o);};
+ set('r7',{n:'洛陽武市的擂台',d:'洛陽武市的擂台上，有個自稱「洛陽第一刀」的刀客，連勝了三十場。',fx:'聲望 +10',on:s=>{s.fame+=Math.round(10*fameMult(s));}});
+ set('r8',{n:'寒山古寺的夜鐘',d:'寒山古寺的鐘，半夜總會自己響三聲。寺裡的僧人說，那是一位老和尚在等一個人。',fx:'感悟 +10',on:s=>{s.insight=Math.min(100,s.insight+10);}});
+ set('r9',{n:'天下會武',d:'三年一度的天下會武又要開了。據說今年的彩頭，是一把沒有名字的劍。',fx:'聲望 +15',on:s=>{s.fame+=Math.round(15*fameMult(s));}});})();
+const RUMOR_MORE=[];
+/* 一、未來弟子的消息：聽過之後，到那裡一定會遇見 */
+for(const P of ZL_PRE){const N=zlNamed(P.p);RUMOR_MORE.push({id:'rz'+P.p,n:(LOCS[P.loc]?LOCS[P.loc].n:'')+'的'+P.n,d:{0:'翠竹林裡有個砍柴的少年，每天打一千下拳，說要變得跟陸捕頭一樣強。',1:'天機閣有個書生，讀遍了閣裡的書，卻被一隻鵝追得滿山跑。',2:'臨江渡口有個臉上帶疤的小子，偷魚的身手比漕幫的人還快。',3:'青雲門山門外，常有個少年對著空氣練劍，從早練到晚。',4:'洛陽武市有個胖小子，一口氣能吃十個饅頭，鏢局的人都認得他。',5:'寒山古寺有個掃雪的小沙彌，脖子上掛著一塊誰也看不懂的玉珮。',6:'翠竹林有個小藥童，認得三百種草藥，卻一見血就發抖。',7:'青石鎮市集新開了一個兵器攤，攤主是個算盤打得劈啪響的小姑娘。',8:'潮音港有個漁家姑娘，能在浪裡憋氣一炷香，說什麼都不肯回家。',9:'京城的巷子裡，常有個穿紫衣的姑娘提著燈籠問路，看樣子像是宮裡出來的。',10:'瑤華仙境的桃樹上，常倒掛著一個綁橘色髮帶的小姑娘。',11:'崑崙雪坡上有個短髮少女，能在百步外射下雪鴞的一根羽毛。'}[P.p],
+  fx:'到「'+(LOCS[P.loc]?LOCS[P.loc].n:'')+'」一定能遇見'+(N.male?'他':'她'),cond:s=>!s.flags['zlpre'+P.p]&&realmOf(s)>=1,on:s=>{s.flags['zlhint'+P.p]=1;}});}
+/* 二、江湖人物的喜好 */
+for(const id in NPCS){const L=NPCS[id].likes;if(!L)continue;const top=Object.entries(L).sort((a,b)=>b[1]-a[1])[0];if(!top||!ITEMS[top[0]])continue;
+ RUMOR_MORE.push({id:'rl_'+id,n:NPCS[id].n+'的心頭好',d:'聽熟人說，'+NPCS[id].n+'最喜歡的東西是「'+ITEMS[top[0]].n+'」，收到時總會笑得合不攏嘴。',fx:'得知'+NPCS[id].n+'最喜歡的禮物',
+  cond:s=>typeof npcMet==='function'&&npcMet(s,id)&&!(s.npc[id].known&&s.npc[id].known[top[0]]),on:s=>{const N=s.npc[id];N.known=N.known||{};N.known[top[0]]=top[1];}});}
+/* 三、藏寶與小道消息 */
+RUMOR_MORE.push(
+ {id:'rt1',n:'沉船裡的寒鐵',d:'臨江渡口下游沉過一艘鏢船，船上載著一塊千年寒鐵，至今沒人撈得起來。',fx:'千年寒鐵 ×1',cond:s=>realmOf(s)>=3,on:s=>{gainItem(s,'hantie',1);}},
+ {id:'rt2',n:'藥王的私藏',d:'百草谷的老藥王去世前，把一株千年靈芝埋在翠竹林的老竹根下。',fx:'靈芝 ×2',cond:s=>realmOf(s)>=2,on:s=>{gainItem(s,'lingzhi',2);}},
+ {id:'rt3',n:'天外隕鐵',d:'天機閣的人說，十年前有顆流星落在邙山，坑裡的石頭會發光。',fx:'天外隕鐵 ×1',cond:s=>realmOf(s)>=5,on:s=>{gainItem(s,'yuntie',1);}},
+ {id:'rt4',n:'鏢局的懸賞',d:'威遠鏢局懸賞捉拿一夥劫鏢的山賊，提供消息的人也有賞錢。',fx:'銀兩 +800',cond:s=>realmOf(s)>=2,on:s=>{s.silver+=800;}},
+ {id:'rt5',n:'說書人的祕密',d:'悅來客棧的說書人，年輕時據說是個了不起的人物。他手上那把舊摺扇，從不離身。',fx:'感悟 +15',cond:s=>realmOf(s)>=4,on:s=>{s.insight=Math.min(100,s.insight+15);}},
+ {id:'rt6',n:'九幽的印記',d:'有人在京城的當鋪裡，看到一枚刻著九個圓圈和一隻眼睛的令牌。',fx:'聲望 +20',cond:s=>realmOf(s)>=6,on:s=>{s.fame+=Math.round(20*fameMult(s));}},
+ {id:'rt7',n:'海外三山',d:'鄭孤帆說，蓬萊之外還有方丈與瀛洲，只有在大霧的夜裡才看得見。',fx:'東海珍珠 ×2',cond:s=>realmOf(s)>=5,on:s=>{gainItem(s,'zhenzhu',2);}},
+ {id:'rt8',n:'雪域的佛音',d:'日光城的老喇嘛說，雪山上有一座無人的寺，每年雪化時會傳出誦經聲。',fx:'修為小幅提升',cond:s=>realmOf(s)>=6,on:s=>{const sum=newSummary();addXp(s,stageReq(s.g)*.05,sum);}},
+);
+RUMORS.push(...RUMOR_MORE.filter(r=>!RUMORS.some(x=>x.id===r.id)));
+/* 聽過弟子消息後，到那裡必定遇見 */
+{const _tr4=tickRates;tickRates=function(s,sec,t,sum){_tr4(s,sec,t,sum);if(!s.started||!s.loc)return;const E=ENCOUNTERS.find(e=>e.zlPre!=null&&e.loc===s.loc&&s.flags['zlhint'+e.zlPre]&&(!e.cond||e.cond(s)));if(!E)return;
+  const L=encState(s);if(L.includes(E.id))return;if(L.length>=ENC_MAX)L.pop();L.unshift(E.id);if(sum&&sum.ext)sumLine(sum,'奇遇：'+E.n+'。');};}
+/* 每日閒談：傳聞都聽完了，還能聽聽閒話 */
+const GOSSIP=[
+ ['賣包子的大娘說，最近麵粉漲價了，包子要小一圈。','silver',60],['鄰桌的鏢師說，北邊的路不太平，要多帶幾個人。','fame',4],['一個書生說，他昨晚夢到自己中了狀元。','insight',4],
+ ['掌櫃抱怨，最近來吃飯的江湖人越來越多，碗都不夠用。','silver',80],['有人說青雲門的沈師姐最近笑得多了。','fame',3],['一個老漁夫說，今年的魚特別肥。','silver',50],
+ ['說書人說到精彩處，滿堂喝彩，你也跟著拍了拍手。','insight',5],['兩個小乞丐在門口比誰討到的錢多，被店小二趕跑了。','silver',40],['有人說洛陽的牡丹今年開得特別早。','insight',3],
+ ['一個商人說，西域來的葡萄酒在京城賣到了天價。','silver',100],['一個老婆婆說，她年輕時見過真正的大俠，跟你有點像。','fame',6],['角落裡有人在下棋，下了一整天，誰也沒贏。','insight',6],
+];
+function gossip(s){const G=s.gossip&&s.gossip.day===gday(s)?s.gossip:(s.gossip={day:gday(s),n:0});if(G.n>=3)return {err:'今天已經聽夠了，明天再來'};if(s.silver<20)return {err:'需要 20 兩'};
+ s.silver-=20;G.n++;advTime(s,30);const [t,k,v]=GOSSIP[((gday(s)*3+G.n+((s.created>>>0)%997))>>>0)%GOSSIP.length];let got;
+ if(k==='silver'){s.silver+=v;got='銀兩 +'+v;}else if(k==='fame'){const f=Math.round(v*fameMult(s));s.fame+=f;got='聲望 +'+f;}else{const a=Math.min(100-s.insight,v);s.insight+=a;got='感悟 +'+a;}return {t,got,left:3-G.n};}
+
 </script>
 <script>
 'use strict';
@@ -7058,10 +7098,10 @@ function itemDetail(u){const it=S.inv.find(i=>i.u===u);if(!it)return closeModal(
 function innModal(){const unread=RUMORS.filter(r=>r.cond(S)&&!S.col.rumors.includes(r.id));const now=Date.now();
  openModal(`${backRow('悅來客棧')}<p class="sub">掌櫃的撥著算盤：「客官，打尖還是住店？」</p>
  <div class="card"><h3>休息</h3><span class="sub">小睡兩個時辰，體力 +40（60 兩）</span><button class="btn" data-act="innRest" ${S.silver>=60&&S.stam<100?'':'disabled'}>住店休息</button></div>
- <div class="card"><h3>飲茶</h3><span class="sub">30 分鐘內武功熟練提升，有時能聽到鄰桌閒談。使用中的茶具：${TEASETS[S.teaset].n}（+${TEASETS[S.teaset].b}%）${S.buffs.tea>now?'・茶香尚餘 '+fmtTime((S.buffs.tea-now)/1000):''}</span>
+ <div class="card"><h3>飲茶</h3><span class="sub">30 分鐘內武功熟練提升，有時能聽到鄰桌閒談。${S.buffs.tea>now?'・茶香尚餘 '+fmtTime((S.buffs.tea-now)/1000):''}</span>
   <div class="row"><button class="btn ghost" data-act="innTea" data-own="0" ${S.silver>=10?'':'disabled'}>店家粗茶<small>10 兩・熟練 +${10+TEASETS[S.teaset].b}%</small></button><button class="btn jade" data-act="innTea" data-own="1" ${has(S,'tea')?'':'disabled'}>自沏碧螺春<small>持有 ${S.mat.tea||0}・熟練 +${15+TEASETS[S.teaset].b}%</small></button></div></div>
  <div class="card"><h3>江湖傳聞牆</h3><span class="sub">打賞說書人 10 兩，聽一則傳聞（一個時辰）。讀過的傳聞收在「收藏」。</span>
-  ${unread.length?unread.map(r=>lineRow(`<b>${r.n}</b><div class="sub">效果：${r.fx}</div>`,`<button class="btn sm" data-act="readRumor" data-id="${r.id}" ${S.silver>=10?'':'disabled'}>打聽</button>`)).join(''):'<p class="sub" style="margin:0">最近沒有新鮮事。境界提升後，會聽到更多消息。</p>'}</div>`,'inn',innModal);}
+  ${unread.length?unread.slice(0,3).map(r=>lineRow(`<b>${r.n}</b><div class="sub">效果：${r.fx}</div>`,`<button class="btn sm" data-act="readRumor" data-id="${r.id}" ${S.silver>=10?'':'disabled'}>打聽</button>`)).join(''):'<p class="sub" style="margin:0">最近沒有新鮮事。境界提升、結識更多人後，會聽到更多消息。</p>'}${unread.length>3?`<span class="mini">還有 ${unread.length-3} 則傳聞等著你打聽。</span>`:''}<div class="row"><button class="btn ghost sm" data-act="gossip" ${S.silver>=20?'':'disabled'}>聽聽鄰桌閒談<small>20 兩・每日 3 次</small></button></div></div>`,'inn',innModal);}
 
 function marketModal(){const T=ui.mkTab;const tabs=[['food','食材'],['cloth','布料・裁縫'],['herb','藥材'],['gear','兵器'],['misc','雜貨'],['sell','出售'],['stroll','逛市集']];
  let body='';const buyRow=k=>lineRow(`${itemIco(k)}<b>${matN(k)}</b> <span class="mini">持有 ${S.mat[k]||0}</span>${ITEMS[k].d?`<div class="sub">${ITEMS[k].d}</div>`:''}`,`<div class="qty"><button class="btn sm" data-act="buyMat" data-k="${k}" data-n="1" ${S.silver>=itemPrice(k,S)?'':'disabled'}>${fmt(itemPrice(k,S))} 兩</button><button class="btn sm ghost" data-act="buyMat" data-k="${k}" data-n="5" ${S.silver>=itemPrice(k,S)*5?'':'disabled'}>×5</button></div>`);
@@ -8217,11 +8257,11 @@ async function makeShareCard(){const W=1080,H=1350,c=document.createElement('can
  const mainN=(S.main&&S.main.claimed.length)||0,met=Object.keys(NPCS).filter(id=>S.npc[id]&&S.npc[id].rel>=150).length;
  const rows=[['江湖風雲錄','已完成 '+mainN+' / '+MAIN.length+' 回'],['試劍塔','第 '+((S.tower&&S.tower.best)||0)+' 層'],['知己','共 '+met+' 位'],['收藏服裝',S.col.outfits.length+' / '+Object.keys(OUTFITS).length],['居所',(typeof HOUSES!=='undefined'?HOUSES[S.house||0].n:'')],(S.reb&&S.reb.n?['輪迴',rebName(S.reb.n)+'・天賦 '+Object.values(S.reb.perk).reduce((a,b)=>a+b,0)+' 點']:['聲望',fmt(S.fame||0)])];
  rows.forEach(([a,b],i)=>{const cx=90+(i%2)*470,cy=960+Math.floor(i/2)*92;x.fillStyle='rgba(255,255,255,.08)';x.fillRect(cx,cy-60,440,84);x.fillStyle='#c7b893';x.font=F(30,700);x.fillText(a,cx+20,cy-24);x.fillStyle='#ffffff';x.font=F(38);x.fillText(b,cx+20,cy+14);});
- x.fillStyle='rgba(251,231,160,.85)';x.font=F(40);x.fillText('來江湖找我切磋吧！',90,H-125);x.fillStyle='rgba(251,231,160,.7)';x.font=F(30,700);x.fillText('musical-daifuku-0cffad.netlify.app',90,H-78);
+ x.fillStyle='rgba(251,231,160,.85)';x.font=F(40);x.fillText('來江湖找我切磋吧！',90,H-125);x.fillStyle='rgba(251,231,160,.7)';x.font=F(30,700);x.fillText('bubupixel.github.io/xiaoyao-game',90,H-78);
  return c;}
 ACT.shareCard=async()=>{try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;}catch(e){}const c=await makeShareCard();const url=c.toDataURL('image/jpeg',.9);
  openModal(`${backRow('分享角色卡')}<img src="${url}" alt="我的角色卡" class="share-img"><p class="sub">長按圖片可以儲存，或者直接分享給朋友。</p><div class="row"><button class="btn" data-act="shareNative">分享…</button></div>`,undefined);ui.shareCanvas=c;};
-ACT.shareNative=()=>{const c=ui.shareCanvas;if(!c)return;c.toBlob(b=>{const f=new File([b],'xiaoyao-card.jpg',{type:'image/jpeg'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:'逍遙江湖',text:'來江湖找我切磋吧！'}).catch(()=>{});else toast('這部裝置不支援直接分享，請長按圖片儲存');},'image/jpeg',.9);};
+ACT.shareNative=()=>{const c=ui.shareCanvas;if(!c)return;c.toBlob(b=>{const f=new File([b],'xiaoyao-card.jpg',{type:'image/jpeg'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:'逍遙江湖',text:'來江湖找我切磋吧！ https://bubupixel.github.io/xiaoyao-game/'}).catch(()=>{});else toast('這部裝置不支援直接分享，請長按圖片儲存');},'image/jpeg',.9);};
 
 /* ---------- 行動 ---------- */
 Object.assign(ACT,{
@@ -9445,6 +9485,7 @@ const estImg=(k,cls)=>typeof EST_IMG_RAW!=='undefined'&&EST_IMG_RAW[k]?`<img cla
   return h.replace(`<div class="card hi"><h3>${esc(S.name)}的`,`<div class="card hi est-main">${estImg(e.type,'est-hero')}<h3>${esc(S.name)}的`);};}
 {const _vh3=vHome;vHome=function(){const e=S.estate;return _vh3().replace('<span>🏮</span>',`<span>${estImg(e&&e.type||'teahouse','est-ic')||'🏮'}</span>`);};}
 (function(){const st=document.createElement('style');st.textContent='.est-pick{display:grid;grid-template-columns:96px 1fr;gap:4px 10px;align-items:center}.est-pick .est-img{grid-row:span 3;width:96px;height:96px;object-fit:contain}.est-pick>.btn{grid-column:1/-1}.est-main .est-hero{display:block;width:170px;height:170px;object-fit:contain;margin:-6px auto 2px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}.h2-est .est-ic{width:40px;height:40px;object-fit:contain;display:block}.h2-est{grid-template-columns:44px 1fr auto}';document.head.appendChild(st);})();
+ACT.gossip=()=>{const r=gossip(S);if(r.err)return toast(r.err);save();SFX.story&&SFX.story();msgModal('鄰桌閒談',`<p>${r.t}</p><p class="eff">${r.got}</p><p class="mini">今天還能聽 ${r.left} 次。</p>`,'inn');renderTop();};
 
 </script>
 <script>
