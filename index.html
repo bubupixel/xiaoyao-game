@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-234350";</script>
+<script>window.XY_BUILD="20261108-082956";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -648,6 +648,9 @@ function mergeSummary(a,b){if(!a)return b;for(const k of ['xp','silver','insight
 const CN='〇一二三四五六七八九十';
 function cnNum(n){if(n<=10)return n===10?'十':CN[n];if(n<20)return '十'+CN[n-10];if(n%10===0)return CN[n/10]+'十';return CN[Math.floor(n/10)]+'十'+CN[n%10];}
 const SHICHEN=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+/* 體力與感悟上限：可透過「氣海淬體」與「靈台問心」突破 */
+function stamMax(s){const n=s&&s.lb&&s.lb.st;return 100+(Number.isFinite(n)?Math.max(0,Math.min(10,n|0)):0)*10;}
+function insMax(s){const n=s&&s.lb&&s.lb.in;return 100+(Number.isFinite(n)?Math.max(0,Math.min(10,n|0)):0)*10;}
 const gday=s=>Math.floor(s.gm/1440);
 const ghour=s=>Math.floor(s.gm%1440/60);
 const isNight=s=>{const h=ghour(s);return h>=19||h<5;};
@@ -695,7 +698,7 @@ function normalize(raw,now){
    if(prev!=null&&n>prev+3){bad=prev;break;}prev=n;}
   if(bad!=null&&bad<s.g){s.g=bad;s.xp=0;s.gfixFrom=Math.floor(raw.g);}}
  s.gfix=1;
- s.g=Math.max(0,Math.min(G_MAX,Math.floor(s.g)));s.xp=Math.max(0,s.xp);s.silver=Math.max(0,s.silver);s.stam=Math.max(0,Math.min(100,s.stam));s.insight=Math.max(0,Math.min(100,s.insight));
+ s.g=Math.max(0,Math.min(G_MAX,Math.floor(s.g)));s.xp=Math.max(0,s.xp);s.silver=Math.max(0,s.silver);s.stam=Math.max(0,Math.min(stamMax(s),s.stam));s.insight=Math.max(0,Math.min(insMax(s),s.insight));
  for(const k in s.mat){if(!ITEMS[k]||typeof s.mat[k]!=='number'||!Number.isFinite(s.mat[k])||s.mat[k]<0)delete s.mat[k];else s.mat[k]=Math.floor(s.mat[k]);}
  const arts={};if(raw.arts&&typeof raw.arts==='object')for(const id in raw.arts){const a=raw.arts[id];if(ARTS[id]&&a&&a.lv>=1)arts[id]={lv:Math.min(10,Math.floor(a.lv)),prof:Math.max(0,+a.prof||0)};}
  for(const id of ['basic_sword','long_fist','breathing'])if(!arts[id])arts[id]={lv:1,prof:0};s.arts=arts;
@@ -791,8 +794,8 @@ function tickRates(s,sec,t,sum){
  const st=computeStats(s),m=MODES[s.mode];
  addXp(s,xpRate(s,st,null,t)*sec,sum);
  const pr=profRates(s,st);for(const id in pr)addProf(s,id,pr[id]*sec,sum);
- if(m.insight){const a=Math.min(100-s.insight,m.insight*(1+st.wis/40)*sec);if(a>0){s.insight+=a;sum.insight+=a;}}
- const sa=Math.min(100-s.stam,sec/72*(1+st.stamRegen/100));if(sa>0){s.stam+=sa;sum.stam+=sa;}
+ if(m.insight){const a=Math.min(insMax(s)-s.insight,m.insight*(1+st.wis/40)*sec);if(a>0){s.insight+=a;sum.insight+=a;}}
+ const sa=Math.min(stamMax(s)-s.stam,sec/72*(1+st.stamRegen/100));if(sa>0){s.stam+=sa;sum.stam+=sa;}
  if(m.gather){const tr=bestDepth(s),mult=1+tr*.4;
   accrue(s,'silver',sec*.05*(1+tr*.7)*(1+st.goldPct/100),sum);
   accrue(s,'herb',sec/80*mult*(1+st.herbBonus*.2),sum);accrue(s,'bamboo',sec/150,sum);accrue(s,'ore',sec/120*mult,sum);
@@ -827,7 +830,7 @@ function breakInfo(s){if(!isGate(s.g))return null;const to=realmOf(s)+1,B=BREAK[
  return {to,conds:c,ok:c.every(x=>x.ok),chance};}
 function doBreak(s){const bi=breakInfo(s);if(!bi||!bi.ok)return {ok:false,msg:'突破條件尚未滿足'};
  if(Math.random()*100<bi.chance){s.xp-=stageReq(s.g);s.g++;s.insight=0;addLog(s,'衝破瓶頸，晉升「'+REALM_NAMES[bi.to]+'」！');const sum=newSummary();addXp(s,.0001,sum);checkUnlocks(s,sum);return {ok:true,success:true,to:bi.to,unlocked:sum.unlocked};}
- s.insight=Math.min(100,s.insight+12);addLog(s,'衝關未果，真氣回落；感悟 +12，修為無損。');return {ok:true,success:false};}
+ s.insight=Math.min(insMax(s),s.insight+12);addLog(s,'衝關未果，真氣回落；感悟 +12，修為無損。');return {ok:true,success:false};}
 
 /* ---------- 戰鬥 ---------- */
 function enemyBase(L,boss){const e={atk:(10+5*L+.4*L*L)*1.15,def:(4+2.5*L+.2*L*L)*1.1,hp:(100+35*L+3*L*L)*1.2,spd:9+L,crit:5+L*.4,critDmg:50,dodge:3+L*.25,dbl:L*.25,stun:0,pierce:0,reflect:0,lifesteal:0,opening:0};
@@ -891,11 +894,11 @@ function challenge(s,id){const C=CHAL.find(c=>c.id===id);if(!locUnlocked(s,C.loc
 function expDur(s,ei){const st=computeStats(s);return Math.round(EXPLORES[ei].dur*(1-Math.min(40,st.expSpeed)/100));}
 function startExp(s,ei,t){if(s.exp)return '已有探索進行中';if(!expUnlocked(s,ei))return '此地尚未解鎖';const c=EXPLORES[ei].cost;if(s.stam<c)return '體力不足（需 '+c+'）';
  s.stam-=c;s.exp={e:ei,start:t,end:t+expDur(s,ei)*1000};return null;}
-function recallExp(s){if(!s.exp)return;s.stam=Math.min(100,s.stam+Math.floor(EXPLORES[s.exp.e].cost/2));s.exp=null;}
+function recallExp(s){if(!s.exp)return;s.stam=Math.min(stamMax(s),s.stam+Math.floor(EXPLORES[s.exp.e].cost/2));s.exp=null;}
 const EXP_EVENTS=[
  (s,E)=>{const id=s.mainMartial;return {txt:'偶遇白鬚老者，指點「'+ARTS[id].n+'」數招。',fn:(s,sum)=>addProf(s,id,25*(1+E.L),sum)};},
- (s,E)=>({txt:'在山腳茶棚小憩，體力 +15。',fn:(s,sum)=>{const a=Math.min(15,100-s.stam);s.stam+=a;sum.stam+=a;}}),
- (s,E)=>({txt:'觀瀑布有感，感悟 +5。',fn:(s,sum)=>{const a=Math.min(5,100-s.insight);s.insight+=a;sum.insight+=a;}}),
+ (s,E)=>({txt:'在山腳茶棚小憩，體力 +15。',fn:(s,sum)=>{const a=Math.min(15,stamMax(s)-s.stam);s.stam+=a;sum.stam+=a;}}),
+ (s,E)=>({txt:'觀瀑布有感，感悟 +5。',fn:(s,sum)=>{const a=Math.min(5,insMax(s)-s.insight);s.insight+=a;sum.insight+=a;}}),
  (s,E)=>({txt:'拾得一個遺落的錢袋。',fn:(s,sum)=>{const v=Math.round(20+E.L*20);s.silver+=v;sum.silver+=v;}}),
  (s,E)=>({txt:'幫樵夫抬柴，對方送你一罈桂花酒。',fn:(s,sum)=>gainItem(s,'wine',1,sum)}),
  (s,E)=>({txt:'溪邊撿到幾塊好礦石。',fn:(s,sum)=>gainItem(s,'ore',2,sum)}),
@@ -917,7 +920,7 @@ function resolveExp(s,t,sum){const ei=s.exp.e,E=EXPLORES[ei];s.exp=null;const r=
  s.stat.explores++;s.expResult=r;sum.exps.push(r);addLog(s,'自'+E.n+'探索歸來：勝 '+r.wins+' 場'+(r.loss?'，負傷而回':'')+'。');}
 
 /* ---------- 生活：客棧 ---------- */
-function innRest(s){if(s.silver<60)return '銀兩不足（需 60）';if(s.stam>=100)return '體力已滿';s.silver-=60;s.stam=Math.min(100,s.stam+40);advTime(s,120,1);addLog(s,'在客棧小睡兩個時辰，神清氣爽。');return null;}
+function innRest(s){if(s.silver<60)return '銀兩不足（需 60）';if(s.stam>=stamMax(s))return '體力已滿';s.silver-=60;s.stam=Math.min(stamMax(s),s.stam+40);advTime(s,120,1);addLog(s,'在客棧小睡兩個時辰，神清氣爽。');return null;}
 function innTea(s,own,now){let txt;
  if(own){if(!has(s,'tea'))return {err:'沒有碧螺春'};useItems(s,{tea:1});}else{if(s.silver<10)return {err:'銀兩不足（需 10）'};s.silver-=10;}
  const pct=(own?15:10)+TEASETS[s.teaset].b;s.buffs.teaPct=Math.max(s.buffs.tea>now?s.buffs.teaPct:0,pct);s.buffs.tea=Math.min(now+2*3600e3,Math.max(now,s.buffs.tea)+1800e3);advTime(s,60);
@@ -982,12 +985,12 @@ function gatherHerb(s){if(s.stam<5)return {err:'體力不足（需 5）'};s.stam
  if(Math.random()<.6){gainItem(s,'bamboo',1,sum);parts.push('竹筍 ×1');}if(realmOf(s)>=1&&Math.random()<.12){gainItem(s,'lingzhi',1,sum);parts.push('靈芝 ×1');}
  return {txt:'在竹林中採得 '+parts.join('、')+'。'};}
 function craft(s,id){const rc=RECIPES.find(r=>r.id===id);if(!rc)return '沒有這個方子';if(!s.col.recipes.includes(id))return '還不會這個方子';const e=useItems(s,rc.need);if(e)return e;gainItem(s,id,1);s.stat.cooked++;advTime(s,30);return null;}
-function useItem(s,k,now){if(!has(s,k))return '沒有'+ITEMS[k].n;const st=v=>{if(s.stam>=100)return '體力已滿';s.stam=Math.min(100,s.stam+v);return null;};let e=null;
+function useItem(s,k,now){if(!has(s,k))return '沒有'+ITEMS[k].n;const st=v=>{if(s.stam>=stamMax(s))return '體力已滿';s.stam=Math.min(stamMax(s),s.stam+v);return null;};let e=null;
  const ext=(key,ms,cap)=>{s.buffs[key]=Math.min(now+(cap||7200e3),Math.max(now,s.buffs[key])+ms);};
  switch(k){case'f_veg':e=st(15);break;case'f_soup':e=st(25);break;case'f_cake':ext('fwis',1800e3);break;case'f_pork':ext('fatk',1800e3);break;
-  case'f_chicken':s.stam=Math.min(100,s.stam+30);ext('fxp',1800e3);break;case'p_stam':e=st(20);break;
+  case'f_chicken':s.stam=Math.min(stamMax(s),s.stam+30);ext('fxp',1800e3);break;case'p_stam':e=st(20);break;
   case'p_qi':if(s.buffs.qi-now>=4*3600e3-1)return '藥力已達上限';ext('qi',1800e3,4*3600e3);break;
-  case'p_break':if(s.insight>=100)return '感悟已滿';s.insight=Math.min(100,s.insight+25);break;default:return '這個不能直接使用';}
+  case'p_break':if(s.insight>=insMax(s))return '感悟已滿';s.insight=Math.min(insMax(s),s.insight+25);break;default:return '這個不能直接使用';}
  if(e)return e;useItems(s,{[k]:1});return null;}
 
 /* ---------- 鐵匠舖 ---------- */
@@ -1324,7 +1327,7 @@ tickRates=function(s,sec,t,sum){sum=sum||newSummary();_tickRates(s,sec,t,sum);if
  // 住客
  if(s.residents.includes('sw')){s.estate.woundAcc+=sec/7200;const w=Math.floor(s.estate.woundAcc);if(w>0){s.estate.woundAcc-=w;gainItem(s,'m_wound',w,sum);if(sum)sumLine(sum,'蘇晚晴替你備好了金創藥。');}}
  // 正道：感悟加成
- if(s.fac&&s.fac.id==='zhengdao'&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(100-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.3);if(a>0){s.insight+=a;sum.insight+=a;}}
+ if(s.fac&&s.fac.id==='zhengdao'&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(insMax(s)-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.3);if(a>0){s.insight+=a;sum.insight+=a;}}
  // 自立門戶：弟子
  if(s.fac&&s.fac.id==='zili'){for(const dc of s.fac.disciples){
    if(dc.job==='train'){extAccrue(s,'fame',.003*dc.apt*sec*fameMult(s),sum);dc.xp=(dc.xp||0)+sec*dc.apt;if(dc.xp>=7200*(dc.lv||1)){dc.xp=0;dc.lv=(dc.lv||1)+1;if(sum)sumLine(sum,'弟子'+dc.name+'修為精進，升至 '+dc.lv+' 重。');}}
@@ -1516,7 +1519,7 @@ function lyShop(s){const r=realmOf(s),d=gday(s);const pool=Object.keys(BASES).fi
  for(let i=0;i<4&&pool.length;i++){h=(h*1103515245+12345)>>>0;const b=pool[h%pool.length];if(used.has(b))continue;used.add(b);const q=BASES[b].req>r?2:(h%3===0?3:2);out.push({b,q,price:Math.round(itemValue({b,q,p:0,fx:[]})*2.4),id:d+'_'+b});}return out;}
 function lyBuy(s,i){const e=lyShop(s)[i];if(!e)return '貨品已更新';s.loc2.bought=s.loc2.bought||{};if(s.loc2.bought[e.id])return '這件已經賣給你了';if(BASES[e.b].req>realmOf(s)+1)return '境界不足';if(s.silver<e.price)return '銀兩不足';if(bagItems(s).length>=BAG_MAX)return '行囊已滿';
  s.silver-=e.price;s.loc2.bought[e.id]=1;const it=makeItem(s,e.b,e.q);s.inv.push(it);addLog(s,'在名兵坊購得'+QUAL[e.q].n+'「'+itemName(it)+'」。');return null;}
-function zenBell(s){const d=gday(s);if(s.loc2.zenDay===d)return {err:'今天已經聽過晨鐘了'};s.loc2.zenDay=d;advTime(s,120);const a=Math.min(100-s.insight,15+(s.residents.includes('hm')?10:0));s.insight+=a;addProf(s,s.mainInner,90*(1+realmOf(s)),null);
+function zenBell(s){const d=gday(s);if(s.loc2.zenDay===d)return {err:'今天已經聽過晨鐘了'};s.loc2.zenDay=d;advTime(s,120);const a=Math.min(insMax(s)-s.insight,15+(s.residents.includes('hm')?10:0));s.insight+=a;addProf(s,s.mainInner,90*(1+realmOf(s)),null);
  return {txt:'鐘聲一響，萬籟俱寂。你隨僧眾禪坐兩個時辰，心如止水。感悟 +'+Math.round(a)+'，「'+ARTS[s.mainInner].n+'」熟練增加。'};}
 function almsGive(s){const d=gday(s);if(s.loc2.almsDay===d)return {err:'今天已經施過藥了'};const e=useItems(s,{m_wound:2});if(e)return {err:'需要金創藥 ×2'};s.loc2.almsDay=d;advTime(s,60);
  const f=Math.round(10*fameMult(s));s.fame+=f;addRel(s,'hm',5);return {txt:'你在寺門前替山下的病人敷藥。慧明合十道謝：「施主慈悲。」聲望 +'+f+'，慧明好感 +5。'};}
@@ -1588,7 +1591,7 @@ NPC_EVENTS.hm=[
   onDone:s=>{s.npc.hm.met=true;}},
  {id:'hm2',n:'雪夜抄經',cond:s=>s.npc.hm.rel>=30&&s.loc==='hanshan'&&isNight(s),hint:s=>s.npc.hm.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）他會在藏經閣抄經',
   text:['藏經閣裡只點著一盞油燈。慧明一筆一畫地抄著醫經，手指凍得發僵。','「方丈說抄經能靜心。」他笑了笑，「貧僧只是想把醫書多抄幾份，送到山下。」'],
-  ch:[{t:'坐下陪他一起抄',fn:s=>{addRel(s,'hm',14);const a=Math.min(100-s.insight,20);s.insight+=a;return '兩人抄到天亮，燈油都燒乾了。你覺得心裡從未這麼安靜。感悟 +'+Math.round(a)+'，好感 +14。';}},
+  ch:[{t:'坐下陪他一起抄',fn:s=>{addRel(s,'hm',14);const a=Math.min(insMax(s)-s.insight,20);s.insight+=a;return '兩人抄到天亮，燈油都燒乾了。你覺得心裡從未這麼安靜。感悟 +'+Math.round(a)+'，好感 +14。';}},
    {t:'替他沏一壺熱茶',need:s=>has(s,'tea')?null:'需要 1 包碧螺春',fn:s=>{useItems(s,{tea:1});addRel(s,'hm',18);return '他捧著茶杯暖手，笑得像個孩子：「施主，這是貧僧今年喝過最好的茶。」好感 +18。';}}]},
  {id:'hm3',n:'怪病之源',cond:s=>s.npc.hm.rel>=80&&realmOf(s)>=3&&s.loc==='hanshan',hint:s=>s.npc.hm.rel<80?'關係達到「信任」':'晉升一流高手',
   text:['慧明在寒潭邊撿到一個空藥瓶，瓶底刻著詭異的蛇紋。','「有人在潭水裡下毒。」他第一次沉下臉，「今晚，那人還會再來。」'],
@@ -1604,7 +1607,7 @@ NPC_EVENTS.hm=[
  {id:'hm5',n:'宿命・寒山不寒',destiny:1,cond:s=>s.residents.includes('hm')&&aff(s,'hm')>=100,hint:s=>!s.residents.includes('hm')?'邀請他入住你的居所（他會常來借住）':'好感達到 100',
   text:['慧明在你的庭院裡種了一株寒梅。他說，這是寒山上那株老梅的枝條。','「方丈說，貧僧塵緣未了。」他低頭笑了，「貧僧想，所謂塵緣，大概就是施主這樣的朋友。」'],
   ch:[{t:'「那就讓這份塵緣，長長久久。」',fn:s=>{s.npcBuff.hm=1;addRel(s,'hm',10);giveTitle(s,'n_hm');return '寒梅在第二年開了花。獲得永久被動「明心見性」與稱號「寒山知音」。';}},
-   {t:'「下次換我上山，陪你掃雪。」',fn:s=>{s.npcBuff.hm=1;addRel(s,'hm',8);giveTitle(s,'n_hm');const a=Math.min(100-s.insight,30);s.insight+=a;return '他愣了愣，笑得眉眼彎彎：「一言為定。」感悟 +'+Math.round(a)+'，獲得永久被動「明心見性」與稱號「寒山知音」。';}}]},
+   {t:'「下次換我上山，陪你掃雪。」',fn:s=>{s.npcBuff.hm=1;addRel(s,'hm',8);giveTitle(s,'n_hm');const a=Math.min(insMax(s)-s.insight,30);s.insight+=a;return '他愣了愣，笑得眉眼彎彎：「一言為定。」感悟 +'+Math.round(a)+'，獲得永久被動「明心見性」與稱號「寒山知音」。';}}]},
 ];
 NPC_EVENTS.ht=[
  {id:'ht1',n:'擂台下的刀客',cond:s=>s.loc==='luoyang',hint:'到洛陽武市的擂台看看',
@@ -1653,18 +1656,18 @@ const _npcHelp=npcHelp;npcHelp=function(s,id){if(id==='sq'||id==='sw')return _np
  s.stam-=H.stam;N.helpDay=gday(s);advTime(s,60);addRel(s,id,5);const r=realmOf(s);
  if(id==='jy'){const v=Math.round(40*(1+r*.8));s.silver+=v;gainItem(s,'fish',1);return {txt:'你們撐了一個時辰的貨船，他把一半工錢分給你。銀兩 +'+v+'、鮮魚 +1，好感 +5。'};}
  if(NPCS[id].helpFn)return NPCS[id].helpFn(s,r);
- if(id==='hm'){const a=Math.min(100-s.insight,8);s.insight+=a;addProf(s,s.mainInner,50*(1+r),null);return {txt:'你們在藏經閣抄了一個時辰的經，窗外雪落無聲。感悟 +'+Math.round(a)+'、心法熟練增加，好感 +5。'};}
+ if(id==='hm'){const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;addProf(s,s.mainInner,50*(1+r),null);return {txt:'你們在藏經閣抄了一個時辰的經，窗外雪落無聲。感悟 +'+Math.round(a)+'、心法熟練增加，好感 +5。'};}
  const v=Math.round(70*(1+r));addProf(s,s.mainMartial,v,null);return {txt:'他的刀又快又沉，你咬牙撐了一個時辰。「'+ARTS[s.mainMartial].n+'」熟練 +'+v+'，好感 +5。'};};
 
 /* ---------- 掛機：住客產出、新地點開放提示 ---------- */
 const _tickRates2=tickRates;tickRates=function(s,sec,t,sum){_tickRates2(s,sec,t,sum);if(!s.loc2||!sum)return;
  if(s.residents.includes('jy')){s.acc.jyfish=(s.acc.jyfish||0)+sec/14400;const w=Math.floor(s.acc.jyfish);if(w>0){s.acc.jyfish-=w;gainItem(s,'fish',w,sum);if(sum.ext)sumLine(sum,'江映川帶回了新鮮的江魚。');}}
- if(s.residents.includes('hm')&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(100-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.3);if(a>0){s.insight+=a;sum.insight+=a;}}
+ if(s.residents.includes('hm')&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(insMax(s)-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.3);if(a>0){s.insight+=a;sum.insight+=a;}}
  for(const k in LOCS){const L=LOCS[k];if(L.realm!=null&&locUnlocked(s,k)&&!s.jkeys['loc_'+k]){addJournal(s,'江湖','打聽到前往「'+L.n+'」的路。','loc_'+k);if(sum.ext)sumLine(sum,'新地點開放：'+L.n+'！到「江湖」頁前往。');}}};
 
 /* 新食物 */
 const _useItem=useItem;useItem=function(s,k,now){if(k!=='f_fish')return _useItem(s,k,now);if(!has(s,k))return '沒有'+ITEMS[k].n;now=now||nowT();
- s.stam=Math.min(100,s.stam+20);s.buffs.fxp=Math.min(now+7200e3,Math.max(now,s.buffs.fxp||0)+1800e3);useItems(s,{[k]:1});return null;};
+ s.stam=Math.min(stamMax(s),s.stam+20);s.buffs.fxp=Math.min(now+7200e3,Math.max(now,s.buffs.fxp||0)+1800e3);useItems(s,{[k]:1});return null;};
 
 /* ---------- 預設值與舊存檔遷移 ---------- */
 const _newState2=newState;newState=function(now){const s=_newState2(now);for(const id in NPCS)if(!s.npc[id])s.npc[id]=newNpc();s.loc2=loc2Defaults();return s;};
@@ -1688,7 +1691,7 @@ const romanceNeed=(s,id)=>s.romance&&s.romance!==id?'你已有心上人（'+NPCS
 function startRomance(s,id){s.romance=id;s.flags['rom_'+id]=1;giveTitle(s,ROMANCE[id].title);addJournal(s,'羈絆','與'+NPCS[id].n+'互訴心意，成為彼此的心上人。','rom_'+id);}
 function endRomance(s){const id=s.romance;if(!id)return '目前沒有心上人';s.romance=null;addJournal(s,'羈絆','與'+NPCS[id].n+'說開了，往後以知己相待。');addLog(s,'與'+NPCS[id].n+'回到知己的情誼。');return null;}
 function npcDate(s,id){if(s.romance!==id)return {err:'只有心上人才能相伴同遊'};const N=s.npc[id];if(N.dateDay===gday(s))return {err:'今天已經一起出遊過了'};N.dateDay=gday(s);advTime(s,60);addRel(s,id,3);
- const now=nowT();s.stam=Math.min(100,s.stam+20);s.buffs.fxp=Math.min(now+7200e3,Math.max(now,s.buffs.fxp||0)+1800e3);
+ const now=nowT();s.stam=Math.min(stamMax(s),s.stam+20);s.buffs.fxp=Math.min(now+7200e3,Math.max(now,s.buffs.fxp||0)+1800e3);
  return {txt:pick(ROMANCE[id].date)+'體力 +20，30 分鐘修為 +10%。'};}
 NPC_EVENTS.jy.push({id:'jy6',n:'心意・江上河燈',romance:1,cond:s=>!!s.npcBuff.jy&&aff(s,'jy')>=100&&s.loc==='jiangnan'&&isNight(s),hint:s=>s.loc!=='jiangnan'?'夜裡到臨江渡口找他':'夜裡（戌時以後）江上會放河燈',
  text:['夜裡，江面上漂滿了河燈。江映川撐著船，在燈與燈之間慢慢穿過去。','他把一盞親手糊的河燈遞給你，難得結巴：「我……我不太會說話。就是……以後的日子，我想都跟你一起過。」'],
@@ -1942,25 +1945,25 @@ const _extStatMods2=extStatMods;extStatMods=function(s,st){_extStatMods2(s,st);i
  if(s.npcBuff.hy){st.dodge+=4;st.stamRegen+=15;}if(s.npcBuff.mh){st.crit+=4;st.atkPct+=5;}if(s.npcBuff.wr){st.xpPct+=6;st.wis+=3;}
  if(s.residents){if(s.residents.includes('hy'))st.wis+=2;if(s.residents.includes('mh'))st.pierce+=4;if(s.residents.includes('wr'))st.goldPct+=8;}};
 const _tickRatesS=tickRates;tickRates=function(s,sec,t,sum){_tickRatesS(s,sec,t,sum);if(!s.fac||!sum)return;
- if(s.fac.id==='yaohua'&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(100-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.2);if(a>0){s.insight+=a;sum.insight+=a;}}
+ if(s.fac.id==='yaohua'&&MODES[s.mode].insight){const st=computeStats(s);const a=Math.min(insMax(s)-s.insight,MODES[s.mode].insight*(1+st.wis/40)*sec*.2);if(a>0){s.insight+=a;sum.insight+=a;}}
  if(s.fac.id==='shegu'&&MODES[s.mode].gather){s.acc.sgherb=(s.acc.sgherb||0)+sec/80*.3;s.acc.sgdan=(s.acc.sgdan||0)+sec/3600;
   const h=Math.floor(s.acc.sgherb),d=Math.floor(s.acc.sgdan);if(h){s.acc.sgherb-=h;gainItem(s,'herb',h,sum);}if(d){s.acc.sgdan-=d;gainItem(s,'shedan',d,sum);}}};
 const _resolveExpT=resolveExp;resolveExp=function(s,t,sum){const ei=s.exp.e,E=EXPLORES[ei];_resolveExpT(s,t,sum);const r=s.expResult;if(!r||r.loss||!s.fac||s.fac.id!=='tianji')return;
  if(Math.random()<.3){const it=dropGear(s,E.tier,.6,1,sum);if(it)r.lines.push('（天機推演）算準了一處暗格，得 '+QUAL[it.q].n+'「'+itemName(it)+'」。');}};
 /* 新料理與丹藥 */
 const _useItemS=useItem;useItem=function(s,k,now){if(k!=='p_she'&&k!=='f_hualu')return _useItemS(s,k,now);if(!has(s,k))return '沒有'+ITEMS[k].n;now=now||nowT();
- if(k==='p_she'){s.stam=Math.min(100,s.stam+15);s.buffs.fatk=Math.min(now+7200e3,Math.max(now,s.buffs.fatk||0)+1800e3);}
- else{s.stam=Math.min(100,s.stam+25);s.buffs.fwis=Math.min(now+7200e3,Math.max(now,s.buffs.fwis||0)+1800e3);}useItems(s,{[k]:1});return null;};
+ if(k==='p_she'){s.stam=Math.min(stamMax(s),s.stam+15);s.buffs.fatk=Math.min(now+7200e3,Math.max(now,s.buffs.fatk||0)+1800e3);}
+ else{s.stam=Math.min(stamMax(s),s.stam+25);s.buffs.fwis=Math.min(now+7200e3,Math.max(now,s.buffs.fwis||0)+1800e3);}useItems(s,{[k]:1});return null;};
 
 /* ---------- 地點活動 ---------- */
 function yaochiBath(s){const d=gday(s);if(s.loc3.bathDay===d)return {err:'今天已經在瑤池沐浴過了'};s.loc3.bathDay=d;advTime(s,60);const night=isNight(s);
- const st=Math.min(100-s.stam,30),a=Math.min(100-s.insight,night?14:8);s.stam+=st;s.insight+=a;
+ const st=Math.min(stamMax(s)-s.stam,30),a=Math.min(insMax(s)-s.insight,night?14:8);s.stam+=st;s.insight+=a;
  return {txt:(night?'月光灑在瑤池上，水面像撒了一層碎銀。':'溫潤的池水泛著淡淡花香。')+'體力 +'+Math.round(st)+'、感悟 +'+Math.round(a)+'。'};}
 function catchSnake(s){const d=gday(s),L=s.loc3;if(L.snakeDay!==d){L.snakeDay=d;L.snakeN=0;}if(L.snakeN>=3)return {err:'今天蛇都躲起來了，明天再來'};if(s.stam<6)return {err:'體力不足（需 6）'};
  s.stam-=6;L.snakeN++;advTime(s,60);if(Math.random()<.18){const v=Math.round(8+realmOf(s)*4);s.stam=Math.max(0,s.stam-v);return {txt:'你被一條竹葉青咬了一口！好在牠沒什麼毒，只是體力 -'+v+'。'};}
  const n=1+(Math.random()<.35?1:0);gainItem(s,'shedan',n);gainItem(s,'herb',1);return {txt:'你按墨蘅教的手法，輕輕取了蛇膽又把蛇放回林中。蛇膽 ×'+n+'、草藥 ×1。'};}
 const FORTUNES=[['上上籤','紫氣東來，諸事皆宜。',s=>{s.estate.tip=true;return '下次探索必有寶物。';}],['上籤','財星高照。',s=>{const v=Math.round(80*(1+realmOf(s)));s.silver+=v;return '銀兩 +'+v+'。';}],
- ['中籤','靜待時機。',s=>{const a=Math.min(100-s.insight,12);s.insight+=a;return '感悟 +'+Math.round(a)+'。';}],['中籤','貴人在側。',s=>{const ids=Object.keys(NPCS).filter(id=>s.npc[id].met||(id==='sq'&&s.npc.sq.ev.sq1!=null));if(!ids.length)return '只是現在還沒遇到。';const id=pick(ids);addRel(s,id,4);return NPCS[id].n+'好感 +4。';}],
+ ['中籤','靜待時機。',s=>{const a=Math.min(insMax(s)-s.insight,12);s.insight+=a;return '感悟 +'+Math.round(a)+'。';}],['中籤','貴人在側。',s=>{const ids=Object.keys(NPCS).filter(id=>s.npc[id].met||(id==='sq'&&s.npc.sq.ev.sq1!=null));if(!ids.length)return '只是現在還沒遇到。';const id=pick(ids);addRel(s,id,4);return NPCS[id].n+'好感 +4。';}],
  ['下籤','小心行事。',s=>{gainItem(s,'m_wound',2);return '溫如晦塞給你兩帖金創藥：「有備無患。」';}]];
 function stargaze(s){const d=gday(s);if(s.loc3.starDay===d)return {err:'今天已經求過籤了'};s.loc3.starDay=d;advTime(s,60);const f=pick(FORTUNES);const fx=f[2](s);return {txt:'觀星台上抽得「'+f[0]+'」：'+f[1]+fx};}
 
@@ -1971,7 +1974,7 @@ Object.assign(NPCS,{
   voice:'輕快活潑，愛用「欸」「好稀奇」，常常一句話問三個問題。',
   likes:{f_cake:15,f_hualu:15,huagao:10,tea:8,cloth2:6},dislikes:{ore:-3,iron:-3,shedan:-4},
   lines:[['欸？你是凡人？好稀奇！你們人間是不是有一種叫「糖葫蘆」的東西？','這朵花叫「醉月」，晚上會發光喔！','宮主說凡人很危險……你看起來不危險呀。'],['你又來啦！今天帶了什麼好吃的？','我昨天偷偷練了新的步法，你看你看！','雲海下面就是你住的地方嗎？好想去看看。'],['跟你在一起的時候，時間過得好快。仙境明明沒有時間的。','你說的人間故事，我每一個都記得。','結界的事……我不想讓你擔心，可是我只想告訴你。'],['你是我在人間……不，在哪裡都是，最好的知己！','以後你去哪裡，我都想跟著看看。','欸，你笑起來的樣子，比醉月花還好看。']],
-  help:{n:'陪她練輕功',stam:6,d:'身法與閃避增進'},helpFn:(s,r)=>{const id=s.mainInner;addProf(s,id,40*(1+r),null);const a=Math.min(100-s.insight,5);s.insight+=a;return {txt:'你們在花瓣間追逐了一個時辰，她笑聲像風鈴。心法熟練增加、感悟 +'+Math.round(a)+'，好感 +5。'};},
+  help:{n:'陪她練輕功',stam:6,d:'身法與閃避增進'},helpFn:(s,r)=>{const id=s.mainInner;addProf(s,id,40*(1+r),null);const a=Math.min(insMax(s)-s.insight,5);s.insight+=a;return {txt:'你們在花瓣間追逐了一個時辰，她笑聲像風鈴。心法熟練增加、感悟 +'+Math.round(a)+'，好感 +5。'};},
   giftTxt:['「哇——！這是什麼？好香好香！」她抱著禮物轉了三圈。','「謝謝你～我要把它供起來！……還是吃掉好了。」','「凡人的東西真有趣。」','「欸……這個硬硬冷冷的，我不太懂耶。」她歪著頭。'],
   reqs:[{n:'一塊桂花糕給她嚐嚐',need:{f_cake:1},rel:12,silver:80},{n:'兩匹綢緞做新衣',need:{cloth2:2},rel:12,silver:140},{n:'一包碧螺春給宮主',need:{tea:1},rel:12,silver:100},{n:'三份花露修補花海',need:{huagao:3},rel:16,silver:200}]},
  mh:{n:'墨蘅',male:1,title:'青冥蛇谷少主・毒手',loc:'shegu',spot:'古樹下',look:{gender:'m',hair:'long',hcolor:'ink',outfit:'qingming',acc:'none',wt:'none'},
@@ -1987,7 +1990,7 @@ Object.assign(NPCS,{
   voice:'慢條斯理，愛打啞謎：「呵呵，天機不可洩漏……不過可以洩漏一點點。」',
   likes:{xingsha:15,tea:12,wine:6,iron:8},dislikes:{fish:-2,shedan:-2},
   lines:[['呵呵，你的腳步聲，我等了三年。','天上的星，地上的人，都有各自的軌跡。','坐吧，老頭子看不見，但聽得見你心跳得很快。'],['又來陪老頭子下棋？你這步棋，下得急了。','今晚北斗偏了一分，有趣。','機關和人心一樣，找到樞紐就好辦。'],['我這雙眼睛，換來了一卷天機。你想聽嗎？','你的命星很亮，亮得老頭子都有點擔心。','閣裡的孩子們都說你人好。我早就算到了。'],['老頭子這輩子算盡天機，唯獨沒算到能交到你這個朋友。','往後天機閣的門，你推開就是。','來，最後一局棋，這次老頭子讓你。']],
-  help:{n:'陪他下棋',stam:4,d:'感悟與修為'},helpFn:(s,r)=>{const a=Math.min(100-s.insight,8);s.insight+=a;const sum=newSummary();addXp(s,stageReq(s.g)*.04,sum);return {txt:'你們下了一個時辰的棋，他每一步都說出你下一步要下哪裡。感悟 +'+Math.round(a)+'、修為小增，好感 +5。'};},
+  help:{n:'陪他下棋',stam:4,d:'感悟與修為'},helpFn:(s,r)=>{const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;const sum=newSummary();addXp(s,stageReq(s.g)*.04,sum);return {txt:'你們下了一個時辰的棋，他每一步都說出你下一步要下哪裡。感悟 +'+Math.round(a)+'、修為小增，好感 +5。'};},
   giftTxt:['「呵呵呵，好東西！」他摸著禮物，笑得鬍子一翹一翹。','「有心了，有心了。」','「嗯，老頭子收下了。」','「這個嘛……老頭子用不上，你自己留著吧。」'],
   reqs:[{n:'兩份星砂修補星盤',need:{xingsha:2},rel:14,silver:200},{n:'一包碧螺春',need:{tea:1},rel:12,silver:90},{n:'一塊玄鐵修補渾天儀',need:{iron:1},rel:16,silver:240},{n:'六塊礦石修機關',need:{ore:6},rel:10,silver:110}]},
 });
@@ -1995,7 +1998,7 @@ NPC_EVENTS.hy=[
  {id:'hy1',n:'花雨初逢',cond:s=>s.loc==='yaohua',hint:'到瑤華仙境走走',
   text:['花海深處，一陣花雨落下。一個紫衣少女從桃樹上翻身跳下，差點撞上你。','她湊近看了你好一會兒：「欸？你是凡人？好稀奇！你是怎麼上來的？雲海下面是什麼樣子？你吃過糖葫蘆嗎？」'],
   ch:[{t:'遞給她一塊桂花糕',need:s=>has(s,'f_cake')?null:'需要 1 塊桂花糕',fn:s=>{useItems(s,{f_cake:1});addRel(s,'hy',14);learnRecipe(s,'f_hualu');return '她咬了一口，眼睛瞪得圓圓的：「這是什麼？！比花露還甜！」她叫花見月，是瑤華宮的聖女。她教你用花露做桂花糕的方法，說要「交換」。習得食譜「花露桂花糕」，好感 +14。';}},
-   {t:'陪她坐下來看花',fn:s=>{addRel(s,'hy',9);learnRecipe(s,'f_hualu');const a=Math.min(100-s.insight,8);s.insight+=a;return '你們在花雨中坐了一個時辰，她問了你一百個人間的問題。她叫花見月，臨走前教你一道仙境點心的做法。習得食譜「花露桂花糕」、感悟 +'+Math.round(a)+'，好感 +9。';}},
+   {t:'陪她坐下來看花',fn:s=>{addRel(s,'hy',9);learnRecipe(s,'f_hualu');const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;return '你們在花雨中坐了一個時辰，她問了你一百個人間的問題。她叫花見月，臨走前教你一道仙境點心的做法。習得食譜「花露桂花糕」、感悟 +'+Math.round(a)+'，好感 +9。';}},
    {t:'「在下誤入仙境，這就告辭。」',fn:s=>{addRel(s,'hy',6);learnRecipe(s,'f_hualu');return '「欸欸欸，別走！」她拉住你的袖子，「我叫花見月，你下次還要來喔！」她硬塞給你一張點心方子。習得食譜「花露桂花糕」，好感 +6。';}}],
   onDone:s=>{s.npc.hy.met=true;}},
  {id:'hy2',n:'人間燈火',cond:s=>s.npc.hy.rel>=30&&s.loc==='town'&&isNight(s),hint:s=>s.npc.hy.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）到青石鎮，好像有人偷偷下山了',
@@ -2048,13 +2051,13 @@ NPC_EVENTS.mh=[
 NPC_EVENTS.wr=[
  {id:'wr1',n:'盲眼觀星',cond:s=>s.loc==='tianji',hint:'到天機閣走走',
   text:['觀星台上，一位白髮老人仰著頭，雙眼蒙著一條布。','你還沒開口，他就笑了：「呵呵，你的腳步聲，老頭子等了三年。坐吧，陪我看看星星。」'],
-  ch:[{t:'「前輩看不見，怎麼看星？」',fn:s=>{addRel(s,'wr',10);const a=Math.min(100-s.insight,10);s.insight+=a;return '「用心看。」他指著天上，一顆一顆說出星名，竟分毫不差。他叫溫如晦，是天機閣的老閣主。感悟 +'+Math.round(a)+'，好感 +10。';}},
+  ch:[{t:'「前輩看不見，怎麼看星？」',fn:s=>{addRel(s,'wr',10);const a=Math.min(insMax(s)-s.insight,10);s.insight+=a;return '「用心看。」他指著天上，一顆一顆說出星名，竟分毫不差。他叫溫如晦，是天機閣的老閣主。感悟 +'+Math.round(a)+'，好感 +10。';}},
    {t:'安靜地陪他坐著',fn:s=>{addRel(s,'wr',12);gainItem(s,'xingsha',1);return '你們坐了一個時辰，誰也沒說話。臨走時，他塞給你一把亮晶晶的砂：「星砂，留個紀念。」他叫溫如晦。星砂 +1，好感 +12。';}},
    {t:'「三年？前輩怎麼知道我會來？」',fn:s=>{addRel(s,'wr',8);return '「天機不可洩漏。」他捋著鬍子，「……不過可以洩漏一點點：你的命星，和一個失蹤的劍客連在一起。」他叫溫如晦。好感 +8。';}}],
   onDone:s=>{s.npc.wr.met=true;}},
  {id:'wr2',n:'機關棋局',cond:s=>s.npc.wr.rel>=30&&s.loc==='tianji'&&isNight(s),hint:s=>s.npc.wr.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）他會在觀星台下棋',
   text:['棋盤是機關做的，每下一子，棋盤下的齒輪就轉一圈。','「這盤棋，閣裡沒人下贏過老頭子。」他笑，「你要不要試試？」'],
-  ch:[{t:'認真下完這一局',fn:s=>{addRel(s,'wr',16);const a=Math.min(100-s.insight,15);s.insight+=a;return '你輸了，但只輸了半子。他沉默了很久：「……三十年來，最接近的一次。」感悟 +'+Math.round(a)+'，好感 +16。';}},
+  ch:[{t:'認真下完這一局',fn:s=>{addRel(s,'wr',16);const a=Math.min(insMax(s)-s.insight,15);s.insight+=a;return '你輸了，但只輸了半子。他沉默了很久：「……三十年來，最接近的一次。」感悟 +'+Math.round(a)+'，好感 +16。';}},
    {t:'「棋下不贏，請前輩喝茶。」',need:s=>has(s,'tea')?null:'需要 1 包碧螺春',fn:s=>{useItems(s,{tea:1});addRel(s,'wr',18);return '他捧著茶，笑得像個孩子：「下棋是輸贏，喝茶是緣分。你懂。」好感 +18。';}}]},
  {id:'wr3',n:'七星連珠',cond:s=>s.npc.wr.rel>=80&&realmOf(s)>=4&&s.loc==='tianji',hint:s=>s.npc.wr.rel<80?'關係達到「信任」':'晉升絕頂高手',
   text:['百年一遇的七星連珠就在今夜。溫如晦卻在推演到一半時吐了一口血。','「有人在閣裡動了手腳……渾天儀被改過。」他抓住你的手，「去機關迴廊盡頭，把天機傀儡停下來。」'],
@@ -2065,7 +2068,7 @@ NPC_EVENTS.wr=[
  {id:'wr4',n:'天機一卷',cond:s=>s.npc.wr.rel>=150&&s.loc==='tianji',hint:s=>s.npc.wr.rel<150?'關係達到「知己」':'到天機閣找他',
   text:['溫如晦把一件繡滿星辰的袍子交給你。','「這是天機閣歷代閣主穿的。老頭子不是要你接閣主——」他笑了笑，「只是想讓它，跟著一個好人走江湖。」'],
   ch:[{t:'「我會穿著它，走遍天下。」',fn:s=>{addRel(s,'wr',10);giveCol(s,'outfits','tianjipao');return '「好，好。」他摸索著拍拍你的肩。獲得服裝「天機星袍」，好感 +10。';}},
-   {t:'「前輩教我看星，我替前輩看天下。」',fn:s=>{addRel(s,'wr',16);giveCol(s,'outfits','tianjipao');const a=Math.min(100-s.insight,25);s.insight+=a;return '他愣了愣，大笑起來：「這句話，老頭子要寫進天機閣的閣志裡！」感悟 +'+Math.round(a)+'，獲得服裝「天機星袍」，好感 +16。';}}],
+   {t:'「前輩教我看星，我替前輩看天下。」',fn:s=>{addRel(s,'wr',16);giveCol(s,'outfits','tianjipao');const a=Math.min(insMax(s)-s.insight,25);s.insight+=a;return '他愣了愣，大笑起來：「這句話，老頭子要寫進天機閣的閣志裡！」感悟 +'+Math.round(a)+'，獲得服裝「天機星袍」，好感 +16。';}}],
   after:'他的故事將在「宿命」章節繼續。'},
  {id:'wr5',n:'宿命・命星',destiny:1,cond:s=>s.residents.includes('wr')&&aff(s,'wr')>=100,hint:s=>!s.residents.includes('wr')?'邀請他來你的居所小住':'好感達到 100',
   text:['溫如晦在你的庭院裡擺了一張小棋盤，每晚都要「看」一會兒星星。','「老頭子算了一輩子別人的命，」他說，「最後才明白，最好的一卦，是遇見你。」'],
@@ -2387,7 +2390,7 @@ function buyRecipe(s,id){const r=RECIPE_SHOP.find(x=>x.id===id);if(!r)return '�
 const FOOD_FX={f_shaobing:{stam:20},f_tanghulu:{stam:10,fwis:1},f_lianzi:{stam:30,fxp:1},f_tangyuan:{stam:25,tea:10},f_suanmei:{stam:15,fatk:1},f_babao:{stam:45},f_niurou:{stam:20,fatk:1},f_yuebing:{fxp:1,fwis:1}};
 const _useItemF=useItem;useItem=function(s,k,now){const F=FOOD_FX[k];if(!F)return _useItemF(s,k,now);if(!has(s,k))return '沒有'+ITEMS[k].n;now=now||nowT();
  const ext=(key,ms)=>{s.buffs[key]=Math.min(now+7200e3,Math.max(now,s.buffs[key]||0)+ms);};
- if(F.stam){if(s.stam>=100&&Object.keys(F).length===1)return '體力已滿';s.stam=Math.min(100,s.stam+F.stam);}
+ if(F.stam){if(s.stam>=stamMax(s)&&Object.keys(F).length===1)return '體力已滿';s.stam=Math.min(stamMax(s),s.stam+F.stam);}
  if(F.fwis)ext('fwis',1800e3);if(F.fxp)ext('fxp',1800e3);if(F.fatk)ext('fatk',1800e3);if(F.tea){ext('tea',1800e3);s.buffs.teaPct=Math.max(s.buffs.teaPct||0,F.tea);}
  useItems(s,{[k]:1});return null;};
 /* 江湖人物的新口味 */
@@ -2670,10 +2673,10 @@ function frontAct(s,loc){const L=s.loc4,d=gday(s),r=realmOf(s);const once=k=>{if
   s.stam-=6;L.n.fish++;advTime(s,60);const n=1+(Math.random()<.4?1:0);gainItem(s,'haiwei',n);let x='';if(Math.random()<.15){gainItem(s,'zhenzhu',1);x='撬開一隻老蚌，裡面竟有一顆東海珍珠！';}
   if(Math.random()<.3){gainItem(s,'fish',1);x+='順手撈到一條鮮魚。';}return {txt:'你跟著漁船出海撒網。海味乾貨 ×'+n+'。'+x};}
  if(loc==='miao'){if(L.day.song===d)return {err:'今晚的篝火已經散了'};if(s.stam<8)return {err:'體力不足（需 8）'};once('song');s.stam-=8;advTime(s,90);
-  const a=Math.min(100-s.insight,10);s.insight+=a;gainItem(s,'miaoyin',1);let x='';if(Math.random()<.12){gainItem(s,'jincan',1);x='一位老阿婆悄悄送你一隻金蠶蠱。';}
+  const a=Math.min(insMax(s)-s.insight,10);s.insight+=a;gainItem(s,'miaoyin',1);let x='';if(Math.random()<.12){gainItem(s,'jincan',1);x='一位老阿婆悄悄送你一隻金蠶蠱。';}
   return {txt:'你在篝火邊跟苗家人對歌、跳蘆笙舞，跳到滿頭大汗。感悟 +'+Math.round(a)+'，寨老送你一塊苗銀。'+x};}
  if(loc==='jing'){if(L.day.tea===d)return {err:'今天已經聽過書了'};if(s.silver<60)return {err:'銀兩不足（茶錢 60 兩）'};once('tea');s.silver-=60;advTime(s,60);
-  const f=Math.round((6+r*2)*fameMult(s));s.fame+=f;const a=Math.min(100-s.insight,6);s.insight+=a;let x='';if(Math.random()<.3){gainItem(s,'gongcha',1);x='掌櫃見你常來，送了一包御前貢茶。';}
+  const f=Math.round((6+r*2)*fameMult(s));s.fame+=f;const a=Math.min(insMax(s)-s.insight,6);s.insight+=a;let x='';if(Math.random()<.3){gainItem(s,'gongcha',1);x='掌櫃見你常來，送了一包御前貢茶。';}
   return {txt:pick(['說書人講到「江湖新秀智破玄蛇會」，滿堂叫好——講的好像是你。','隔壁桌在議論國師府夜夜點燈，不知在煉什麼。','茶客說，最近京城米價漲了三成，像有人在囤糧。','一位老翰林說，欽天監算出明年有一場月蝕。'])+'聲望 +'+f+'、感悟 +'+Math.round(a)+'。'+x};}
  if(loc==='kunlun'){if(L.day.ice===d)return {err:'冰泉今天已經泡過了，身子受不住'};if(s.stam<12)return {err:'體力不足（需 12）'};once('ice');s.stam-=12;advTime(s,120);
   const sum=newSummary();addXp(s,stageReq(s.g)*.06,sum);let x='';if(Math.random()<.3){gainItem(s,'xuelian',1);x='泉邊開著一朵天山雪蓮，你小心摘下。';}
@@ -2710,7 +2713,7 @@ Object.assign(NPCS,{
   voice:'俏皮、愛逗人：「別怕，我的蠱不咬好人。……大概吧？」',
   likes:{f_suantang:15,miaoyin:10,jincan:14,f_tanghulu:12,zhenzhu:10},dislikes:{shedan:-3,iron:-2,ore:-2},
   lines:[['外人？你迷路了吧。……跟著那隻藍蝴蝶走，牠不會害你。','我們苗人不會隨便下蠱的，是你們漢人亂講！','別碰那個罐子！……騙你的，裡面是酸菜。'],['你又來啦！阿婆說你是好人，我還在觀察。','小藍說喜歡你。小藍就是那隻蝴蝶。','今晚有篝火，你要不要來？不會跳舞我教你。'],['聖蠱被偷了……如果它落到壞人手裡，會害死很多人。','你身上的味道，小藍很喜歡。我也……沒什麼。','我把你寫進寨子的歌裡了，不准笑。'],['苗家的姑娘，只給一個人戴銀冠的機會。','以後你走到哪裡，小藍都能找到你。','你不怕蠱，也不怕我。所以我想一直跟你在一起。']],
-  help:{n:'陪她採蠱草',stam:6,d:'感悟與草藥'},helpFn:(s,r)=>{gainItem(s,'herb',3);const a=Math.min(100-s.insight,7);s.insight+=a;return {txt:'你們在霧氣裡找了一個時辰的蠱草，她一路哼著歌。草藥 +3、感悟 +'+Math.round(a)+'，好感 +5。'};},
+  help:{n:'陪她採蠱草',stam:6,d:'感悟與草藥'},helpFn:(s,r)=>{gainItem(s,'herb',3);const a=Math.min(insMax(s)-s.insight,7);s.insight+=a;return {txt:'你們在霧氣裡找了一個時辰的蠱草，她一路哼著歌。草藥 +3、感悟 +'+Math.round(a)+'，好感 +5。'};},
   giftTxt:['「哇！給我的？」她把禮物舉到小藍面前：「你看你看！」','「嘿嘿，算你有眼光。」','「謝謝啦～」','「這個……小藍說牠不喜歡。我也不喜歡。」'],
   reqs:[{n:'兩碗酸湯魚給寨老',need:{f_suantang:2},rel:14,silver:180},{n:'兩塊苗銀打新鈴鐺',need:{miaoyin:2},rel:12,silver:160},{n:'八份草藥做解毒藥',need:{herb:8},rel:10,silver:120},{n:'三串冰糖葫蘆',need:{f_tanghulu:3},rel:12,silver:120}]},
  zml:{n:'趙明璃',title:'女扮男裝的郡主・鐵骨摺扇',loc:'jing',spot:'狀元茶樓',look:{gender:'f',hair:'guan',hcolor:'ink',outfit:'nanzhuang',acc:'yuguan',wt:'none'},
@@ -2718,7 +2721,7 @@ Object.assign(NPCS,{
   voice:'聰明、帶點驕傲：「本公子……咳，本姑娘說的話，十句有九句是對的。」',
   likes:{gongcha:16,f_meigui:15,zhenzhu:12,tea:10,cloth3:8},dislikes:{f_kaoyang:-1,shedan:-3,ore:-2},
   lines:[['這位兄台，你看我做什麼？本公子臉上有花嗎？','說書人說錯了三處，我已經記下來了。','京城的茶，十家有九家是兌了水的。'],['又是你。坐吧，這壺茶本公子請。','王府的牆太高了，翻出來可費勁了。','你知道嗎，你是第一個沒拆穿我、又陪我演下去的人。'],['父王的病……太醫院說是風寒，可我不信。','朝堂上的人，笑得越溫和，心越冷。','你會一直站在我這邊嗎？……我只是隨口問問。'],['在你面前，我不用當郡主，也不用當公子。','以後王府的門，你想走正門還是翻牆都行。','本姑娘說的話十句有九句對，剩下那句是——我喜歡你在身邊。']],
-  help:{n:'陪她逛書肆',stam:4,d:'悟性與聲望'},helpFn:(s,r)=>{const a=Math.min(100-s.insight,8);s.insight+=a;const f=Math.round(5*fameMult(s));s.fame+=f;return {txt:'你們在書肆裡泡了一個時辰，她把整排兵書都翻了一遍。感悟 +'+Math.round(a)+'、聲望 +'+f+'，好感 +5。'};},
+  help:{n:'陪她逛書肆',stam:4,d:'悟性與聲望'},helpFn:(s,r)=>{const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;const f=Math.round(5*fameMult(s));s.fame+=f;return {txt:'你們在書肆裡泡了一個時辰，她把整排兵書都翻了一遍。感悟 +'+Math.round(a)+'、聲望 +'+f+'，好感 +5。'};},
   giftTxt:['「哦？還算有品味。」她嘴角翹起來，藏都藏不住。','「本公子收下了。」','「嗯，謝了。」','「這種東西……也好意思送給本公子？」'],
   reqs:[{n:'兩包碧螺春',need:{tea:2},rel:12,silver:150},{n:'兩匹雲錦做新衣',need:{cloth3:2},rel:14,silver:220},{n:'一顆東海珍珠給王妃',need:{zhenzhu:1},rel:16,silver:260},{n:'三個玫瑰餅給小丫鬟們',need:{f_meigui:3},rel:12,silver:160}]},
  hls:{n:'賀蘭朔',male:1,title:'崑崙守山人・斬馬刀',loc:'kunlun',spot:'雪線石屋',look:{gender:'m',hair:'braid',hcolor:'chestnut',outfit:'langqiu',acc:'none',wt:'blade',beard:1},
@@ -2734,7 +2737,7 @@ Object.assign(NPCS,{
   voice:'溫和平靜：「慢一點也無妨。雪落得慢，才積得深。」',
   likes:{tea:14,f_lianzi:14,gongcha:14,lingzhi:10,f_cake:8},dislikes:{wine:-2,shedan:-3,f_kaoyang:-1},
   lines:[['……是你。謝謝你，把我帶回來。','手還握不穩劍。慢慢來吧。','青霜長大了。比我想的還要好。'],['今天能練完一套劍法了。你要看嗎？','地牢裡三年，我每天都在心裡練劍。','青雲山的風，還是那個味道。'],['那晚在地牢裡，我聽見有人說「九幽令」。玄蛇會，只是一條小蛇。','你和青霜，是我在這世上最信的兩個人。','劍是冷的，人不必是。這是你教我的。'],['往後無論你去哪裡，照雪劍都與你同在。','若我當年早一點遇見你，大概就不會被關三年了。','雪化了，就是春天。']],
-  help:{n:'陪她練劍',stam:5,d:'劍法熟練與感悟'},helpFn:(s,r)=>{addProf(s,s.mainMartial,40*(1+r),null);const a=Math.min(100-s.insight,5);s.insight+=a;return {txt:'你們在劍閣前對練了一個時辰，她的劍一天比一天穩。武功熟練增加、感悟 +'+Math.round(a)+'，好感 +5。'};},
+  help:{n:'陪她練劍',stam:5,d:'劍法熟練與感悟'},helpFn:(s,r)=>{addProf(s,s.mainMartial,40*(1+r),null);const a=Math.min(insMax(s)-s.insight,5);s.insight+=a;return {txt:'你們在劍閣前對練了一個時辰，她的劍一天比一天穩。武功熟練增加、感悟 +'+Math.round(a)+'，好感 +5。'};},
   giftTxt:['「……謝謝你。」她眼眶有點紅，「好久沒人送我東西了。」','「我會好好收著。」','「有心了。」','「這個……我不太需要。你自己留著吧。」'],
   reqs:[{n:'一株靈芝養傷',need:{lingzhi:1},rel:14,silver:160},{n:'兩碗冰糖蓮子羹',need:{f_lianzi:2},rel:12,silver:150},{n:'兩包碧螺春給師父',need:{tea:2},rel:12,silver:140},{n:'一塊千年寒鐵修劍鞘',need:{hantie:1},rel:18,silver:400}]},
 });
@@ -2749,7 +2752,7 @@ NPC_EVENTS.ayn=[
  {id:'ayn2',n:'駝鈴與篝火',cond:s=>s.npc.ayn.rel>=30&&s.loc==='damo'&&isNight(s),hint:s=>s.npc.ayn.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）到落雁關的駝隊營地',
   text:['大漠的夜很冷，駝隊營地中間燒著一大堆篝火。阿依娜抱著一把西域琵琶，坐在火邊。','「阿爸以前每晚都彈這首曲子。」她撥了兩下弦，「他去年帶著一支駝隊出關，再也沒回來。」'],
   ch:[{t:'開一罈葡萄美酒，陪她喝',need:s=>has(s,'putao')?null:'需要 1 罈葡萄美酒',fn:s=>{useItems(s,{putao:1});addRel(s,'ayn',18);return '你們一碗接一碗，她唱起了阿爸教她的歌，唱到一半哭了，又笑著說是沙子吹進眼睛。好感 +18。';}},
-   {t:'「你阿爸一定還活著。我陪你找。」',fn:s=>{addRel(s,'ayn',13);const a=Math.min(100-s.insight,6);s.insight+=a;return '她看著篝火很久，然後重重地點頭：「嗯！朋友，說好了。」感悟 +'+Math.round(a)+'，好感 +13。';}}]},
+   {t:'「你阿爸一定還活著。我陪你找。」',fn:s=>{addRel(s,'ayn',13);const a=Math.min(insMax(s)-s.insight,6);s.insight+=a;return '她看著篝火很久，然後重重地點頭：「嗯！朋友，說好了。」感悟 +'+Math.round(a)+'，好感 +13。';}}]},
  {id:'ayn3',n:'鐵面騎兵',cond:s=>mainAt(s,9)&&s.npc.ayn.rel>=80&&realmOf(s)>=6&&s.loc==='damo',hint:s=>!mainAt(s,9)?'江湖風雲錄進行到第九章':s.npc.ayn.rel<80?'關係達到「信任」':realmOf(s)<6?'晉升武林宗師':'到落雁關找她',
   text:['阿依娜在古城廢墟找到了阿爸駝隊的殘骸。牆上釘著一塊黑鐵面具，面具內側刻著九個圓圈圍著一隻眼睛。','沙丘後面揚起一片沙塵。上百個戴黑鐵面具的騎兵排成一列，為首的人慢慢舉起長刀。'],
   ch:[{t:'「阿依娜，背後交給我！」',fight:true,fn:s=>evFight(s,'ayn',24,'鐵面騎兵統領',s=>{addRel(s,'ayn',20);s.flags.jiuyou_seal=true;const f=Math.round(35*fameMult(s));s.fame+=f;addJournal(s,'主線','在落雁古城擊敗鐵面騎兵統領，搜出九幽密信。','ayn3');
@@ -2800,7 +2803,7 @@ NPC_EVENTS.ld=[
   onDone:s=>{s.npc.ld.met=true;}},
  {id:'ld2',n:'篝火對歌',cond:s=>s.npc.ld.rel>=30&&s.loc==='miao'&&isNight(s),hint:s=>s.npc.ld.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）到苗寨',
   text:['苗寨的篝火燒得很旺，年輕人圍成一圈對歌。藍蝶把你拉進圈子裡：「輪到你了！」','整個寨子都在看你。小藍停在你頭上，好像也在等。'],
-  ch:[{t:'清清嗓子，唱一首家鄉的小調',fn:s=>{addRel(s,'ld',14);const a=Math.min(100-s.insight,8);s.insight+=a;return '你唱得不好，可是很認真。唱完全寨子都在鼓掌，藍蝶拍得最大聲，臉紅紅的。感悟 +'+Math.round(a)+'，好感 +14。';}},
+  ch:[{t:'清清嗓子，唱一首家鄉的小調',fn:s=>{addRel(s,'ld',14);const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;return '你唱得不好，可是很認真。唱完全寨子都在鼓掌，藍蝶拍得最大聲，臉紅紅的。感悟 +'+Math.round(a)+'，好感 +14。';}},
    {t:'「我不會唱，但我會跳！」',need:s=>s.stam>=10?null:'需要 10 體力',fn:s=>{s.stam-=10;addRel(s,'ld',16);return '你跳得手腳打結，藍蝶笑到蹲在地上，然後跳起來牽著你的手帶你跳完了一整曲。好感 +16。';}}]},
  {id:'ld3',n:'黑蠶蠱',cond:s=>mainAt(s,11)&&s.npc.ld.rel>=80&&realmOf(s)>=6&&s.loc==='miao'&&(s.npc.sw.rel>=80||s.npc.hm.rel>=80),hint:s=>!mainAt(s,11)?'江湖風雲錄進行到第十一章':s.npc.ld.rel<80?'關係達到「信任」':realmOf(s)<6?'晉升武林宗師':!(s.npc.sw.rel>=80||s.npc.hm.rel>=80)?'與蘇晚晴或慧明的關係達到「信任」（需要醫者幫忙驗毒）':'到苗疆找她',
   text:['蘇晚晴和慧明驗出來了：幽靈船上的毒，是苗疆失傳的「黑蠶蠱」煉成的。而它的母蠱，就是苗寨被偷走的聖蠱。','藍蝶帶你闖進萬蠱洞深處。一個穿黑袍的蠱師正對著聖蠱念咒，洞頂掛滿了黑色的蠶繭。「把聖蠱還來！」藍蝶的聲音在發抖。'],
@@ -2873,7 +2876,7 @@ NPC_EVENTS.lzx=[
  {id:'lzx1',n:'劫後重逢',cond:s=>!!s.flags.main_done&&s.loc==='qingyun',hint:s=>!s.flags.main_done?'完成江湖風雲錄第七章':'到青雲門的劍閣',
   text:['青雲門劍閣前，一個白衣女子扶著劍架，一招一式地練劍。她的手還在抖，劍卻很穩。','她看見你，放下劍，鄭重地行了一個大禮：「青雲門林照雪，謝恩公救命之恩。」沈青霜在旁邊紅著眼睛偷笑。'],
   ch:[{t:'連忙扶起她：「叫我名字就好。」',fn:s=>{addRel(s,'lzx',12);if(s.npc.sq)addRel(s,'sq',4);return '她怔了一下，笑了：「好。那你也叫我照雪。」沈青霜在一旁說：「師姐，他就是這樣的人。」好感 +12。';}},
-   {t:'「你的劍，比三年前更穩了吧？」',fn:s=>{addRel(s,'lzx',10);const a=Math.min(100-s.insight,8);s.insight+=a;return '她看了看自己的手，又看了看你：「……地牢裡什麼都沒有，只有時間。我每天都在心裡練劍。」她示範了一招，你看得入神。感悟 +'+Math.round(a)+'，好感 +10。';}}],
+   {t:'「你的劍，比三年前更穩了吧？」',fn:s=>{addRel(s,'lzx',10);const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;return '她看了看自己的手，又看了看你：「……地牢裡什麼都沒有，只有時間。我每天都在心裡練劍。」她示範了一招，你看得入神。感悟 +'+Math.round(a)+'，好感 +10。';}}],
   onDone:s=>{s.npc.lzx.met=true;}},
  {id:'lzx2',n:'照雪劍',cond:s=>s.npc.lzx.rel>=30&&s.loc==='qingyun',hint:s=>s.npc.lzx.rel<30?'關係達到「熟悉」':'到青雲門找她',
   text:['林照雪聽說，她失蹤時遺落在寒潭的那把劍，被人從冰裡取出、重鑄了。','「那把劍，是師父給我的。」她看著遠方，「若它在好人手裡，就讓它留在那人身邊吧。」'],
@@ -3068,7 +3071,7 @@ function feast(s){if(!feastReady(s))return {err:'上一場宴席才過沒幾天�
 const CHARITY=[['施粥賑災','在城門口支起大鍋，為逃荒的百姓施粥。'],['修橋鋪路','出錢重修了鎮外那座被洪水沖斷的石橋。'],['捐建義學','為窮人家的孩子捐了一間學堂。'],['義診施藥','請醫者坐堂三日，藥錢全由你出。'],['收留孤兒','把幾個無家可歸的孩子送進了善堂。']];
 const charityCost=s=>Math.round(2000*(1+realmOf(s))/100)*100;
 function doCharity(s){const d=gday(s);if(s.charity.day===d)return {err:'今天已經行過善了，明天再來'};const c=charityCost(s);if(s.silver<c)return {err:'銀兩不足（需 '+fmt(c)+'）'};
- s.silver-=c;s.charity.day=d;s.charity.n++;s.charity.total+=c;const f=Math.round((12+realmOf(s)*8)*fameMult(s));s.fame+=f;const a=Math.min(100-s.insight,6);s.insight+=a;
+ s.silver-=c;s.charity.day=d;s.charity.n++;s.charity.total+=c;const f=Math.round((12+realmOf(s)*8)*fameMult(s));s.fame+=f;const a=Math.min(insMax(s)-s.insight,6);s.insight+=a;
  if(s.charity.n>=10)giveTitle(s,'e_shan');if(s.charity.n>=50)giveTitle(s,'e_shan2');const C=pick(CHARITY);addLog(s,'江湖善舉：'+C[0]+'。');
  return {txt:C[1]+'百姓口耳相傳，聲望 +'+f+'、感悟 +'+Math.round(a)+'。（累計行善 '+s.charity.n+' 次）'};}
 
@@ -3155,13 +3158,13 @@ const encGold=(s,k)=>Math.round((60+realmOf(s)*90)*(k||1)*(.8+Math.random()*.4))
 const encMet=s=>Object.keys(NPCS).filter(id=>s.npc[id]&&(id==='sq'?s.npc.sq.ev.sq1!=null:s.npc[id].met));
 const ENCOUNTERS=[
  {id:'oldman',n:'路邊老丈',text:'山路邊，一位白髮老丈坐在石頭上，扇子搖得慢悠悠：「年輕人，陪老頭子下一盤棋如何？」',
-  ch:[{t:'坐下來陪他下棋',fn:s=>{const a=Math.min(100-s.insight,8+realmOf(s));s.insight+=a;if(Math.random()<.25){gainItem(s,'p_qi',1);return '一局下完，老丈哈哈大笑，塞給你一顆聚氣丹。感悟 +'+Math.round(a)+'、聚氣丹 ×1。';}return '你輸得一塌糊塗，卻覺得心裡某處通透了。感悟 +'+Math.round(a)+'。';}},
+  ch:[{t:'坐下來陪他下棋',fn:s=>{const a=Math.min(insMax(s)-s.insight,8+realmOf(s));s.insight+=a;if(Math.random()<.25){gainItem(s,'p_qi',1);return '一局下完，老丈哈哈大笑，塞給你一顆聚氣丹。感悟 +'+Math.round(a)+'、聚氣丹 ×1。';}return '你輸得一塌糊塗，卻覺得心裡某處通透了。感悟 +'+Math.round(a)+'。';}},
    {t:'婉拒，繼續趕路',fn:s=>{const v=encGold(s,.5);s.silver+=v;return '你拱手告辭。走了幾步，腳邊踢到一個錢袋——老丈早已不見蹤影。銀兩 +'+v+'。';}}]},
  {id:'thief',n:'小賊',text:'市集人潮中，一隻手悄悄伸向你的錢袋。',
   ch:[{t:'一把扣住他的手腕',fn:s=>{const v=encGold(s,.8);s.silver+=v;s.fame+=Math.round(3*fameMult(s));return '小賊痛得哇哇叫，身上搜出好幾個別人的錢袋。你交給了失主，大家硬要塞謝禮給你。銀兩 +'+v+'、聲望小增。';}},
    {t:'假裝沒看見，跟蹤他',fn:s=>{if(Math.random()<.5){const it=dropGear(s,Math.min(7,realmOf(s)),.6,1,null);return it?'他把你引到一處賊窩，你順手端了，搜出一件'+QUAL[it.q].n+'「'+itemName(it)+'」。':'他鑽進巷子就不見了。';}const v=encGold(s,.3);s.silver=Math.max(0,s.silver-v);return '跟丟了，回頭一摸——錢袋輕了 '+v+' 兩。下次別那麼好奇。';}}]},
  {id:'rain',n:'山中驟雨',text:'突如其來的大雨，你躲進一座破廟。廟裡已經有一個濕透的書生，正在生火。',
-  ch:[{t:'和他分享乾糧',fn:s=>{gainItem(s,'tea',1);const a=Math.min(100-s.insight,6);s.insight+=a;return '書生感激不盡，說起天下大勢頭頭是道，臨別送你一包碧螺春。感悟 +'+Math.round(a)+'、碧螺春 ×1。';}},
+  ch:[{t:'和他分享乾糧',fn:s=>{gainItem(s,'tea',1);const a=Math.min(insMax(s)-s.insight,6);s.insight+=a;return '書生感激不盡，說起天下大勢頭頭是道，臨別送你一包碧螺春。感悟 +'+Math.round(a)+'、碧螺春 ×1。';}},
    {t:'在雨聲中打坐',fn:s=>{const sum=newSummary();addXp(s,stageReq(s.g)*.05,sum);return '雨打瓦片，一聲一聲，你的心慢慢靜了下來。修為增加。';}}]},
  {id:'herbs',n:'崖邊靈草',text:'懸崖邊上長著一株發著微光的靈草，風一吹就晃。',
   ch:[{t:'冒險攀崖去採',fn:s=>{if(Math.random()<.7){gainItem(s,'lingzhi',1+(Math.random()<.3?1:0));return '你手腳並用爬下去，摘到了！是一株上好的靈芝。';}const v=Math.min(s.stam,15);s.stam-=v;return '腳下一滑，你及時抓住樹根，靈草掉下了山谷。體力 -'+v+'。';}},
@@ -3186,7 +3189,7 @@ const ENCOUNTERS=[
  {id:'letterboy',n:'送信的小廝',text:'一個小廝氣喘吁吁跑來：「找到你了！有人託我帶東西給你！」',
   ch:[{t:'接過包裹',fn:s=>{const ids=encMet(s);if(!ids.length){gainItem(s,'f_cake',2);return '包裹裡是兩塊桂花糕，沒有署名。桂花糕 ×2。';}const id=pick(ids);addRel(s,id,5);const L=LETTERS&&LETTERS[id]&&LETTERS[id].gift?pick(LETTERS[id].gift):null;if(L)gainItem(s,L[0],L[1]);return NPCS[id].n+'託人送來的'+(L?ITEMS[L[0]].n+' ×'+L[1]:'一句問候')+'。'+NPCS[id].n+'好感 +5。';}}]},
  {id:'stars',n:'流星',text:'夜空劃過一道流星，落在不遠的山坡上，還在發光。',
-  ch:[{t:'去找找看',fn:s=>{if(Math.random()<.35){gainItem(s,'xingsha',1);return '你在焦黑的土坑裡撿到一小撮星砂，閃閃發亮。星砂 ×1。';}const a=Math.min(100-s.insight,10);s.insight+=a;return '什麼也沒找到，但那一刻的星空讓你久久不能忘懷。感悟 +'+Math.round(a)+'。';}},
+  ch:[{t:'去找找看',fn:s=>{if(Math.random()<.35){gainItem(s,'xingsha',1);return '你在焦黑的土坑裡撿到一小撮星砂，閃閃發亮。星砂 ×1。';}const a=Math.min(insMax(s)-s.insight,10);s.insight+=a;return '什麼也沒找到，但那一刻的星空讓你久久不能忘懷。感悟 +'+Math.round(a)+'。';}},
    {t:'許個願',fn:s=>{const v=encGold(s,.6);s.silver+=v;return '你許了個願。第二天，市集的賭攤上你押中了大。銀兩 +'+v+'。';}}]},
  {id:'master',n:'神秘高人',text:'竹林深處，一位蒙面人背對著你：「你的武功……還差一點火候。看好了。」',
   ch:[{t:'凝神細看',fn:s=>{const r=realmOf(s);addProf(s,s.mainMartial,120*(1+r),null);addProf(s,s.mainInner,60*(1+r),null);if(Math.random()<.1){gainItem(s,'p_break',1);return '一套劍法使完，蒙面人留下一顆破境丹便消失了。武功與心法熟練大增、破境丹 ×1！';}return '一套劍法使完，蒙面人便消失了。你照著練了一夜。武功與心法熟練大增。';}}]},
@@ -3280,7 +3283,7 @@ const rebGain=s=>3+(rebState(s).n===0?2:0)+Math.floor(((s.main&&s.main.claimed.l
 const REB_NAMES=['','一轉','二轉','三轉','四轉','五轉','六轉','七轉','八轉','九轉'];
 const rebName=n=>n<=0?'':n<REB_NAMES.length?REB_NAMES[n]:n+'轉';
 function rebirth(s){if(!rebReady(s))return {err:'晉升到一代大宗師・九重才能飛升'};const R=rebState(s),gain=rebGain(s);
- R.n++;R.pts+=gain;R.mr=Math.max(R.mr,realmOf(s));s.g=0;s.xp=0;s.insight=Math.min(100,s.insight+30);s.stam=100;
+ R.n++;R.pts+=gain;R.mr=Math.max(R.mr,realmOf(s));s.g=0;s.xp=0;s.insight=Math.min(insMax(s),s.insight+30);s.stam=100;
  giveTitle(s,'r_reb1');if(R.n>=3)giveTitle(s,'r_reb3');if(R.n>=9)giveTitle(s,'r_reb9');
  addJournal(s,'輪迴','第 '+R.n+' 次輪迴飛升，從頭再走一遍江湖路。','reb'+R.n);addLog(s,'輪迴飛升！得到天賦點 '+gain+' 點。');return {gain,n:R.n};}
 function rebPerkUp(s,k){const R=rebState(s),P=REB_PERKS[k];if(!P)return '沒有這項天賦';const lv=R.perk[k]|0;if(lv>=REB_PERK_MAX)return '已經修到極致';if(R.pts<1)return '天賦點不足';R.pts--;R.perk[k]=lv+1;return null;}
@@ -3739,7 +3742,7 @@ const ROAD={
  ch:{
   help:{t:'先救翻車的老人',r:'你跳進泥溝，硬是把驢車抬了起來。老人被救出來以後，握著你的手不停道謝。他說他是青石鎮客棧的老掌櫃，到了鎮上，一定要來找他。（客棧的人會記得你）',fn:s=>{s.fame=(s.fame||0)+10;gainItem(s,'f_cake',2);gainItem(s,'p_stam',1);}},
   chase:{t:'追那個偷錢袋的小賊',r:'你在雨裡追了半里路，終於把小賊按在地上。掀開斗笠一看，是個餓得皮包骨的小孩。你把錢袋還給旅人，又把自己的乾糧分了一半給他。小孩一聲不吭地跑了，臨走前回頭看了你一眼。',fn:s=>{s.silver+=80;s.fame=(s.fame||0)+5;}},
-  sit:{t:'坐下來，聽茶棚老人講江湖',r:'雨聲裡，茶棚的老人講起了青雲門的劍、寒山的鐘、洛陽的擂台。你聽得入了迷，連雨停了都不知道。臨走時老人說：「年輕人，江湖不在說書人嘴裡，在你腳下。」你覺得心裡有什麼東西亮了一下。',fn:s=>{s.insight=Math.min(100,(s.insight||0)+20);const sum=newSummary();addXp(s,stageReq(s.g)*.6,sum);}},
+  sit:{t:'坐下來，聽茶棚老人講江湖',r:'雨聲裡，茶棚的老人講起了青雲門的劍、寒山的鐘、洛陽的擂台。你聽得入了迷，連雨停了都不知道。臨走時老人說：「年輕人，江湖不在說書人嘴裡，在你腳下。」你覺得心裡有什麼東西亮了一下。',fn:s=>{s.insight=Math.min(insMax(s),(s.insight||0)+20);const sum=newSummary();addXp(s,stageReq(s.g)*.6,sum);}},
  }};
 function originSet(s,k,why,road){if(s.origin&&s.origin.k)return {err:'身世已經寫下了'};const O=ORIGINS[k],W=WHYS[why],R=ROAD.ch[road];if(!O||!W)return {err:'請選擇出身與緣由'};
  s.origin={k,why,road:R?road:null};for(const [it,n] of O.item)gainItem(s,it,n);if(O.silver)s.silver+=O.silver;
@@ -3977,7 +3980,7 @@ const _estateMultW=estateMult;estateMult=function(s){let m=_estateMultW(s);if(!m
 const FESTS=[
  {id:'yuanxiao',m:0,n:'元宵燈會',d:'正月十五，青石鎮掛滿花燈。據點收益 +15%。',scene:'market',
   text:['正月的青石鎮，從街頭到街尾都掛滿了花燈。兔子燈、走馬燈、蓮花燈，一盞比一盞亮。','{c}拉著你的袖子：「快來猜燈謎！猜中了有湯圓吃。」'],
-  ch:[['陪{c}猜燈謎','你們猜中了七個燈謎，換來一大碗芝麻湯圓。{c}吃得滿嘴都是糖：「明年還要一起來。」',s=>{gainItem(s,'f_tangyuan',2);}],['一起放一盞孔明燈','孔明燈慢慢飄上夜空，{c}閉著眼睛許了很久的願。你問許了什麼，{c}只是笑，不肯說。',s=>{s.insight=Math.min(100,s.insight+15);}]]},
+  ch:[['陪{c}猜燈謎','你們猜中了七個燈謎，換來一大碗芝麻湯圓。{c}吃得滿嘴都是糖：「明年還要一起來。」',s=>{gainItem(s,'f_tangyuan',2);}],['一起放一盞孔明燈','孔明燈慢慢飄上夜空，{c}閉著眼睛許了很久的願。你問許了什麼，{c}只是笑，不肯說。',s=>{s.insight=Math.min(insMax(s),s.insight+15);}]]},
  {id:'qingming',m:2,n:'清明踏青',d:'三月踏青，草長鶯飛。修為 +5%。',scene:'bamboo',
   text:['清明時節雨紛紛。你和{c}撐著傘，走過翠竹林外的田埂。','路邊有人在掃墓，也有孩子在放風箏。{c}說：「記得一個人，就是讓他在心裡多活一天。」'],
   ch:[['陪{c}去祭拜故人','你們在一座無名的小墳前上了香。{c}說了很多話，你只是在旁邊陪著。',s=>{}],['帶{c}去放風箏','風箏飛得好高，{c}笑得像個孩子。下山時你們的鞋都沾滿了泥。',s=>{gainItem(s,'herb',5);}]]},
@@ -3986,7 +3989,7 @@ const FESTS=[
   ch:[['跳上龍舟一起划','你們的龍舟在最後十丈超過了對手。整條江都在歡呼，{c}在岸上跳起來揮手。',s=>{s.silver+=300+realmOf(s)*120;s.fame+=10;}],['和{c}在岸邊包粽子','你包的粽子歪歪扭扭，{c}笑了你一個下午，最後還是全部吃掉了。',s=>{gainItem(s,'f_babao',3);}]]},
  {id:'qixi',m:6,n:'七夕乞巧',d:'七月初七，鵲橋相會。好感獲得 +20%。',scene:'courtyard',
   text:['七月初七的夜晚，滿天星斗。院子裡擺著瓜果，姑娘們在月下穿針乞巧。','{c}抬頭看著銀河：「牛郎織女一年才見一次。你說，他們會不會等得很辛苦？」'],
-  ch:[['「有人等，就不辛苦。」','{c}沒有說話，只是往你身邊靠近了一點點。',s=>{}],['陪{c}數星星','你們數到第一百零八顆的時候，{c}睡著了，頭靠在你的肩膀上。',s=>{s.insight=Math.min(100,s.insight+10);}]]},
+  ch:[['「有人等，就不辛苦。」','{c}沒有說話，只是往你身邊靠近了一點點。',s=>{}],['陪{c}數星星','你們數到第一百零八顆的時候，{c}睡著了，頭靠在你的肩膀上。',s=>{s.insight=Math.min(insMax(s),s.insight+10);}]]},
  {id:'zhongqiu',m:7,n:'中秋賞月',d:'八月十五，月圓人團圓。體力回復 +15%。',scene:'courtyard',
   text:['八月十五，月亮又圓又大，像一面銅鏡掛在屋簷上。','你在院子裡擺了月餅和桂花酒。{c}來了，手裡也提著一盒月餅：「我做的，不許說難吃。」'],
   ch:[['和{c}在庭院賞月','你們一邊吃月餅，一邊說起這些年在江湖上的事。月亮慢慢移過屋簷，誰都沒有說要回去。',s=>{gainItem(s,'f_yuebing',3);}],['把所有朋友都請來','院子裡擠滿了人。有人划拳、有人唱歌，你的江湖朋友們第一次坐在同一張桌子上。',s=>{for(const id in NPCS)if(s.npc[id]&&s.npc[id].met)addRel(s,id,2);}]]},
@@ -4012,11 +4015,11 @@ const _addRelL=addRel;addRel=function(s,id,v){const F=s&&s.started?festNow(s):nu
 /* 季節奇遇：回來時的奇遇會依季節出現 */
 ENCOUNTERS.push(
  {id:'s_spring',season:'spring',n:'春日花雨',text:'山道上一株老桃樹開得正盛，花瓣隨風落了你一身。樹下有個小姑娘在撿花瓣，說要做桃花餅給生病的娘吃。',
-  ch:[{t:'幫她一起撿',fn:s=>{s.fame+=5;gainItem(s,'herb',3);return '你們撿了滿滿一籃。小姑娘塞給你一把草藥當謝禮。聲望 +5、草藥 ×3。';}},{t:'給她一點銀兩買藥',fn:s=>{const v=Math.min(s.silver,100);s.silver-=v;s.insight=Math.min(100,s.insight+12);return '小姑娘紅著眼睛道謝。走遠了，你還聽見她在唱歌。感悟 +12。';}}]},
+  ch:[{t:'幫她一起撿',fn:s=>{s.fame+=5;gainItem(s,'herb',3);return '你們撿了滿滿一籃。小姑娘塞給你一把草藥當謝禮。聲望 +5、草藥 ×3。';}},{t:'給她一點銀兩買藥',fn:s=>{const v=Math.min(s.silver,100);s.silver-=v;s.insight=Math.min(insMax(s),s.insight+12);return '小姑娘紅著眼睛道謝。走遠了，你還聽見她在唱歌。感悟 +12。';}}]},
  {id:'s_summer',season:'summer',n:'夏夜螢火',text:'夏夜的河邊飛滿了螢火蟲。幾個孩子在捉螢火蟲裝進紗袋，其中一個不小心掉進了河裡。',
   ch:[{t:'跳下河救人',fn:s=>{s.fame+=12;return '你把孩子撈了上來。孩子的爹娘千恩萬謝，鎮上很快就傳開了你的事。聲望 +12。';}},{t:'用竹竿把孩子拉上來',fn:s=>{s.fame+=8;gainItem(s,'fish',2);return '孩子平安上岸。他爹是漁夫，硬是塞給你兩條魚。聲望 +8、鮮魚 ×2。';}}]},
  {id:'s_autumn',season:'autumn',n:'秋山採藥',text:'秋天的山上，一位老藥農背著竹簍，腳下一滑，簍裡的藥材撒了一地。',
-  ch:[{t:'幫他撿藥材',fn:s=>{gainItem(s,'lingzhi',1);return '老藥農說你心腸好，分了你一株靈芝。靈芝 ×1。';}},{t:'請教他辨認藥材',fn:s=>{gainItem(s,'herb',6);s.insight=Math.min(100,s.insight+8);return '老藥農教了你三種秋天才長的草藥。草藥 ×6、感悟 +8。';}}]},
+  ch:[{t:'幫他撿藥材',fn:s=>{gainItem(s,'lingzhi',1);return '老藥農說你心腸好，分了你一株靈芝。靈芝 ×1。';}},{t:'請教他辨認藥材',fn:s=>{gainItem(s,'herb',6);s.insight=Math.min(insMax(s),s.insight+8);return '老藥農教了你三種秋天才長的草藥。草藥 ×6、感悟 +8。';}}]},
  {id:'s_winter',season:'winter',n:'雪夜歸人',text:'大雪的夜晚，你在客棧門口看見一個凍得發抖的旅人。他說他是要回家過年的，盤纏被人偷了。',
   ch:[{t:'請他進客棧喝碗熱湯',fn:s=>{s.fame+=8;return '旅人喝了熱湯，說他家在江南，明年一定託人帶茶葉給你。聲望 +8。';}},{t:'送他一些盤纏',fn:s=>{const v=Math.min(s.silver,150);s.silver-=v;gainItem(s,'p_break',1);return '旅人不肯白拿，從懷裡掏出一顆他祖傳的丹藥。破境丹 ×1。';}}]});
 const _encAddL=encAdd;encAdd=function(s,n){const sea=seasonOf(s);const keep=ENCOUNTERS.slice();const idx=ENCOUNTERS.filter(e=>e.season&&e.season!==sea);for(const e of idx)ENCOUNTERS.splice(ENCOUNTERS.indexOf(e),1);try{return _encAddL(s,n);}finally{ENCOUNTERS.splice(0,ENCOUNTERS.length,...keep);}};
@@ -4097,7 +4100,7 @@ function visitResolve(s,ci){const id=(s.visitQ||[])[0];if(!id)return {err:'沒�
  s.stat.visits=(s.stat.visits||0)+1;addJournal(s,'人物',NPCS[id].n+'上門探訪。','visit_'+id+'_'+gday(s));return {id,txt:c.r.replace(/\{c\}/g,NPCS[id].n)+'好感 +'+c.rel+'。'};}
 const VISIT_CH=[{t:'泡一壺好茶招待',rel:8,r:'你們在窗邊喝了一下午的茶，聊了很多這段日子的事。{c}臨走時說：「下次換你來找我。」'},
  {t:'留{c}住一晚，好好吃頓飯',rel:12,fn:(s,id)=>{s.silver=Math.max(0,s.silver-100);},r:'你做了一桌菜，{c}吃得很開心。夜裡你們坐在院子裡，聊到月亮都斜了。'},
- {t:'一起出去走走',rel:10,fn:s=>{s.insight=Math.min(100,s.insight+10);},r:'你們沿著鎮外的小路走了很遠。{c}說，好久沒有這樣什麼都不想地走路了。'}];
+ {t:'一起出去走走',rel:10,fn:s=>{s.insight=Math.min(insMax(s),s.insight+10);},r:'你們沿著鎮外的小路走了很遠。{c}說，好久沒有這樣什麼都不想地走路了。'}];
 /* 互動時記錄「見過面」 */
 const _npcTalkL=npcTalk;npcTalk=function(s,id){const r=_npcTalkL(s,id);if(!r.err)s.npc[id].seen=gday(s);return r;};
 const _npcGiftL=npcGift;npcGift=function(s,id,k){const r=_npcGiftL(s,id,k);if(!r.err)s.npc[id].seen=gday(s);return r;};
@@ -4160,7 +4163,7 @@ function plant(s,i,k){const H=homeState(s),C=CROPS[k];if(!C)return {err:'沒有�
  if(!C.sea.includes(seasonOf(s)))return {err:C.n+'不適合在'+SEASON_N[seasonOf(s)]+'天種'};if(s.silver<C.seed)return {err:'銀兩不足'};s.silver-=C.seed;const now=Date.now();H.plots[i]={c:k,at:now,ready:now+growSec(s,C)*1000};return {C};}
 function plotState(s,i){const P=homeState(s).plots[i];if(!P)return null;const now=Date.now();return {P,C:CROPS[P.c],ready:now>=P.ready,pct:Math.min(100,(now-P.at)/(P.ready-P.at)*100),left:Math.max(0,(P.ready-now)/1000)};}
 function harvest(s,i){const H=homeState(s),st=plotState(s,i);if(!st)return {err:'這塊地是空的'};if(!st.ready)return {err:'還沒成熟'};H.plots[i]=null;const C=st.C;const got=[];
- if(C.flower){H.bloom=Date.now()+12*3600e3;s.insight=Math.min(100,s.insight+6);got.push('滿園花開（12 小時內溫馨度 +4）','感悟 +6');if(Math.random()<.3){gainItem(s,'huagao',1);got.push('瑤池花露 ×1');}}
+ if(C.flower){H.bloom=Date.now()+12*3600e3;s.insight=Math.min(insMax(s),s.insight+6);got.push('滿園花開（12 小時內溫馨度 +4）','感悟 +6');if(Math.random()<.3){gainItem(s,'huagao',1);got.push('瑤池花露 ×1');}}
  else{let n=C.give[1];if(wxToday(s)==='rain')n=Math.ceil(n*1.3);gainItem(s,C.give[0],n);got.push(ITEMS[C.give[0]].n+' ×'+n);}
  s.stat.harvest=(s.stat.harvest||0)+1;if(s.stat.harvest>=30)giveTitle(s,'h_farm');return {C,got};}
 const bloomOn=s=>((s.home2&&s.home2.bloom)||0)>Date.now();
@@ -4174,19 +4177,19 @@ function petFeed(s,k){const H=homeState(s),p=H.pets[k];if(!p)return {err:'沒有
 function homeMate(s){const R=(s.residents||[]).filter(id=>NPCS[id]);if(s.romance&&R.includes(s.romance))return s.romance;if(R.length)return R[gday(s)%R.length];return typeof festCompanion==='function'?festCompanion(s):null;}
 const HOME_ACTS=[
  {id:'moon',n:'庭院賞月',ic:'🌕',why:s=>gameHour(s)<18&&gameHour(s)>=5?'要等入夜':['rain','storm','snow'].includes(wxToday(s))?'今晚看不見月亮':null,
-  txt:'月亮升上屋簷，你和{c}在庭院的石凳上坐了很久。誰都沒說話，只有蟲鳴和遠處的更鼓。',fx:s=>{s.insight=Math.min(100,s.insight+10);return '感悟 +10';},rel:6},
+  txt:'月亮升上屋簷，你和{c}在庭院的石凳上坐了很久。誰都沒說話，只有蟲鳴和遠處的更鼓。',fx:s=>{s.insight=Math.min(insMax(s),s.insight+10);return '感悟 +10';},rel:6},
  {id:'tea',n:'雨中煮茶',ic:'🍵',why:s=>!['rain','storm','snow'].includes(wxToday(s))?'要等下雨或下雪':!(s.mat.tea>0)?'需要碧螺春 ×1':null,
-  txt:'雨點打在竹簾上。你在茶室裡生起小爐，{c}捧著茶杯，看著窗外的雨發呆：「下雨天，最適合待在家裡。」',fx:s=>{useItems(s,{tea:1});s.stam=Math.min(100,s.stam+25);return '體力 +25';},rel:6},
+  txt:'雨點打在竹簾上。你在茶室裡生起小爐，{c}捧著茶杯，看著窗外的雨發呆：「下雨天，最適合待在家裡。」',fx:s=>{useItems(s,{tea:1});s.stam=Math.min(stamMax(s),s.stam+25);return '體力 +25';},rel:6},
  {id:'qin',n:'撫琴',ic:'🎼',why:s=>!s.col.decor.includes('guqin')?'需要擺設「古琴」':null,
   txt:'你撥了一首不太熟的曲子，彈錯了好幾個音。{c}卻聽得很認真，最後輕輕鼓掌。',fx:s=>{addProf(s,s.mainInner,120*(1+realmOf(s)),null);return '內功熟練增加';},rel:5},
  {id:'chess',n:'對弈',ic:'♟',why:s=>!s.col.decor.includes('xingpan')&&!s.col.decor.includes('shujia')?'需要擺設「星盤」或「書架」':null,
-  txt:'你和{c}下了一局棋。{c}下得很慢，每一步都想很久，最後你們下成了和局。',fx:s=>{s.insight=Math.min(100,s.insight+8);return '感悟 +8';},rel:5},
+  txt:'你和{c}下了一局棋。{c}下得很慢，每一步都想很久，最後你們下成了和局。',fx:s=>{s.insight=Math.min(insMax(s),s.insight+8);return '感悟 +8';},rel:5},
  {id:'fire',n:'圍爐夜話',ic:'🔥',why:s=>seasonOf(s)!=='winter'?'冬天才圍爐':!s.col.decor.includes('nuanlu')?'需要擺設「銅暖爐」':null,
   txt:'外面下著雪，屋裡的暖爐燒得劈啪響。{c}烤著手，說起小時候過冬的事，說著說著就笑了。',fx:s=>{for(const id of (s.residents||[]))if(s.npc[id])addRel(s,id,3);return '所有住客好感 +3';},rel:6},
  {id:'flower',n:'賞花',ic:'🌸',why:s=>!bloomOn(s)?'要等花園開花':null,
-  txt:'花園裡的花開得正好。{c}摘了一朵別在你的衣襟上：「這樣好看。」',fx:s=>{s.insight=Math.min(100,s.insight+6);return '感悟 +6';},rel:7},
+  txt:'花園裡的花開得正好。{c}摘了一朵別在你的衣襟上：「這樣好看。」',fx:s=>{s.insight=Math.min(insMax(s),s.insight+6);return '感悟 +6';},rel:7},
  {id:'fish',n:'餵金魚',ic:'🐟',why:s=>!s.col.decor.includes('yugang')?'需要擺設「金魚缸」':null,
-  txt:'你和{c}趴在魚缸邊撒魚食。金魚搶食的樣子讓{c}笑出了聲。',fx:s=>{s.stam=Math.min(100,s.stam+12);return '體力 +12';},rel:4},
+  txt:'你和{c}趴在魚缸邊撒魚食。金魚搶食的樣子讓{c}笑出了聲。',fx:s=>{s.stam=Math.min(stamMax(s),s.stam+12);return '體力 +12';},rel:4},
  {id:'read',n:'書房夜讀',ic:'📖',why:s=>!s.col.decor.includes('shujia')&&!s.col.decor.includes('nanmu')?'需要擺設「書架」':null,
   txt:'燈下讀書，{c}在旁邊替你研墨。讀到精彩處，你念給{c}聽，{c}聽得入了迷。',fx:s=>{addProf(s,s.mainMartial,120*(1+realmOf(s)),null);return '武功熟練增加';},rel:4},
 ];
@@ -4276,7 +4279,7 @@ const _frontActSK=frontAct;frontAct=function(s,loc){if(loc!=='persia'&&loc!=='pl
   const v=Math.round((200+r*80)*(.8+Math.random()*.4));s.silver+=v;gainItem(s,'meiguilu',1);let x='';const q=Math.random();if(q<.12){gainItem(s,'liuli',1);x='還用半價買到一隻琉璃盞！';}else if(q<.4){gainItem(s,'zanghong',1);x='老香料商送你一小包藏紅花。';}
   return {txt:pick(['你在銅燈下跟地毯商人殺了一個時辰的價，最後兩個人都笑了。','香料攤的老闆說你的波斯話帶著中原口音，硬是多送了你一勺。','一個賣琉璃的小孩說，公主昨天又偷偷溜出宮來逛夜市了。'])+'銀兩 +'+v+'、玫瑰露 ×1。'+x};}
  if(L.day.kora===d)return {err:'今天已經轉過湖了'};if(s.stam<10)return {err:'體力不足（需 10）'};L.day.kora=d;s.stam-=10;advTime(s,150);
- const a=Math.min(100-s.insight,12);s.insight+=a;const f=Math.round((6+r*2)*fameMult(s));s.fame+=f;gainItem(s,'suyou',1);let x='';if(Math.random()<.08){gainItem(s,'tianzhu',1);x='轉到第三圈，一位老阿媽把一顆天珠放進你手心。';}
+ const a=Math.min(insMax(s)-s.insight,12);s.insight+=a;const f=Math.round((6+r*2)*fameMult(s));s.fame+=f;gainItem(s,'suyou',1);let x='';if(Math.random()<.08){gainItem(s,'tianzhu',1);x='轉到第三圈，一位老阿媽把一顆天珠放進你手心。';}
  return {txt:'你跟著朝聖的人繞著聖湖走了一圈。風很大，經幡一直在響，心卻越來越靜。感悟 +'+Math.round(a)+'、聲望 +'+f+'、酥油 ×1。'+x};};
 
 /* ---------- 兩位新人物 ---------- */
@@ -4286,7 +4289,7 @@ Object.assign(NPCS,{
   voice:'明媚自信，愛引詩句：「你們中原人說『月是故鄉明』？胡說，月亮在哪裡都一樣亮。」',
   likes:{meiguilu:14,f_zhuafan:16,f_cake:14,liuli:12,xingsha:10,zhenzhu:10},dislikes:{shedan:-3,ore:-2,iron:-1},
   lines:[['你是中原人？真的嗎？快告訴我，江南的雨是什麼味道？','噓——別告訴任何人你在這裡見過我。','這朵玫瑰送你。在碧琉璃城，玫瑰比人多。'],['你又來了！我今天背了一首你們中原的詩，你聽聽看對不對。','父王說公主不能跟陌生人說話。可你已經不是陌生人了。','桂花糕到底是什麼味道？你下次一定要帶來。'],['宮裡有人在說謊。我看得出來，星星也看得出來。','你知道嗎，昴宿在你們那裡叫「七姊妹」？我們的天空，原來是同一片。','我不怕危險。我只怕一輩子都待在花園裡。'],['如果有一天我去了中原，你會帶我去看雨嗎？','你是我在這座城裡，唯一可以不用當公主的地方。','我寫了一首詩。主角是你。不准問寫了什麼。']],
-  help:{n:'陪她夜觀星象',stam:6,d:'感悟與修為'},helpFn:(s,r)=>{const a=Math.min(100-s.insight,8);s.insight+=a;const sum=newSummary();addXp(s,stageReq(s.g)*.02*(1+r*.3),sum);return {txt:'你們躺在宮殿的天台上，她指著星星一顆一顆地教你名字。感悟 +'+Math.round(a)+'、修為增加，好感 +5。'};},
+  help:{n:'陪她夜觀星象',stam:6,d:'感悟與修為'},helpFn:(s,r)=>{const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;const sum=newSummary();addXp(s,stageReq(s.g)*.02*(1+r*.3),sum);return {txt:'你們躺在宮殿的天台上，她指著星星一顆一顆地教你名字。感悟 +'+Math.round(a)+'、修為增加，好感 +5。'};},
   giftTxt:['「這是給我的？」她把禮物抱在懷裡轉了一圈，「我要寫一首詩給它！」','「嗯——你很懂我嘛。」','「謝謝你，中原的朋友。」','「這個……宮裡的僕人都不會送我這種東西。」她皺起鼻子。'],
   reqs:[{n:'三包桂花糕',need:{f_cake:3},rel:14,silver:200},{n:'兩罈葡萄美酒給父王',need:{putao:2},rel:12,silver:220},{n:'一顆東海珍珠鑲額鍊',need:{zhenzhu:1},rel:16,silver:300},{n:'兩份藏紅花抓飯',need:{f_zhuafan:2},rel:14,silver:240}]},
  zxd:{n:'扎西多吉',male:1,title:'康巴馬幫首領・雪獅斬',loc:'plateau',spot:'馬幫營地',look:{gender:'m',hair:'braid',hcolor:'ink',outfit:'zangpao',acc:'hongsui',wt:'blade'},
@@ -4308,7 +4311,7 @@ NPC_EVENTS.sly=[
   onDone:s=>{s.npc.sly.met=true;}},
  {id:'sly2',n:'星圖',cond:s=>s.npc.sly.rel>=30&&s.loc==='persia'&&isNight(s),hint:s=>s.npc.sly.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）到碧琉璃城',
   text:['蘇拉雅帶你從花園後的小門溜進宮，爬上一座圓頂的天台。天上的星星多得像打翻了一罐星砂。','「那七顆擠在一起的，就是我的名字——昴宿。」她指著天空，「你們中原叫它什麼？」'],
-  ch:[{t:'「我們叫它『七姊妹』。」',fn:s=>{addRel(s,'sly',16);const a=Math.min(100-s.insight,8);s.insight+=a;return '「七姊妹……」她念了好幾遍，「所以我們看的是同一片天空。中原和碧琉璃城，其實沒有那麼遠。」感悟 +'+Math.round(a)+'，好感 +16。';}},
+  ch:[{t:'「我們叫它『七姊妹』。」',fn:s=>{addRel(s,'sly',16);const a=Math.min(insMax(s)-s.insight,8);s.insight+=a;return '「七姊妹……」她念了好幾遍，「所以我們看的是同一片天空。中原和碧琉璃城，其實沒有那麼遠。」感悟 +'+Math.round(a)+'，好感 +16。';}},
    {t:'「我只知道它很亮，像你一樣。」',fn:s=>{addRel(s,'sly',13);return '她愣了一下，把臉轉向星星：「……你們中原人說話都這麼直接嗎？」可你看見她偷偷笑了。好感 +13。';}}]},
  {id:'sly3',n:'琉璃火',cond:s=>s.npc.sly.rel>=80&&realmOf(s)>=6&&s.loc==='persia',hint:s=>s.npc.sly.rel<80?'關係達到「信任」':realmOf(s)<6?'晉升「'+REALM_NAMES[6]+'」':'到碧琉璃城找她',
   text:['半夜，王宮的藏書閣燒起來了。火光把琉璃圓頂照得通紅。','蘇拉雅抓著你的手衝進火裡：「是宮廷總管！他和戴鐵面具的人勾結，要偷藏書閣最深處的那卷古書！」煙霧裡，一個黑袍人抱著書卷正要從窗口跳出去。'],
@@ -4322,7 +4325,7 @@ NPC_EVENTS.sly=[
  {id:'sly5',n:'宿命・昴宿落在院子裡',destiny:1,cond:s=>s.residents.includes('sly')&&aff(s,'sly')>=100,hint:s=>!s.residents.includes('sly')?'邀請她入住你的居所':'好感達到 100',
   text:['蘇拉雅在你的院子裡鋪了一張波斯地毯，每天晚上都躺在上面看星星。','「在碧琉璃城，我是公主。」她說，「在這裡，我只是蘇拉雅。原來只當蘇拉雅，是這麼輕鬆的事。」'],
   ch:[{t:'「那就一直當蘇拉雅吧。」',fn:s=>{s.npcBuff.sly=1;addRel(s,'sly',10);giveTitle(s,'n_sly');return '那天晚上的星星特別亮。獲得永久被動「七星照命」與稱號「琉璃知音」。';}},
-   {t:'躺下來，陪她把七顆星都找出來',fn:s=>{s.npcBuff.sly=1;addRel(s,'sly',8);giveTitle(s,'n_sly');const a=Math.min(100-s.insight,15);s.insight+=a;return '你們找到第七顆的時候，天已經快亮了。感悟 +'+Math.round(a)+'、永久被動「七星照命」與稱號「琉璃知音」。';}}]},
+   {t:'躺下來，陪她把七顆星都找出來',fn:s=>{s.npcBuff.sly=1;addRel(s,'sly',8);giveTitle(s,'n_sly');const a=Math.min(insMax(s)-s.insight,15);s.insight+=a;return '你們找到第七顆的時候，天已經快亮了。感悟 +'+Math.round(a)+'、永久被動「七星照命」與稱號「琉璃知音」。';}}]},
 ];
 NPC_EVENTS.zxd=[
  {id:'zxd1',n:'埡口風雪',cond:s=>s.loc==='plateau',hint:'到雪域・日光城走走',
@@ -4333,7 +4336,7 @@ NPC_EVENTS.zxd=[
  {id:'zxd2',n:'篝火歌',cond:s=>s.npc.zxd.rel>=30&&s.loc==='plateau'&&isNight(s),hint:s=>s.npc.zxd.rel<30?'關係達到「熟悉」':'夜裡（戌時以後）到雪域・日光城',
   text:['馬幫的營地燒起了篝火。扎西多吉把一大碗青稞酒推到你面前：「雪域的規矩：鬥酒、鬥歌。輸了的人，要唱一首家鄉的歌。」','整個營地的漢子都在起哄，他的雪獒森格也搖著尾巴湊了過來。'],
   ch:[{t:'端起酒碗，跟他拼到天亮',need:s=>has(s,'wine')?null:'需要 1 罈桂花酒',fn:s=>{useItems(s,{wine:1});addRel(s,'zxd',18);return '你們喝到第十二碗，他終於趴在了桌上，嘴裡還在唱歌。整個營地的人都把你舉了起來。好感 +18。';}},
-   {t:'認輸，唱一首中原小調',fn:s=>{addRel(s,'zxd',14);const a=Math.min(100-s.insight,6);s.insight+=a;return '你唱得很爛，可是他聽完很久都沒說話。最後他說：「你唱的是家。我聽得懂。」然後他唱了一首雪域的歌回給你。感悟 +'+Math.round(a)+'，好感 +14。';}}]},
+   {t:'認輸，唱一首中原小調',fn:s=>{addRel(s,'zxd',14);const a=Math.min(insMax(s)-s.insight,6);s.insight+=a;return '你唱得很爛，可是他聽完很久都沒說話。最後他說：「你唱的是家。我聽得懂。」然後他唱了一首雪域的歌回給你。感悟 +'+Math.round(a)+'，好感 +14。';}}]},
  {id:'zxd3',n:'鹽道',cond:s=>s.npc.zxd.rel>=80&&realmOf(s)>=7&&s.loc==='plateau',hint:s=>s.npc.zxd.rel<80?'關係達到「信任」':realmOf(s)<7?'晉升「'+REALM_NAMES[7]+'」':'到雪域・日光城找他',
   text:['運鹽的古道上，一支馬幫倒在雪地裡，貨被搶光了。雪地上的腳印通往一座石窟，窟口插著一面黑旗：九個圓圈，圍著一隻眼睛。','扎西多吉握緊了刀：「慕容玄死了，他的狗還在咬人。」他回頭看你：「這一次，你守我後背。」'],
   ch:[{t:'「去吧，後面交給我。」',fight:true,fn:s=>evFight(s,'zxd',36,'九幽殘黨・鐵面馬賊王',s=>{addRel(s,'zxd',20);const f=Math.round(40*fameMult(s));s.fame+=f;addJournal(s,'人物','在雪域鹽道上與扎西多吉擊退九幽殘黨。','zxd3');return '鐵面馬賊王的刀斷成兩截。扎西多吉把搶回來的鹽一袋一袋扛回馬背上，然後解下自己的酒囊遞給你：「從今天起，雪域的每一條路，你都能走。」聲望 +'+f+'，好感 +20。';},
@@ -4429,7 +4432,7 @@ Object.assign(VISIT_TEXT,{sly:'門外飄來一陣玫瑰香。蘇拉雅掀開面�
 FESTS.push(
  {id:'nowruz',m:1,n:'春分新年',d:'絲路上的新年，從碧琉璃城傳到了中原。修為 +5%。',scene:'market',
   text:['春分這天，從西域來的商隊在青石鎮的市集擺起了一張長桌。桌上有七樣東西：麥苗、蘋果、蒜、醋、金幣、彩蛋和一面鏡子。','「這是我們的新年。」商隊裡的人笑著說，「麥苗是新生，鏡子照出新的自己。」{c}好奇地拿起一顆彩蛋。'],
-  ch:[['和{c}一起畫彩蛋','你們畫了一個下午的彩蛋，{c}的彩蛋上畫了一個小小的你。',s=>{gainItem(s,'meiguilu',2);if(s.npc.sly&&s.npc.sly.met)addRel(s,'sly',6);}],['跳過門口的篝火','商隊的人說，跳過篝火能把舊年的煩惱燒掉。你拉著{c}一起跳，兩個人的衣角都差點著了。',s=>{s.insight=Math.min(100,s.insight+10);if(s.npc.sly&&s.npc.sly.met)addRel(s,'sly',6);}]]},
+  ch:[['和{c}一起畫彩蛋','你們畫了一個下午的彩蛋，{c}的彩蛋上畫了一個小小的你。',s=>{gainItem(s,'meiguilu',2);if(s.npc.sly&&s.npc.sly.met)addRel(s,'sly',6);}],['跳過門口的篝火','商隊的人說，跳過篝火能把舊年的煩惱燒掉。你拉著{c}一起跳，兩個人的衣角都差點著了。',s=>{s.insight=Math.min(insMax(s),s.insight+10);if(s.npc.sly&&s.npc.sly.met)addRel(s,'sly',6);}]]},
  {id:'saima',m:5,n:'雪域賽馬節',d:'雪域的夏天，草甸上萬馬奔騰。攻擊 +3%、體力回復 +10%。',scene:'mtpath',
   text:['六月，雪域的商人帶著好馬來到中原，在青雲山下的草地上辦了一場賽馬。','幾十匹高原馬一字排開，馬鬃上繫著彩色綢帶。{c}拉著你的袖子：「我們也去跑一場！」'],
   ch:[['和{c}一起上馬比賽','你們的馬一路領先，最後在終點前被一個雪域少年超了過去。{c}笑著說：「明年再來！」',s=>{s.silver+=400+realmOf(s)*150;s.fame+=10;if(s.npc.zxd&&s.npc.zxd.met)addRel(s,'zxd',6);}],['在帳篷裡喝酥油茶看比賽','你們坐在帳篷裡喝了一下午的酥油茶，看著馬群在草地上奔跑，像一條會飛的河。',s=>{gainItem(s,'suyou',2);gainItem(s,'qingke',3);if(s.npc.zxd&&s.npc.zxd.met)addRel(s,'zxd',6);}]]});
@@ -4610,7 +4613,7 @@ const _normalizeFR=normalize;normalize=function(raw,now){const s=_normalizeFR(ra
 /* ================= 逍遙江湖 擴充二十二：更多隨機奇遇 =================
    奇遇出現得更頻密（約每 45 分鐘一件），並加入各地專屬奇遇。 */
 const xpBit=(s,k)=>{const sum=newSummary();addXp(s,stageReq(s.g)*k,sum);};
-const insBit=(s,n)=>{const a=Math.min(100-s.insight,n);s.insight+=a;return Math.round(a);};
+const insBit=(s,n)=>{const a=Math.min(insMax(s)-s.insight,n);s.insight+=a;return Math.round(a);};
 const fameBit=(s,n)=>{const f=Math.round(n*fameMult(s));s.fame+=f;return f;};
 ENCOUNTERS.push(
  /* 通用 */
@@ -5212,11 +5215,11 @@ function homeMates(s){const out=[],add=id=>{if(id&&NPCS[id]&&!out.includes(id))o
 function home2Why(s,id){const A=HOME2[id];if(!A)return '沒有這項';const H=homeState(s);if(H.inter[id]===gday(s))return '今天已經做過了';if(A.night&&gameHour(s)<18&&gameHour(s)>=5)return '要等入夜';return null;}
 function home2Do(s,id,mate,score,choice){const A=HOME2[id],w=home2Why(s,id);if(w)return {err:w};const H=homeState(s);H.inter[id]=gday(s);score=Math.max(0,Math.min(1,+score||0));
  const m=.5+score,r=realmOf(s),got=[];const c=mate&&NPCS[mate]?mate:null;let rel=Math.round(3+score*5);
- const ins=n=>{const a=Math.min(100-s.insight,Math.round(n));s.insight+=a;got.push('感悟 +'+a);};
+ const ins=n=>{const a=Math.min(insMax(s)-s.insight,Math.round(n));s.insight+=a;got.push('感悟 +'+a);};
  if(id==='qin'){addProf(s,s.mainInner,150*(1+r)*m,null);got.push('內功熟練 +'+Math.round(150*(1+r)*m));}
  else if(id==='chess'){ins(10*m);if(score>=1)rel+=3;}
- else if(id==='fish'){const v=Math.round(15*m);s.stam=Math.min(100,s.stam+v);got.push('體力 +'+v);}
- else if(id==='tea'){const v=Math.round(20*m*(['rain','storm','snow'].includes(wxToday(s))?2:1));s.stam=Math.min(100,s.stam+v);got.push('體力 +'+v);}
+ else if(id==='fish'){const v=Math.round(15*m);s.stam=Math.min(stamMax(s),s.stam+v);got.push('體力 +'+v);}
+ else if(id==='tea'){const v=Math.round(20*m*(['rain','storm','snow'].includes(wxToday(s))?2:1));s.stam=Math.min(stamMax(s),s.stam+v);got.push('體力 +'+v);}
  else if(id==='moon'){if(choice===0)rel+=6;else if(choice===1)ins(12);else{rel+=3;ins(6);}}
  else if(id==='read'){if(choice===0){addProf(s,s.mainMartial,150*(1+r),null);got.push('武功熟練 +'+150*(1+r));}else if(choice===1){addProf(s,s.mainInner,150*(1+r),null);got.push('內功熟練 +'+150*(1+r));}else ins(12);}
  else if(id==='fire'){if(choice===0){for(const x of (s.residents||[]))if(s.npc[x])addRel(s,x,4);got.push('所有住客好感 +4');}else if(choice===1){const f=Math.round(10*fameMult(s));s.fame+=f;got.push('聲望 +'+f);}else ins(12);}
@@ -5250,7 +5253,7 @@ delete HOME2.fish;
 /* 舊的「後續擴充預告」改成實際內容 */
 (function(){const R=id=>RUMORS.find(r=>r.id===id);const set=(id,o)=>{const r=R(id);if(r)Object.assign(r,o);};
  set('r7',{n:'洛陽武市的擂台',d:'洛陽武市的擂台上，有個自稱「洛陽第一刀」的刀客，連勝了三十場。',fx:'聲望 +10',on:s=>{s.fame+=Math.round(10*fameMult(s));}});
- set('r8',{n:'寒山古寺的夜鐘',d:'寒山古寺的鐘，半夜總會自己響三聲。寺裡的僧人說，那是一位老和尚在等一個人。',fx:'感悟 +10',on:s=>{s.insight=Math.min(100,s.insight+10);}});
+ set('r8',{n:'寒山古寺的夜鐘',d:'寒山古寺的鐘，半夜總會自己響三聲。寺裡的僧人說，那是一位老和尚在等一個人。',fx:'感悟 +10',on:s=>{s.insight=Math.min(insMax(s),s.insight+10);}});
  set('r9',{n:'天下會武',d:'三年一度的天下會武又要開了。據說今年的彩頭，是一把沒有名字的劍。',fx:'聲望 +15',on:s=>{s.fame+=Math.round(15*fameMult(s));}});})();
 const RUMOR_MORE=[];
 /* 一、未來弟子的消息：聽過之後，到那裡一定會遇見 */
@@ -5266,7 +5269,7 @@ RUMOR_MORE.push(
  {id:'rt2',n:'藥王的私藏',d:'百草谷的老藥王去世前，把一株千年靈芝埋在翠竹林的老竹根下。',fx:'靈芝 ×2',cond:s=>realmOf(s)>=2,on:s=>{gainItem(s,'lingzhi',2);}},
  {id:'rt3',n:'天外隕鐵',d:'天機閣的人說，十年前有顆流星落在邙山，坑裡的石頭會發光。',fx:'天外隕鐵 ×1',cond:s=>realmOf(s)>=5,on:s=>{gainItem(s,'yuntie',1);}},
  {id:'rt4',n:'鏢局的懸賞',d:'威遠鏢局懸賞捉拿一夥劫鏢的山賊，提供消息的人也有賞錢。',fx:'銀兩 +800',cond:s=>realmOf(s)>=2,on:s=>{s.silver+=800;}},
- {id:'rt5',n:'說書人的祕密',d:'悅來客棧的說書人，年輕時據說是個了不起的人物。他手上那把舊摺扇，從不離身。',fx:'感悟 +15',cond:s=>realmOf(s)>=4,on:s=>{s.insight=Math.min(100,s.insight+15);}},
+ {id:'rt5',n:'說書人的祕密',d:'悅來客棧的說書人，年輕時據說是個了不起的人物。他手上那把舊摺扇，從不離身。',fx:'感悟 +15',cond:s=>realmOf(s)>=4,on:s=>{s.insight=Math.min(insMax(s),s.insight+15);}},
  {id:'rt6',n:'九幽的印記',d:'有人在京城的當鋪裡，看到一枚刻著九個圓圈和一隻眼睛的令牌。',fx:'聲望 +20',cond:s=>realmOf(s)>=6,on:s=>{s.fame+=Math.round(20*fameMult(s));}},
  {id:'rt7',n:'海外三山',d:'鄭孤帆說，蓬萊之外還有方丈與瀛洲，只有在大霧的夜裡才看得見。',fx:'東海珍珠 ×2',cond:s=>realmOf(s)>=5,on:s=>{gainItem(s,'zhenzhu',2);}},
  {id:'rt8',n:'雪域的佛音',d:'日光城的老喇嘛說，雪山上有一座無人的寺，每年雪化時會傳出誦經聲。',fx:'修為小幅提升',cond:s=>realmOf(s)>=6,on:s=>{const sum=newSummary();addXp(s,stageReq(s.g)*.05,sum);}},
@@ -5284,7 +5287,50 @@ const GOSSIP=[
 ];
 function gossip(s){const G=s.gossip&&s.gossip.day===gday(s)?s.gossip:(s.gossip={day:gday(s),n:0});if(G.n>=3)return {err:'今天已經聽夠了，明天再來'};if(s.silver<20)return {err:'需要 20 兩'};
  s.silver-=20;G.n++;advTime(s,30);const [t,k,v]=GOSSIP[((gday(s)*3+G.n+((s.created>>>0)%997))>>>0)%GOSSIP.length];let got;
- if(k==='silver'){s.silver+=v;got='銀兩 +'+v;}else if(k==='fame'){const f=Math.round(v*fameMult(s));s.fame+=f;got='聲望 +'+f;}else{const a=Math.min(100-s.insight,v);s.insight+=a;got='感悟 +'+a;}return {t,got,left:3-G.n};}
+ if(k==='silver'){s.silver+=v;got='銀兩 +'+v;}else if(k==='fame'){const f=Math.round(v*fameMult(s));s.fame+=f;got='聲望 +'+f;}else{const a=Math.min(insMax(s)-s.insight,v);s.insight+=a;got='感悟 +'+a;}return {t,got,left:3-G.n};}
+
+/* ================= 突破極限：氣海淬體（體力上限）・靈台問心（感悟上限） ================= */
+const LB_MAX=10;
+const lbState=s=>{if(!s.lb||typeof s.lb!=='object')s.lb={};const L=s.lb;for(const k of ['st','in'])L[k]=Math.max(0,Math.min(LB_MAX,L[k]|0));if(!Number.isFinite(L.stTry))L.stTry=-1;if(!Number.isFinite(L.inTry))L.inTry=-1;return L;};
+const LB_ST_NAMES=['一重','二重','三重','四重','五重','六重','七重','八重','九重','圓滿'];
+const lbStLv=n=>15+n*6,lbInLv=n=>20+n*6;
+function lbStCost(n){const c={herb:10+n*5,lingzhi:1+Math.floor(n/2)};if(n>=5)c.shedan=n-4;return c;}
+const LB_FOES=[['山中猛虎','餓狼群','熊王'],['綠林刀客','綠林槍手','綠林寨主'],['九幽暗衛','九幽刺客','九幽護法']];
+function lbStCheck(s){const L=lbState(s),n=L.st;if(n>=LB_MAX)return '氣海已經圓滿';if(s.g<lbStLv(n))return '需要等級 '+lbStLv(n);if(L.stTry===gday(s))return '今天已經淬體過了，明天再來';if(s.stam<20)return '體力不足（需 20）';
+ const c=lbStCost(n);for(const k in c)if((s.mat[k]||0)<c[k])return '材料不足：'+ITEMS[k].n+' ×'+c[k];return null;}
+/* 連戰三場，氣血不回復 */
+function lbStTry(s){const e=lbStCheck(s);if(e)return {err:e};const L=lbState(s),n=L.st;L.stTry=gday(s);s.stam-=20;advTime(s,120);
+ const P=playerFighter(s),names=LB_FOES[Math.min(2,Math.floor(n/4))],lines=[];let hp=P.hp,win=true;
+ for(let i=0;i<3;i++){const base=finishEnemy(Object.assign(enemyBase(realmOf(s)*3.8+2,i===2),{name:names[i]}));Object.assign(base,{hp:P.hp*(.46+n*.008+i*.12),atk:P.atk*(.60+n*.005+i*.04),def:P.def*.85,spd:P.spd,crit:6+n*.4,critDmg:50,dodge:4+n*.2,dbl:4,stun:0,pierce:5+n*.5,reflect:0,lifesteal:0,opening:0});finishEnemy(base);
+  const r=fight(Object.assign({},P,{hp}),base);const left=Math.max(0,Math.round(r.pHp!=null?r.pHp:(r.win?hp*.6:0)));
+  lines.push('第 '+(i+1)+' 場・'+names[i]+'：'+(r.win?'勝（剩餘氣血 '+fmt(left)+' / '+fmt(P.hp)+'）':'敗'));if(!r.win){win=false;break;}hp=left;}
+ if(!win){lines.push('氣血耗盡，淬體未成。材料沒有消耗，明天再來。');return {win:false,lines};}
+ useItems(s,lbStCost(n));L.st++;s.stam=stamMax(s);addJournal(s,'修行','氣海淬體突破至「'+LB_ST_NAMES[L.st-1]+'」，體力上限提升到 '+stamMax(s)+'。');if(L.st>=5)giveTitle(s,'lb_st5');if(L.st>=LB_MAX)giveTitle(s,'lb_st10');
+ lines.push('連過三關！氣海擴開，體力上限 +10（現在 '+stamMax(s)+'），體力回復 +2%，體力全滿。');return {win:true,lines};}
+/* 靈台問心：心魔出題，答錯不損失，明天再來 */
+function lbInCheck(s){const L=lbState(s),n=L.in;if(n>=LB_MAX)return '靈台已經圓滿';if(s.g<lbInLv(n))return '需要等級 '+lbInLv(n);if(L.inTry===gday(s))return '今天心神已疲，明天再來';if(s.insight<insMax(s)-.01)return '感悟需要滿溢（'+insMax(s)+'）';return null;}
+function lbShuffle(a,seed){const r=a.slice();for(let i=r.length-1;i>0;i--){seed=(seed*1103515245+12345)>>>0;const j=seed%(i+1);[r[i],r[j]]=[r[j],r[i]];}return r;}
+function lbQuestions(s){const L=lbState(s),n=L.in,cnt=3+Math.floor(n/3),seed=(gday(s)*7919+n*131+((s.created>>>0)%9973))>>>0,Q=[];
+ const met=Object.keys(NPCS).filter(id=>typeof npcMet==='function'&&npcMet(s,id)&&NPCS[id].loc&&LOCS[NPCS[id].loc]);const locs=Object.keys(LOCS);
+ const pickN=(arr,k,sd)=>lbShuffle(arr,sd).slice(0,k);
+ const gens=[
+  sd=>{if(met.length<1)return null;const id=pickN(met,1,sd)[0],ok=LOCS[NPCS[id].loc].n,wr=pickN(locs.map(l=>LOCS[l].n).filter(x=>x!==ok),3,sd+1);return {q:'「'+NPCS[id].n+'」平時在哪裡？',a:ok,o:lbShuffle([ok,...wr],sd+2)};},
+  sd=>{const T=met.filter(id=>NPCS[id].title);if(T.length<4)return null;const id=pickN(T,1,sd)[0],ok=NPCS[id].n,wr=pickN(T.filter(x=>x!==id).map(x=>NPCS[x].n),3,sd+1);return {q:'誰是「'+NPCS[id].title.split('・')[0]+'」？',a:ok,o:lbShuffle([ok,...wr],sd+2)};},
+  sd=>{const i=sd%(REALM_NAMES.length-1),ok=REALM_NAMES[i+1],wr=pickN(REALM_NAMES.filter((x,j)=>j!==i+1&&j!==i),3,sd+1);return {q:'「'+REALM_NAMES[i]+'」之後，是哪一個境界？',a:ok,o:lbShuffle([ok,...wr],sd+2)};},
+  sd=>{const ks=Object.keys(PET_SK);const k=ks[sd%ks.length],ok=PET_SK[k].sn,wr=pickN(ks.filter(x=>x!==k).map(x=>PET_SK[x].sn),3,sd+1);return {q:PETS[k].n+'的戰鬥技能是什麼？',a:ok,o:lbShuffle([ok,...wr],sd+2)};},
+  sd=>{const ks=Object.keys(ZL_STYLES);const k=ks[sd%ks.length],ok=ZL_STYLES[k].t,wr=pickN(ks.filter(x=>x!==k).map(x=>ZL_STYLES[x].t),3,sd+1);return {q:'「'+ZL_STYLES[k].n+'」的宗旨是？',a:ok,o:lbShuffle([ok,...wr],sd+2)};},
+  sd=>{const L2=ZL_NAMED.filter(N=>NPCS[N.npc]);const N=L2[sd%L2.length],ok=NPCS[N.npc].n,wr=pickN(L2.filter(x=>x.npc!==N.npc).map(x=>NPCS[x.npc].n),3,sd+1);return {q:'少年「'+N.name+'」與誰有淵源？',a:ok,o:lbShuffle([ok,...[...new Set(wr)]].slice(0,4),sd+2)};},
+ ];
+ let k=0;while(Q.length<cnt&&k<40){const g=gens[(seed+k*7)%gens.length];const q=g((seed+k*977)>>>0);k++;if(q&&!Q.some(x=>x.q===q.q))Q.push(q);}return Q;}
+const LB_DEMON=['心魔冷笑：「連這都記不得，還想悟道？」','心魔幻化成你熟悉的模樣，輕聲問：','心魔在你耳邊低語：','四周一片漆黑，只剩一個聲音在問：','心魔笑了：「最後一題。」'];
+function lbInStart(s){const e=lbInCheck(s);if(e)return {err:e};return {qs:lbQuestions(s)};}
+function lbInFinish(s,correct,total){const L=lbState(s);L.inTry=gday(s);if(correct<total)return {win:false,txt:'答錯了一題，心魔一笑，幻境崩散。感悟沒有減少，明天再來。'};
+ L.in++;s.insight=0;addJournal(s,'修行','靈台問心突破至第 '+L.in+' 層，感悟上限提升到 '+insMax(s)+'。');if(L.in>=5)giveTitle(s,'lb_in5');if(L.in>=LB_MAX)giveTitle(s,'lb_in10');
+ return {win:true,txt:'心魔散去，靈台一片清明。感悟上限 +10（現在 '+insMax(s)+'），悟性 +1。這次的感悟化作根基，從零重新累積。'};}
+{const _em=extStatMods;extStatMods=function(s,st){_em(s,st);const L=s.lb;if(!L)return;st.stamRegen=(st.stamRegen||0)+(L.st|0)*2;st.wis=(st.wis||0)+(L.in|0);};}
+Object.assign(TITLES,{lb_st5:{n:'氣吞山河',src:'氣海淬體五重',tier:6,e:{stamRegen:8,hpPct:5}},lb_st10:{n:'氣海無涯',src:'氣海淬體圓滿',tier:7,e:{stamRegen:15,hpPct:10,atkPct:4}},
+ lb_in5:{n:'靈台清明',src:'靈台問心五層',tier:6,e:{wis:4,xpPct:6}},lb_in10:{n:'明心見性',src:'靈台問心圓滿',tier:7,e:{wis:8,xpPct:12,crit:3}}});
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);lbState(s);s.stam=Math.max(0,Math.min(stamMax(s),Number.isFinite(raw.stam)?raw.stam:s.stam));s.insight=Math.max(0,Math.min(insMax(s),Number.isFinite(raw.insight)?raw.insight:s.insight));return s;};}
 
 </script>
 <script>
@@ -7009,8 +7055,8 @@ function vCultivate(){let h=seg('cult',[['train','修行'],['arts','武功'],['g
  if(ui.seg.cult==='train'){const bi=breakInfo(S);
   if(bi){h+=`<div class="card hi"><div class="h-row"><h3>衝關：${REALM_NAMES[bi.to]}</h3><span class="sub">成功率 <b class="num" style="color:var(--gold2)">${bi.chance}%</b></span></div>
    <ul class="cond">${bi.conds.map(c=>`<li class="${c.ok?'ok':''}">${c.t}</li>`).join('')}</ul>
-   ${bi.to>=4?`<div class="sub">感悟 ${Math.floor(S.insight)}/100（每點 +0.5% 成功率）</div>${bar(S.insight,'gold','insBar')}`:''}
-   <div class="row"><button class="btn" data-act="breakthrough" ${bi.ok?'':'disabled'}>突破境界</button>${bi.to>=4?`<button class="btn ghost sm" data-act="useItem" data-k="p_break" ${has(S,'p_break')&&S.insight<100?'':'disabled'}>服破境丹（${S.mat.p_break||0}）</button>`:''}</div>
+   ${bi.to>=4?`<div class="sub">感悟 ${Math.floor(S.insight)}/${insMax(S)}（每點 +0.5% 成功率）</div>${bar(S.insight/insMax(S)*100,'gold','insBar')}`:''}
+   <div class="row"><button class="btn" data-act="breakthrough" ${bi.ok?'':'disabled'}>突破境界</button>${bi.to>=4?`<button class="btn ghost sm" data-act="useItem" data-k="p_break" ${has(S,'p_break')&&S.insight<insMax(S)?'':'disabled'}>服破境丹（${S.mat.p_break||0}）</button>`:''}</div>
    <p class="sub" style="margin:0">失敗不扣修為，只增加感悟。</p></div>`;}
   else if(S.g<G_MAX){let n=S.g+1;while(n<G_MAX&&!isGate(n))n++;h+=`<div class="card"><h3>修行進度</h3><p class="sub" style="margin:0">小階段修為圓滿會自動晉升（離線也會）。下一個要親自衝關的是「${stageName(n)}」。</p></div>`;}
   h+=`<div class="lbl">修行方向（切換時會先結算上一段時間）</div><div class="modes">${Object.entries(MODES).map(([k,m])=>`<button class="mode" data-act="mode" data-m="${k}" aria-pressed="${S.mode===k}"><b><i class="mi md-${k}" aria-hidden="true"></i>${m.n}</b><span>${m.d}</span><em>${modeEst(k)}</em></button>`).join('')}</div>`;
@@ -7036,7 +7082,7 @@ function vCultivate(){let h=seg('cult',[['train','修行'],['arts','武功'],['g
 /* 人物分頁 */
 function vPeople(){const st=computeStats(S);const P=(k,v)=>`<div><span>${k}</span><b>${v}</b></div>`;
  let h=`<div class="card"><div class="npc-head"><canvas class="full" width="28" height="52" data-self="1"></canvas><div><h3>${esc(S.name)}</h3><span class="sub">${S.gender==='f'?'女俠':'少俠'}・${stageName(S.g)}・兵器：${WTYPES[st.wt]}</span></div></div>
- <div class="kv">${P('修為',fmt(S.xp)+' / '+fmt(stageReq(S.g)))}${P('銀兩',fmt(S.silver))}${P('體力',Math.floor(S.stam)+' / 100')}${P('氣血',fmt(st.hp))}${P('攻擊',fmt(st.atk))}${P('防禦',fmt(st.def))}
+ <div class="kv">${P('修為',fmt(S.xp)+' / '+fmt(stageReq(S.g)))}${P('銀兩',fmt(S.silver))}${P('體力',Math.floor(S.stam)+' / '+stamMax(S))}${P('氣血',fmt(st.hp))}${P('攻擊',fmt(st.atk))}${P('防禦',fmt(st.def))}
  ${P('速度',st.spd)}${P('悟性',st.wis)}${P('暴擊',st.crit+'%')}${P('閃避',Math.min(60,Math.max(0,st.dodge))+'%')}${P('連擊',st.dbl+'%')}${P('破甲',Math.min(80,st.pierce)+'%')}${P('修為加成',st.xpPct+'%')}${P('熟練加成',st.profPct+'%')}${P('感悟',Math.floor(S.insight)+'/100')}${P('勝 / 負',S.stat.wins+' / '+S.stat.losses)}</div>
  <div class="row"><button class="btn ghost sm" data-act="rename">改名</button><button class="btn ghost sm" data-act="seg" data-k="life" data-v="look" data-goto="life">換裝</button></div></div>`;
  h+=`<div class="lbl">江湖人物</div>`;
@@ -7099,7 +7145,7 @@ function itemDetail(u){const it=S.inv.find(i=>i.u===u);if(!it)return closeModal(
 
 function innModal(){const unread=RUMORS.filter(r=>r.cond(S)&&!S.col.rumors.includes(r.id));const now=Date.now();
  openModal(`${backRow('悅來客棧')}<p class="sub">掌櫃的撥著算盤：「客官，打尖還是住店？」</p>
- <div class="card"><h3>休息</h3><span class="sub">小睡兩個時辰，體力 +40（60 兩）</span><button class="btn" data-act="innRest" ${S.silver>=60&&S.stam<100?'':'disabled'}>住店休息</button></div>
+ <div class="card"><h3>休息</h3><span class="sub">小睡兩個時辰，體力 +40（60 兩）</span><button class="btn" data-act="innRest" ${S.silver>=60&&S.stam<stamMax(S)?'':'disabled'}>住店休息</button></div>
  <div class="card"><h3>飲茶</h3><span class="sub">30 分鐘內武功熟練提升，有時能聽到鄰桌閒談。${S.buffs.tea>now?'・茶香尚餘 '+fmtTime((S.buffs.tea-now)/1000):''}</span>
   <div class="row"><button class="btn ghost" data-act="innTea" data-own="0" ${S.silver>=10?'':'disabled'}>店家粗茶<small>10 兩・熟練 +${10+TEASETS[S.teaset].b}%</small></button><button class="btn jade" data-act="innTea" data-own="1" ${has(S,'tea')?'':'disabled'}>自沏碧螺春<small>持有 ${S.mat.tea||0}・熟練 +${15+TEASETS[S.teaset].b}%</small></button></div></div>
  <div class="card"><h3>江湖傳聞牆</h3><span class="sub">打賞說書人 10 兩，聽一則傳聞（一個時辰）。讀過的傳聞收在「收藏」。</span>
@@ -8152,7 +8198,7 @@ const _renderTopS=renderTop;renderTop=function(){_renderTopS();applyCalm();};
 
 /* ================= 擴充十一介面：下一步指引、江湖地圖、回歸奇遇、回來時間、試劍塔、出招策略、切磋碼、分享卡 ================= */
 const clk=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
-const stamFullAt=()=>{if(S.stam>=100)return null;const st=computeStats(S);return Date.now()+(100-S.stam)*72/(1+(st.stamRegen||0)/100)*1000;};
+const stamFullAt=()=>{if(S.stam>=stamMax(S))return null;const st=computeStats(S);return Date.now()+(stamMax(S)-S.stam)*72/(1+(st.stamRegen||0)/100)*1000;};
 
 /* ---------- A1 下一步指引 ---------- */
 function bestExploreHere(){const st=computeStats(S);let best=null;EXPLORES.forEach((E,i)=>{if(E.loc!==S.loc||!expUnlocked(S,i)||S.stam<E.cost)return;const fp=foePower(i);if(fp>st.power*1.15)return;if(!best||E.L>EXPLORES[best].L)best=i;});return best;}
@@ -9405,6 +9451,26 @@ const zlSprImg=(d,h)=>SPRITE_IMG_SRC[zlSprKey(d)]?`<img class="zl-spr" src="${SP
    q.push({key,flip:dir<0,cx:pl.cx+spots[i][0]+dx,fy:pl.fy+spots[i][1]-Math.max(0,Math.sin(t/160+i))*(Math.abs(dir)>.3?1.5:0),f:ph/SPR[key].naturalHeight,seed:3+i});});};}
 {const _cup=ACT.zlCup;ACT.zlCup=()=>{const team=ui.zlTeam.map(id=>zlFind(S,id)).filter(Boolean);_cup();const s=$('#sheet h3');if(s&&team.length)s.insertAdjacentHTML('afterend',`<div class="zl-team">${team.map(d=>`<div>${zlSprImg(d,96)}<span class="mini">${esc(d.name)}</span></div>`).join('')}</div>`);};}
 (function(){const st=document.createElement('style');st.textContent='.zl-spr{object-fit:contain;margin-left:auto;flex:none}.zl-team{display:flex;justify-content:center;gap:14px;margin:6px 0}.zl-team>div{display:grid;justify-items:center}';document.head.appendChild(st);})();
+/* 突破極限卡（修行 › 修行） */
+function lbCard(){const L=lbState(S),sn=L.st,in_=L.in,c=lbStCost(sn),e1=lbStCheck(S),e2=lbInCheck(S);
+ const stBody=sn>=LB_MAX?'<span class="eff">氣海已經圓滿。</span>':`<div class="mini">下一重需：等級 ${lbStLv(sn)}・${Object.entries(c).map(([k,v])=>`${ITEMS[k].n} ${Math.floor(S.mat[k]||0)}/${v}`).join('・')}・體力 20</div>
+  <span class="sub">連戰三場，氣血不回復。三場都贏，體力上限 +10、體力回復 +2%。輸了材料不扣，明天再來。</span><button class="btn red" data-act="lbSt" ${e1?'disabled':''}>淬體連戰<small>${e1||'每日一次'}</small></button>`;
+ const inBody=in_>=LB_MAX?'<span class="eff">靈台已經圓滿。</span>':`<div class="mini">下一層需：等級 ${lbInLv(in_)}・感悟滿溢 ${Math.floor(S.insight)}/${insMax(S)}</div>
+  <span class="sub">心魔會問你 ${3+Math.floor(in_/3)} 條江湖舊事，全部答對才算過關：感悟上限 +10、悟性 +1。答錯不損失，明天再來。</span><button class="btn jade" data-act="lbIn" ${e2?'disabled':''}>入定問心<small>${e2||'每日一次'}</small></button>`;
+ return fold('lb','突破極限 <span class="mini">體力 '+stamMax(S)+'・感悟 '+insMax(S)+'</span>',`<div class="card"><h3>氣海淬體 <span class="stage-pill">${sn?LB_ST_NAMES[sn-1]:'未入門'}</span></h3>${bar(sn/LB_MAX*100,'red')}${stBody}</div>
+  <div class="card"><h3>靈台問心 <span class="stage-pill">${in_?'第 '+in_+' 層':'未入門'}</span></h3>${bar(in_/LB_MAX*100,'gold')}${inBody}</div>`);}
+{const _vc2=vCultivate;vCultivate=function(){const h=_vc2();return ui.seg.cult==='train'?h+lbCard():h;};}
+function lbQuiz(){const Q=ui.lbQ;if(!Q)return;const i=Q.i,q=Q.qs[i];
+ openModal(`${backRow('靈台問心')}<p class="mini">第 ${i+1} / ${Q.qs.length} 問・答對 ${Q.ok}</p><p class="sub">${LB_DEMON[Math.min(i,LB_DEMON.length-1)]}</p><h3 style="margin:6px 0 10px">${q.q}</h3>
+  <div class="h2-opts">${q.o.map((o,j)=>`<button class="btn ghost" data-act="lbAns" data-j="${j}">${o}</button>`).join('')}</div>`,'mtpath');}
+Object.assign(ACT,{
+ lbSt:()=>{const r=lbStTry(S);if(r.err)return toast(r.err);save();render();renderTop();if(r.win)SFX.story&&SFX.story();
+  msgModal(r.win?'氣海淬體・成功':'氣海淬體・未成',r.lines.map((l,i)=>`<p class="${i===r.lines.length-1?(r.win?'eff':'sub'):'sub'}">${l}</p>`).join(''),'mtpath');},
+ lbIn:()=>{const r=lbInStart(S);if(r.err)return toast(r.err);ui.lbQ={qs:r.qs,i:0,ok:0};lbQuiz();},
+ lbAns:d=>{const Q=ui.lbQ;if(!Q)return;const q=Q.qs[Q.i],right=q.o[+d.j]===q.a;if(right)Q.ok++;else{const r=lbInFinish(S,0,1);ui.lbQ=null;save();render();renderTop();
+   return msgModal('靈台問心・未成',`<p class="sub">正確答案是「${q.a}」。</p><p class="sub">${r.txt}</p>`,'mtpath');}
+  Q.i++;if(Q.i<Q.qs.length)return lbQuiz();const r=lbInFinish(S,Q.ok,Q.qs.length);ui.lbQ=null;save();render();renderTop();SFX.story&&SFX.story();msgModal('靈台問心・突破',`<p class="eff">${r.txt}</p>`,'mtpath');},
+});
 
 /* ================= 庭院互動 2.0 與據點 2.0 介面 ================= */
 /* ---------- 家園：庭院互動清單 ---------- */
