@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-232718";</script>
+<script>window.XY_BUILD="20261107-232841";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -9503,6 +9503,11 @@ const NAV_IMG={"icons": {"jianghu": "data:image/webp;base64,UklGRhgeAABXRUJQVlA4
  #nav button[aria-current="true"] .nv-ic{transform:translateY(-8px) scale(1.28);opacity:1;filter:drop-shadow(0 0 6px rgba(255,214,110,.95)) drop-shadow(0 2px 1px rgba(0,0,0,.5))}
  #nav button[aria-current="true"] span{position:relative}#nav button[aria-current="true"] span::after{content:'';position:absolute;left:50%;bottom:-5px;width:18px;height:3px;margin-left:-9px;border-radius:2px;background:linear-gradient(90deg,transparent,#f3c55a,transparent)}
  #nav button:active .nv-ic{transform:scale(.92)}`;document.head.appendChild(st);})();
+/* 紅點：柔和發光、呼吸閃動 */
+(function(){const st=document.createElement('style');st.textContent=`html body #nav .nav-dot{background:radial-gradient(circle at 35% 30%,#ffd0b8 0,#ff6a48 35%,#d0281a 70%)!important;border-radius:50%!important;width:11px!important;height:11px!important;image-rendering:auto!important;
+ box-shadow:0 0 0 1.5px #3a1008,0 0 6px 2px rgba(255,90,60,.85),0 0 12px 4px rgba(255,120,60,.45)!important;animation:navDotGlow 1.8s ease-in-out infinite;z-index:2}
+@keyframes navDotGlow{0%,100%{box-shadow:0 0 0 1.5px #3a1008,0 0 4px 1px rgba(255,90,60,.7),0 0 8px 2px rgba(255,120,60,.3)}50%{box-shadow:0 0 0 1.5px #3a1008,0 0 8px 3px rgba(255,110,70,1),0 0 16px 6px rgba(255,150,70,.55)}}
+@media (prefers-reduced-motion:reduce){html body #nav .nav-dot{animation:none}}`;document.head.appendChild(st);})();
 
 </script>
 <script>
