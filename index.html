@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-082956";</script>
+<script>window.XY_BUILD="20261108-083206";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -560,7 +560,7 @@ const DECOR={
  bingqijia:{n:'兵器架',e:{atkPct:2},how:'鐵匠舖 400 兩',price:400},
  huadeng:{n:'花燈',e:{stamRegen:5},how:'夜裡逛市集遇上燈會'},
  jianxia:{n:'青霜劍匣',e:{profPct:5},how:'沈青霜「殘譜」'},
- yaogui:{n:'藥櫃',e:{herbBonus:1},how:'蘇晚晴「付不起的藥錢」'},
+ yaogui:{n:'藥櫃',e:{herbBonus:10},how:'蘇晚晴「付不起的藥錢」'},
 };
 const RECORDS={
  herbfield:{n:'竹林藥圃',d:'竹林深處有一片野生藥圃，晚晴說這是她的秘密。'},stele:{n:'竹林古碑',d:'苔痕下刻著半闕劍訣，字跡已難辨認。'},
@@ -798,7 +798,7 @@ function tickRates(s,sec,t,sum){
  const sa=Math.min(stamMax(s)-s.stam,sec/72*(1+st.stamRegen/100));if(sa>0){s.stam+=sa;sum.stam+=sa;}
  if(m.gather){const tr=bestDepth(s),mult=1+tr*.4;
   accrue(s,'silver',sec*.05*(1+tr*.7)*(1+st.goldPct/100),sum);
-  accrue(s,'herb',sec/80*mult*(1+st.herbBonus*.2),sum);accrue(s,'bamboo',sec/150,sum);accrue(s,'ore',sec/120*mult,sum);
+  accrue(s,'herb',sec/80*mult*(1+(st.herbBonus||0)/100),sum);accrue(s,'bamboo',sec/150,sum);accrue(s,'ore',sec/120*mult,sum);
   if(tr>=2)accrue(s,'lingzhi',sec/1500*(1+tr*.3),sum);if(tr>=3)accrue(s,'iron',sec/2700*(1+tr*.2),sum);}
  s.gm+=sec*GM_RATE;
 }
@@ -981,7 +981,7 @@ function strollChoose(s,evId,i){const ev=STROLL.find(e=>e.id===evId);const c=ev&
 
 /* ---------- 生活：採藥、烹飪、製藥、食用 ---------- */
 function gatherHerb(s){if(s.stam<5)return {err:'體力不足（需 5）'};s.stam-=5;advTime(s,60);const st=computeStats(s);const sum=newSummary();
- const n=2+Math.floor(Math.random()*3)+(s.flags.herbspot?1:0)+st.herbBonus;gainItem(s,'herb',n,sum);const parts=['草藥 ×'+n];
+ const n=Math.max(1,Math.round((2+Math.floor(Math.random()*3)+(s.flags.herbspot?1:0))*(1+(st.herbBonus||0)/100)));gainItem(s,'herb',n,sum);const parts=['草藥 ×'+n];
  if(Math.random()<.6){gainItem(s,'bamboo',1,sum);parts.push('竹筍 ×1');}if(realmOf(s)>=1&&Math.random()<.12){gainItem(s,'lingzhi',1,sum);parts.push('靈芝 ×1');}
  return {txt:'在竹林中採得 '+parts.join('、')+'。'};}
 function craft(s,id){const rc=RECIPES.find(r=>r.id===id);if(!rc)return '沒有這個方子';if(!s.col.recipes.includes(id))return '還不會這個方子';const e=useItems(s,rc.need);if(e)return e;gainItem(s,id,1);s.stat.cooked++;advTime(s,30);return null;}
@@ -7049,7 +7049,7 @@ function lookEditor(L,creating){const owned=creating?Object.keys(OUTFITS).filter
 
 /* 修行分頁 */
 function modeEst(k){const st=computeStats(S),m=MODES[k],o=['修為 +'+fmt(xpRate(S,st,k)*3600)];const pr=profRates(S,st,k);for(const id in pr)o.push(ARTS[id].n+' +'+fmt(pr[id]*3600));
- if(m.insight)o.push('感悟 +'+Math.round(m.insight*(1+st.wis/40)*3600));if(m.gather){const tr=bestDepth(S),mu=1+tr*.4;o.push('草藥 '+Math.round(3600/80*mu*(1+st.herbBonus*.2))+'、礦石 '+Math.round(3600/120*mu)+'、竹筍 24');}
+ if(m.insight)o.push('感悟 +'+Math.round(m.insight*(1+st.wis/40)*3600));if(m.gather){const tr=bestDepth(S),mu=1+tr*.4;o.push('草藥 '+Math.round(3600/80*mu*(1+st.herbBonus/100))+'、礦石 '+Math.round(3600/120*mu)+'、竹筍 24');}
  return '每小時：'+o.join('・');}
 function vCultivate(){let h=seg('cult',[['train','修行'],['arts','武功'],['gear','裝備']]);const st=computeStats(S);
  if(ui.seg.cult==='train'){const bi=breakInfo(S);
