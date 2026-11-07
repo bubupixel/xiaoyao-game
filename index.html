@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-201712";</script>
+<script>window.XY_BUILD="20261107-205209";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -952,7 +952,7 @@ const STROLL=[
   ch:[{t:'歸還錢袋',fn:s=>{s.flags.goodDeed=(s.flags.goodDeed||0)+1;gainItem(s,'tea',1);return '書生千恩萬謝，硬塞給你一包碧螺春。';}},
       {t:'先打開看看',fn:s=>{s.silver+=30;return '裡面只有 30 兩和一封家書。你猶豫了一下，還是交給了巡街的衙役，衙役順手賞了你 30 兩。';}}]},
  {id:'junk',w:2,cond:s=>true,t:'角落的舊貨攤上堆滿了瓶瓶罐罐，攤主神秘兮兮地說：「八十兩，摸一樣。」',
-  ch:[{t:'花 80 兩摸一樣',need:s=>s.silver>=80?null:'銀兩不足',fn:s=>{s.silver-=80;const pool=[['outfits','duanda'],['teasets','zisha'],['decor','zhulian']].filter(([k,id])=>!s.col[k].includes(id));
+  ch:[{t:'花 80 兩摸一樣',need:s=>s.silver>=80?null:'銀兩不足',fn:s=>{s.silver-=80;const pool=[['outfits','duanda']].filter(([k,id])=>!s.col[k].includes(id));
     if(pool.length&&Math.random()<.6){const [k,id]=pick(pool);giveCol(s,k,id);return '你摸到了「'+{outfits:OUTFITS,teasets:TEASETS,decor:DECOR,accs:ACCS}[k][id].n+'」，賺到了！';}gainItem(s,'ore',3);return '摸到三塊生鏽的鐵……不過拿去鐵匠舖還能用（礦石 ×3）。';}},
       {t:'不了',fn:s=>'攤主聳聳肩：「下回再來。」'}]},
  {id:'lost',w:2,cond:s=>true,t:'一個小娃娃坐在糖葫蘆攤前哭，說找不到娘了。',
@@ -965,7 +965,7 @@ const STROLL=[
     if(win&&!s.col.teasets.includes('zisha')){giveCol(s,'teasets','zisha');return '你的茶湯清亮回甘，奪得頭籌，獲贈一把紫砂壺！';}gainItem(s,'tea',2);return '雖未奪魁，茶商們讚你懂茶，送你兩份碧螺春。';}},
       {t:'在旁邊看熱鬧',fn:s=>{addRecord(s,'teafight');return '你學到不少品茶的門道。';}}]},
  {id:'lantern',w:4,cond:s=>isNight(s),t:'夜市張燈結綵，原來今晚是燈會。滿街花燈映得人臉通紅。',
-  ch:[{t:'買一盞花燈（60 兩）',need:s=>s.silver>=60?null:'銀兩不足',fn:s=>{s.silver-=60;addRecord(s,'lantern');if(!s.col.decor.includes('huadeng')){giveCol(s,'decor','huadeng');return '你提著花燈回家，掛在居所裡（居所裝飾：花燈）。';}gainItem(s,'osman',2);return '又添一盞燈，賣燈的大娘送你兩份桂花。';}},
+  ch:[{t:'買一盞花燈（60 兩）',need:s=>s.silver>=60?null:'銀兩不足',fn:s=>{s.silver-=60;addRecord(s,'lantern');if(!s.col.decor.includes('huadeng')){giveCol(s,'decor','huadeng');return '你提著花燈回家，掛在屋簷下，整個院子都亮了起來。';}gainItem(s,'osman',2);return '又添一盞燈，賣燈的大娘送你兩份桂花。';}},
       {t:'猜燈謎',fn:s=>{addRecord(s,'lantern');if(Math.random()<.5){const v=60+realmOf(s)*40;s.silver+=v;return '你連猜三道燈謎，攤主笑著把彩頭塞給你。銀兩 +'+v+'。';}return '燈謎太難，只猜中一道，換到一包糖。';}}]},
  {id:'meetsw',w:3,cond:s=>s.npc.sw.met,t:'你在藥材攤前碰見蘇晚晴，她正和攤主為一兩銀子的價錢討價還價。',
   ch:[{t:'幫她說話',fn:s=>{addRel(s,'sw',4);return '攤主拗不過兩個人，讓了價。晚晴朝你眨眨眼：「合作愉快！」（好感 +4）';}},{t:'替她付錢',need:s=>s.silver>=20?null:'銀兩不足',fn:s=>{s.silver-=20;addRel(s,'sw',2);return '晚晴愣了一下：「這怎麼好意思……下次我請你喝藥茶。」（好感 +2）';}}]},
@@ -1084,7 +1084,7 @@ const NPC_EVENTS={
    onDone:s=>{s.npc.sw.met=true;}},
   {id:'sw2',n:'付不起的藥錢',cond:s=>s.npc.sw.rel>=30&&s.loc==='town',hint:s=>s.npc.sw.rel<30?'關係達到「熟悉」':'到青石鎮市集的藥舖找她',
    text:['藥舖裡，一位老婦人抱著發燒的孫子，攥著幾枚銅板不敢開口。','晚晴看看藥櫃，又看看帳本，咬著嘴唇。這帖藥得用上靈芝。'],
-   ch:[{t:'捐出一株靈芝',need:s=>has(s,'lingzhi')?null:'需要 1 株靈芝',fn:s=>{useItems(s,{lingzhi:1});addRel(s,'sw',18);giveCol(s,'decor','yaogui');return '晚晴抱住你的手臂：「謝謝你！」幾天後她送來一座舊藥櫃：「放你家，採藥時用得上。」獲得居所裝飾「藥櫃」（採藥收穫提升），好感 +18。';}},
+   ch:[{t:'捐出一株靈芝',need:s=>has(s,'lingzhi')?null:'需要 1 株靈芝',fn:s=>{useItems(s,{lingzhi:1});addRel(s,'sw',18);giveCol(s,'decor','yaogui');return '晚晴抱住你的手臂：「謝謝你！」好感 +18。';}},
        {t:'替老婦付 200 兩藥錢',need:s=>s.silver>=200?null:'需要 200 兩',fn:s=>{s.silver-=200;addRel(s,'sw',10);s.flags.sw_paid=true;return '晚晴鬆了口氣，又認真地說：「你心善。不過下次，我們一起想想不花錢的法子，好嗎？」好感 +10。';}},
        {t:'和她一起去竹林找替代藥材',need:s=>s.stam>=15?null:'需要 15 體力',fn:s=>{s.stam-=15;advTime(s,240);gainItem(s,'herb',3);addRel(s,'sw',14);learnRecipe(s,'p_qi');return '你們在竹林找了四個時辰，終於湊齊一帖替代方。回程時她教你一張丹方：「這是我爹留下的。」習得丹方「聚氣丹」，草藥 +3，好感 +14。';}}]},
   {id:'sw3',n:'醫者之路',cond:s=>s.npc.sw.rel>=80&&realmOf(s)>=1&&s.loc==='town',hint:s=>s.npc.sw.rel<80?'關係達到「信任」':'晉升三流高手',
@@ -1093,12 +1093,12 @@ const NPC_EVENTS={
        {t:'「先把簡方寫完，我幫你試藥。」',fn:s=>{addRel(s,'sw',14);unlockArt(s,'clear_heart',null,'晚晴傳授');learnRecipe(s,'p_break');return '「試藥可不好玩喔！」她笑著把幾張丹方謄給你，又教你清心調息之法。習得內功「清心訣」、丹方「破境丹」，好感 +14。';}}]},
   {id:'sw4',n:'一盞藥茶',cond:s=>s.npc.sw.rel>=150&&s.loc==='town',hint:s=>s.npc.sw.rel<150?'關係達到「知己」':'到青石鎮找她',
    text:['打烊後，晚晴在藥舖後院泡了一壺藥茶，茶香裡有桂花和甘草。','「這壺茶，我只泡給知己。」'],
-   ch:[{t:'「謝謝你一直照顧我。」',fn:s=>{addRel(s,'sw',8);giveCol(s,'outfits','wanqing');giveCol(s,'teasets','baiyu');return '「傻瓜，是你照顧我才對。」她送你一套親手縫的藥師裝，和一套白玉茶盞。獲得服裝「晚晴藥師裝」、茶具「白玉茶盞」。';}},
-       {t:'「下次換我泡給你。」',need:s=>has(s,'tea')?null:'需要 1 份碧螺春',fn:s=>{useItems(s,{tea:1});addRel(s,'sw',14);giveCol(s,'outfits','wanqing');giveCol(s,'teasets','baiyu');return '你當場泡了一壺碧螺春，她喝了一口，笑得眼睛彎彎的：「嗯，及格！」獲得服裝「晚晴藥師裝」、茶具「白玉茶盞」，好感 +14。';}}],
+   ch:[{t:'「謝謝你一直照顧我。」',fn:s=>{addRel(s,'sw',8);giveCol(s,'outfits','wanqing');giveCol(s,'teasets','baiyu');return '「傻瓜，是你照顧我才對。」她送你一套親手縫的藥師裝。獲得服裝「晚晴藥師裝」。';}},
+       {t:'「下次換我泡給你。」',need:s=>has(s,'tea')?null:'需要 1 份碧螺春',fn:s=>{useItems(s,{tea:1});addRel(s,'sw',14);giveCol(s,'outfits','wanqing');giveCol(s,'teasets','baiyu');return '你當場泡了一壺碧螺春，她喝了一口，笑得眼睛彎彎的：「嗯，及格！」獲得服裝「晚晴藥師裝」，好感 +14。';}}],
    after:'她的故事將在「寒山古寺」章節繼續。'},
  ],
 };
-function finishSq3(s,txt,rel,r,E){addRel(s,'sq',rel);unlockArt(s,'cloud_sword',null,'沈青霜傳授');giveCol(s,'decor','jianxia');return {txt:txt+' 習得「流雲劍法」、居所裝飾「青霜劍匣」，好感 +'+rel+'。',res:r,E};}
+function finishSq3(s,txt,rel,r,E){addRel(s,'sq',rel);unlockArt(s,'cloud_sword',null,'沈青霜傳授');giveCol(s,'decor','jianxia');return {txt:txt+' 習得「流雲劍法」，好感 +'+rel+'。',res:r,E};}
 function npcNextEvent(s,id){return NPC_EVENTS[id].find(e=>s.npc[id].ev[e.id]==null)||null;}
 function npcEventReady(s,id){const e=npcNextEvent(s,id);return e&&e.cond(s)?e:null;}
 function npcEventChoose(s,nid,eid,i){const ev=NPC_EVENTS[nid].find(e=>e.id===eid);if(!ev||s.npc[nid].ev[eid]!=null)return {err:'事件已結束'};if(!ev.cond(s))return {err:'條件不符'};
@@ -5101,6 +5101,19 @@ for(const P of ZL_PRE){const N=zlNamed(P.p);const hit=s=>{s.flags['zlpre'+P.p]=1
   if(s.g>=40&&!F.zlHint40){F.zlHint40=1;addJournal(s,'江湖傳聞','說書人講到一段舊事：「自古一代大宗師，皆可開宗立派、廣收門徒。」你心裡動了一下。');if(sum&&sum.ext)sumLine(sum,'江湖傳聞：一代大宗師可以開宗立派、收徒傳藝。');}
   if(s.g>=70&&!F.zlHint70){F.zlHint70=1;addJournal(s,'門派','你已是一代大宗師，可以開宗立派了（人物 › 門派）。');addLog(s,'你已是一代大宗師——可以開宗立派、收徒傳藝了！');if(sum&&sum.ext)sumLine(sum,'晉升一代大宗師：可以開宗立派、收徒傳藝了！');}};}
 
+/* ================= 精簡：取消居所裝飾（含珍寶閣）、茶具、花園 =================
+   已擁有的擺設與茶具效果照舊保留；之後不再取得、不再販售。飲茶一律享有最好的茶具加成。 */
+{const _gc=giveCol;giveCol=function(s,kind,id){if(kind==='decor'||kind==='teasets')return false;return _gc(s,kind,id);};}
+{const _bc=buyCol;buyCol=function(s,kind,id){if(kind==='decor'||kind==='teasets')return '已停售';return _bc(s,kind,id);};}
+if(typeof luxBuy==='function'){luxBuy=function(){return '已停售';};}
+for(const k in TEASETS)TEASETS[k].b=15;
+if(typeof MILE_DEF!=='undefined')for(const k of ['decor','teasets']){const i=MILE_DEF.findIndex(m=>m.k===k);if(i>=0)MILE_DEF.splice(i,1);}
+(function(){const scrub=A=>{if(!Array.isArray(A))return;for(let i=A.length-1;i>=0;i--)if(A[i]&&(A[i].decor||A[i].teaset))A.splice(i,1);};
+ if(typeof SECT_SHOP!=='undefined')scrub(SECT_SHOP);for(const G of [typeof FAC_SHOP!=='undefined'?FAC_SHOP:null,typeof FAC_EXTRA!=='undefined'?FAC_EXTRA:null])if(G)for(const k in G)scrub(G[k]);})();
+if(typeof HOME_ACTS!=='undefined')for(const A of HOME_ACTS){const w=A.why;A.why=s=>{const r=w(s);return r&&/擺設/.test(r)?null:r;};}
+if(typeof plant==='function')plant=function(){return {err:'花園已經關閉'};};
+if(typeof landUp==='function')landUp=function(){return {err:'花園已經關閉'};};
+
 </script>
 <script>
 'use strict';
@@ -9101,6 +9114,12 @@ function zlTeaser(){const met=ZL_NAMED.filter(N=>S.flags['zlpre'+N.por]).length,
   <div class="zl-tz">${ZL_NAMED.map(N=>{const m=S.flags['zlpre'+N.por];return `<div class="zl-tzi${m?'':' unk'}">${zlPor({por:N.por,name:N.name,male:N.male},44)}<span>${m?N.name:'？'}</span></div>`;}).join('')}</div>
   <span class="mini">江湖各地有些少年，正等著遇見你。已結識 ${met}/12・在各地的奇遇中遇見他們，日後收徒時會更親近你。</span>${can?'':bar(S.g/70*100,'gold')+`<span class="mini">等級 ${S.g} / 70</span>`}</div>`);}
 (function(){const st=document.createElement('style');st.textContent='.zl-tz{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}.zl-tzi{display:grid;justify-items:center;gap:2px;font-size:11px}.zl-tzi.unk .zl-por{filter:grayscale(1) brightness(.35) blur(1px)}.zl-tzi.unk span{opacity:.6}';document.head.appendChild(st);})();
+
+/* ================= 精簡介面：移除居所裝飾、茶具、花園 ================= */
+{const _cs=colSection;colSection=function(title,all,owned,rend){if(title==='茶具'||title==='居所裝飾')return '';return _cs(title,all,owned,rend);};}
+{const _vh=vHome;vHome=function(){return _vh().replace(/<details class="hm-sec" data-fold="garden"[\s\S]*?<\/details>/,'');};}
+{const _hc=homeCard;homeCard=function(){return _hc().replace(/<button class="btn jade" data-act="openLux">[\s\S]*?<\/button>/,'').replace(/<span class="mini">每點溫馨度[\s\S]*?<\/span><\/div>$/,'</div>');};}
+{const _mm=marketModal;marketModal=function(){if(ui.mkTab==='misc')ui.mkTab='food';_mm();const t=$('#sheet .shop-tab[data-t="misc"]');if(t)t.remove();};}
 
 </script>
 <script>
