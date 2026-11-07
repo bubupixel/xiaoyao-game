@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-131416";</script>
+<script>window.XY_BUILD="20261107-134815";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6888,7 +6888,7 @@ const _vPeople=vPeople;
 vPeople=function(){const h=seg('people',[['me','主角'],['npc','江湖人物'],['fac','門派'],['jr','閱歷']]);
  const v=ui.seg.people;if(v==='npc')return h+vNpcs();if(v==='fac')return h+vFaction();if(v==='jr')return h+vJournal();
  const old=_vPeople();const cut=old.indexOf('<div class="lbl">江湖人物</div>');return h+(cut>0?old.slice(0,cut):old)+vTitles();};
-function vTitles(){const T=TITLES[S.title];const eff=o=>Object.entries(o).map(([k,v])=>({xpPct:'修為',atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',crit:'暴擊',dodge:'閃避',goldPct:'銀兩',stamRegen:'體力回復',expSpeed:'探索速度'}[k]||k)+' +'+v+'%').join('、')||'—';
+function vTitles(){const T=TITLES[S.title];const EN={xpPct:'修為',goldPct:'銀兩',expSpeed:'探索速度'};const eff=o=>Object.entries(o).map(([k,v])=>(EN[k]||STAT_NAMES[k]||k)+' +'+v+(PCT_KEYS.has(k)?'%':'')).join('、')||'—';
  let h=`<div class="card"><div class="npc-head">${avatarHTML(true)}<div style="min-width:0"><h3>${T.n}</h3><span class="sub">頭像框：${FRAME_TIERS[T.tier].n}・聲望 ${fmt(S.fame)}</span><span class="eff">稱號加成：${eff(T.e)}</span></div></div></div>`;
  h+=`<div class="lbl">稱號 ${S.titles.length}/${Object.keys(TITLES).length}</div><div class="card">${Object.entries(TITLES).map(([id,t])=>{const own=S.titles.includes(id);
   return lineRow(`<b${own?'':' style="color:var(--rice2)"'}>${own?t.n:'？？？'}</b> <span class="mini">${FRAME_TIERS[t.tier].n}</span><div class="sub">${t.realm!=null?'晉升「'+REALM_NAMES[t.realm]+'」':t.src}・${eff(t.e)}</div>`,own?(S.title===id?'<span class="stage-pill">使用中</span>':`<button class="btn sm ghost" data-act="setTitle" data-id="${id}">佩戴</button>`):'');}).join('')}</div>`;
