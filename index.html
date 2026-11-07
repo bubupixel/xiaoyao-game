@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261107-192135";</script>
+<script>window.XY_BUILD="20261107-192518";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -384,7 +384,8 @@ const G_MAX=8*STAGE_N-1;
 const realmOfG=g=>Math.floor(g/STAGE_N);
 const gEq=g=>g*4/STAGE_N; /* 換算成舊四階刻度，屬性與修為曲線保持連續 */
 const realmOf=s=>realmOfG(s.g);
-const stageReq=g=>Math.round(120*Math.pow(1.56,gEq(g))*8/STAGE_N);
+const REALM_HARD=[1,1,1,1,1.8,3,5,8]; /* 後天高手起，每級所需修為逐步加重 */
+const stageReq=g=>Math.round(120*Math.pow(1.56,gEq(g))*8/STAGE_N*REALM_HARD[Math.min(7,realmOfG(g))]);
 const xpBase=g=>0.5*Math.pow(1.30,gEq(g));
 const isGate=g=>g<G_MAX&&g%STAGE_N===STAGE_N-1;
 const stageName=g=>REALM_NAMES[realmOfG(g)]+'・等級 '+g;
@@ -4783,6 +4784,15 @@ const _challengeBAL=challenge;challenge=function(s,id){const before=s.silver;con
 /* ---------- 平衡：試劍塔每層銀兩降為五分之一 ---------- */
 const _towerFightBAL=towerFight;towerFight=function(s){const before=s.silver;const o=_towerFightBAL(s);const g=s.silver-before;
  if(o&&!o.err&&g>0){const keep=Math.max(1,Math.round(g/5));s.silver=before+keep;if(o.lines)o.lines=o.lines.map(l=>l.replace('銀兩 +'+fmt(g),'銀兩 +'+fmt(keep)));}return o;};
+
+/* ---------- 平衡：離線放置收益減半，草藥與材料只剩四分之一 ---------- */
+let OFFLINE_RUN=false;
+const OFF_MAT=new Set(['herb','ore','bamboo','lingzhi','iron','hantie','yuntie','xingsha']);
+{const _ax=addXp;addXp=function(s,amt,sum){return _ax(s,OFFLINE_RUN?amt*.5:amt,sum);};}
+{const _ap=addProf;addProf=function(s,id,amt,sum,d){return _ap(s,id,OFFLINE_RUN&&!d?amt*.5:amt,sum,d);};}
+{const _gi=gainItem;gainItem=function(s,k,n,sum){if(OFFLINE_RUN&&n>0){const I=ITEMS[k];n*=OFF_MAT.has(k)||(I&&['材料','藥材','布料'].includes(I.cat))?.25:.5;}return _gi(s,k,n,sum);};}
+{const _cu=catchUp;catchUp=function(s,now){const from=Math.max(s.lastTs||now,s.maxTs||0),off=s.started&&(now-from)/1000>=ONLINE_GAP_SEC;if(!off)return _cu(s,now);
+ const sv=s.silver;OFFLINE_RUN=true;let r;try{r=_cu(s,now);}finally{OFFLINE_RUN=false;}const g=s.silver-sv;if(g>0){const cut=Math.floor(g/2);s.silver-=cut;if(r&&r.sum)r.sum.silver=Math.max(0,(r.sum.silver||0)-cut);}return r;};}
 
 </script>
 <script>
