@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-193340";</script>
+<script>window.XY_BUILD="20261108-194139";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10096,6 +10096,8 @@ if(typeof GEAR2_IMG!=='undefined'){const M={tw_sword:'w_autumn',tw_blade:'b_hors
  /* 已建立的圖片表也補上 */setTimeout(()=>{if(typeof paintCanvases==='function')paintCanvases();},50);}
 /* ================= 兵器行囊：分類、評分、與身上裝備比較 ================= */
 function itemScore(it){const s=itemStats(it);let v=(s.atk||0)*1+(s.def||0)*1.6+(s.hp||0)*.12+(s.spd||0)*4+(s.wis||0)*3;const fx=it.fx||[];for(const f of fx){const n=+(f.v||f[1]||0);if(n)v+=n*6;}const b=BASES[it.b];if(b&&b.fx)for(const k in b.fx)v+=b.fx[k]*5;return Math.round(v);}
+function bagStatLine(s2){const SH={atk:'攻',def:'防',hp:'血',spd:'速'},PCT=new Set(['xpPct','profPct','critDmg','crit','dodge','dbl','pierce','lifesteal','stun','reflect','hpPct','atkPct','defPct','goldPct','stamRegen','expSpeed']);
+ const L=[];for(const k of ['atk','def','hp','spd'])if(s2[k])L.push(SH[k]+' '+s2[k]);for(const k in s2){if(SH[k]||!s2[k])continue;const n=(typeof STAT_NAMES!=='undefined'&&STAT_NAMES[k])||k;L.push(n+' +'+s2[k]+(PCT.has(k)?'%':''));}return L.slice(0,4).join(' ');}
 function bagHTML(){const items=bagItems(S),T=ui.bagTab||'all',st=computeStats(S);
  const cnt=k=>items.filter(i=>k==='all'||BASES[i.b].slot===k).length;const tabs=[['all','全部'],...Object.entries(SLOTS)];
  const eqScore={};for(const sl in SLOTS){const it=S.inv.find(i=>i.u===S.eq[sl]);eqScore[sl]=it?itemScore(it):0;}
@@ -10106,7 +10108,7 @@ function bagHTML(){const items=bagItems(S),T=ui.bagTab||'all',st=computeStats(S)
  for(const {i:it,sc} of L){const b=BASES[it.b],s2=itemStats(it),d=sc-eqScore[b.slot],wtOk=b.slot!=='weapon'||!S.mainMartial||artCoef(ARTS[S.mainMartial].t,b.t)>=1;
   if(it.q!==lastQ){lastQ=it.q;h+=`<div class="bg-qh q${it.q}">${QUAL[it.q].n}</div>`;}
   h+=`<button class="bg-it qb${it.q}" data-act="itemDetail" data-u="${it.u}">${itemIcon(it)}<span class="bg-tx"><b class="q${it.q}">${esc(itemName(it))}</b>
-   <small>${b.slot==='weapon'?WTYPES[b.t]:SLOTS[b.slot]}・${[s2.atk?'攻 '+s2.atk:'',s2.def?'防 '+s2.def:'',s2.hp?'血 '+s2.hp:'',s2.spd?'速 '+s2.spd:''].filter(Boolean).join(' ')}${wtOk?'':' <i class="warn">不合主修</i>'}</small></span>
+   <small>${b.slot==='weapon'?WTYPES[b.t]:SLOTS[b.slot]}・${bagStatLine(s2)}${wtOk?'':' <i class="warn">不合主修</i>'}</small></span>
    <span class="bg-sc"><b>${fmt(sc)}</b><i class="${d>0?'up':d<0?'dn':''}">${d>0?'▲ '+fmt(d):d<0?'▼ '+fmt(-d):'＝'}</i></span></button>`;}
  return h+`</div><span class="mini">評分綜合攻防血速與附加效果；▲▼ 是與身上同部位裝備相比。</span>`;}
 ACT.bagTab=d=>{ui.bagTab=d.v;render();};
