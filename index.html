@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-192812";</script>
+<script>window.XY_BUILD="20261108-193340";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5356,6 +5356,16 @@ function guestBuy(s,fid,id){const w=guestWhy(s,fid);if(w)return w;return guestRu
 {const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const G=raw&&raw.guest;s.guest={};if(G&&typeof G==='object')for(const k in G){if(!GUEST_OK.includes(k))continue;const g=G[k]||{};
   s.guest[k]={contrib:Math.max(0,g.contrib|0),total:Math.max(0,g.total|0),tasks:g.tasks&&typeof g.tasks==='object'?{day:g.tasks.day|0,done:Object.assign({},g.tasks.done)}:{day:-1,done:{}}};}return s;};}
 
+/* ================= 神兵保護與找回；出售後可回購 ================= */
+const isUniq=it=>!!(it&&BASES[it.b]&&BASES[it.b].uniq);
+function sbLost(s){return Object.keys(SHENBING).filter(id=>sbState(s,id).step>=3&&!s.inv.some(i=>i.b===SHENBING[id].base));}
+function sbRecast(s,id){if(!sbLost(s).includes(id))return '這把神兵還在你身邊';if(!s.npc.tx||!s.npc.tx.met)return '需要先結識青石鎮鐵匠舖的唐小滿';if(s.loc!=='town')return '要到青石鎮鐵匠舖找唐小滿';
+ const c=3000;if(s.silver<c)return '銀兩不足（需 '+fmt(c)+'）';if(bagItems(s).length>=BAG_MAX)return '行囊已滿';s.silver-=c;
+ const it=makeItem(s,SHENBING[id].base,4);it.fx.push(['crit',4]);s.inv.push(it);addJournal(s,'神兵','唐小滿替你把神兵「'+SHENBING[id].n+'」找了回來，重新鑄好。');return null;}
+{const _sg=sellGear;sellGear=function(s,u){const it=s.inv.find(i=>i.u===u);if(isUniq(it))return '神兵不能出售';if(it&&(it.q>=3||it.p>0||it.bl)){const p=sellPrice(it);const e=_sg(s,u);if(!e){s.sold=(s.sold||[]).concat([{it:JSON.parse(JSON.stringify(it)),p}]).slice(-10);}return e;}return _sg(s,u);};}
+function buyBack(s,i){const L=s.sold||[],e=L[i];if(!e)return '找不到這件';if(s.silver<e.p)return '銀兩不足（需 '+fmt(e.p)+'）';if(bagItems(s).length>=BAG_MAX)return '行囊已滿';s.silver-=e.p;const it=e.it;it.u=s.nextUid++;s.inv.push(it);L.splice(i,1);return null;}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);s.sold=Array.isArray(raw.sold)?raw.sold.filter(e=>e&&e.it&&BASES[e.it.b]&&QUAL[e.it.q]).slice(-10).map(e=>({it:e.it,p:Math.max(0,e.p|0)})):[];return s;};}
+
 </script>
 <script>
 'use strict';
@@ -10108,6 +10118,15 @@ ACT.bagTab=d=>{ui.bagTab=d.v;render();};
 .bg-it .ic canvas{width:44px!important;height:44px!important}.bg-card{padding:8px}.bg-card .btn{width:100%}.bg-it,.bg-it *{color:#3a2a1c}.bg-it .q0{color:#6b6458}.bg-it .q1{color:#2f7a3e}.bg-it .q2{color:#2f5fa8}.bg-it .q3{color:#7a3fa8}.bg-it .q4{color:#b0701a}.bg-tx{display:grid;min-width:0}.bg-tx b{font-size:15px}.bg-tx small{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bg-p{font-style:normal;font-size:12px;color:var(--red2)}.bg-sc{display:grid;justify-items:end;font-size:15px}.bg-sc i{font-style:normal;font-size:11.5px}.bg-it .bg-sc .up{color:#2f8a3a}.bg-it .bg-sc .dn{color:#b0402a}.bg-it .warn{color:#b0402a;font-style:normal}.bg-qh.q0{color:#c8c0b0}.bg-qh.q1{color:#7fc08a}.bg-qh.q2{color:#7fa8e0}.bg-qh.q3{color:#c08ae0}.bg-qh.q4{color:#f0b850}
 .qb0{border-left-color:#9a9184}.qb1{border-left-color:#5f9c6a}.qb2{border-left-color:#4f7fc0}.qb3{border-left-color:#9a5fc0}.qb4{border-left-color:#e0a03a}`;document.head.appendChild(st);})();
+/* 找回神兵、回購 */
+function lostHTML(){const L=sbLost(S),B=S.sold||[];if(!L.length&&!B.length)return '';let h='';
+ if(L.length)h+=`<div class="card hi"><h3>遺失的神兵</h3><span class="sub">神兵已與你結緣，不會真的消失。到青石鎮鐵匠舖找唐小滿，花 3,000 兩就能重新鑄回（傳說品質，強化與兵魂從頭來過）。</span>${L.map(id=>lineRow(`<b class="q4">${SHENBING[id].n}</b>`,`<button class="btn sm" data-act="sbRecast" data-id="${id}">請唐小滿重鑄<small>3,000 兩</small></button>`)).join('')}</div>`;
+ if(B.length)h+=fold('buyback',`回購 <span class="mini">${B.length} 件</span>`,`<div class="card"><span class="sub">最近賣出的史詩以上、強化過或養過兵魂的裝備，可以原價買回。</span>${B.map((e,i)=>lineRow(`<b class="q${e.it.q}">${esc(itemName(e.it))}</b><div class="sub">${QUAL[e.it.q].n}</div>`,`<button class="btn sm ghost" data-act="buyBack" data-i="${i}">買回<small>${fmt(e.p)} 兩</small></button>`)).reverse().join('')}</div>`);
+ return h;}
+Object.assign(ACT,{sbRecast:d=>{const e=sbRecast(S,d.id);if(e)return toast(e);SFX.coin();save();toast('神兵「'+SHENBING[d.id].n+'」重新鑄好了！');render();renderTop();},
+ buyBack:d=>{const e=buyBack(S,+d.i);if(e)return toast(e);SFX.coin();save();toast('已買回');render();renderTop();}});
+{const _bh=bagHTML;bagHTML=function(){return lostHTML()+_bh();};}
+{const _sh=shenbingHTML;shenbingHTML=function(){const h=_sh();const L=sbLost(S);return L.length?h.replace('</div>',`<span class="warn">有 ${L.length} 把神兵不在身邊，可到「修行 › 裝備」找唐小滿重鑄。</span></div>`):h;};}
 
 </script>
 <script>
