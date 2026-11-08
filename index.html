@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-153638";</script>
+<script>window.XY_BUILD="20261108-181703";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10038,6 +10038,37 @@ const NOVEL2={
  for(const p of W.p){if(p[0]==='@'){const eid=p.slice(1),T=s.tale&&s.tale[eid];if(T&&T.c)out.push({k:'choice',t:T.c});const t=T?T.t:(DEF_TALE[eid]||'');if(t)out.push({k:'p',t:fill(t)});continue;}
   if(p[0]==='~')out.push({k:'end',t:fill(p.slice(1))});else out.push({k:'p',t:fill(p)});}
  return out;};}
+
+/* ================= 武學之路：清楚選擇自己的練武方向 ================= */
+const STYLE_ROLE={sword:['劍客','一劍在手，以劍入道'],blade:['刀客','大開大合，刀走霸道'],fist:['拳師','以身為兵，拳掌通神'],pole:['槍棍名家','一寸長一寸強'],hidden:['暗器名家','百步之外，取人無形'],light:['遊俠','身法第一，來去如風']};
+const WT_FOR={sword:['sword'],blade:['blade'],fist:['gauntlet','none'],pole:['spear','staff'],hidden:['hidden']};
+const tierName=t=>t>=3?'神功':t>=2.5?'絕學':t>=2?'上乘':t>=1.5?'進階':'入門';
+const tierCls=t=>t>=3?'t5':t>=2.5?'t4':t>=2?'t3':t>=1.5?'t2':'t1';
+function styleArtRow(id,act,cur,wt){const A=ARTS[id],a=S.arts[id],mx=maxArtLv(S),coef=artCoef(A.t,wt),on=cur===id;
+ return `<button class="sa-row${on?' on':''}" data-act="${act}" data-v="${id}"><div class="sa-top"><b>${A.n}</b><span class="sa-tier ${tierCls(A.tier)}">${tierName(A.tier)}</span><span class="sa-lv">Lv ${a.lv}/${mx}</span></div>
+  ${bar(a.lv/mx*100,on?'gold':'')}<span class="sa-eff">${fmtEff(A.e(a.lv),coef)}${coef<1?` <i class="warn">兵器不合 ${Math.round(coef*100)}%</i>`:''}</span>${on?'<span class="sa-on">主修中</span>':''}</button>`;}
+function styleHTML(){const st=computeStats(S),wt=st.wt,mi=S.mainMartial,mn=S.mainInner,MA=ARTS[mi],MI=ARTS[mn];
+ const mart=Object.keys(S.arts).filter(id=>ARTS[id].t!=='inner'),inner=Object.keys(S.arts).filter(id=>ARTS[id].t==='inner');
+ const types=Object.keys(STYLE_ROLE).filter(t=>mart.some(id=>ARTS[id].t===t));if(!ui.artTab||!types.includes(ui.artTab))ui.artTab=MA?MA.t:types[0];
+ const role=MA?STYLE_ROLE[MA.t]:['初學者','尚未選定方向'];const ok=!MA||!WT_FOR[MA.t]||WT_FOR[MA.t].includes(wt);
+ let h=`<div class="card hi sa-hero"><span class="mini">你的武學之路</span><div class="sa-role">${role[0]}</div><span class="sub">${role[1]}</span>
+  <div class="sa-main"><div><span class="mini">主修武功</span><b>${MA?MA.n:'—'}</b><small>${MA?ART_TYPES[MA.t]+'・Lv '+S.arts[mi].lv:''}</small></div><div><span class="mini">主修心法</span><b>${MI?MI.n:'—'}</b><small>${MI?'Lv '+S.arts[mn].lv:''}</small></div></div>
+  <span class="${ok?'eff':'warn'}">目前兵器：${WTYPES[wt]}${MA&&WT_FOR[MA.t]?(ok?'・與'+ART_TYPES[MA.t]+'相合，威力全開':'・與'+ART_TYPES[MA.t]+'不合，只發揮三成——換一把'+WT_FOR[MA.t].map(w=>WTYPES[w]).join('或')+'吧'):'・不受兵器影響'}</span></div>`;
+ h+=`<div class="card"><h3>選擇流派</h3><span class="sub">「練習武功」時，主修的武功會提升。挑一條路，專心走下去。</span>
+  <div class="sa-tabs">${types.map(t=>{const n=mart.filter(id=>ARTS[id].t===t).length;return `<button class="sa-tab${ui.artTab===t?' on':''}" data-act="artTab" data-v="${t}"><i class="mi at-${t}" aria-hidden="true"></i><b>${ART_TYPES[t]}</b><small>${STYLE_ROLE[t][0]}・${n}</small></button>`;}).join('')}</div>
+  <div class="sa-list">${mart.filter(id=>ARTS[id].t===ui.artTab).sort((a,b)=>ARTS[b].tier-ARTS[a].tier||S.arts[b].lv-S.arts[a].lv).map(id=>styleArtRow(id,'setMartial',mi,wt)).join('')}</div></div>`;
+ h+=fold('sa_inner',`主修心法 <span class="mini">${MI?MI.n:''}</span>`,`<div class="card"><span class="sub">「閉關修內功」「閉關參悟」時提升。心法不受兵器影響。</span><div class="sa-list">${inner.sort((a,b)=>ARTS[b].tier-ARTS[a].tier||S.arts[b].lv-S.arts[a].lv).map(id=>styleArtRow(id,'setInner',mn,wt)).join('')}</div></div>`);
+ return h;}
+ACT.artTab=d=>{ui.artTab=d.v;render();};
+{const _vc=vCultivate;vCultivate=function(){let h=_vc();if(ui.seg.cult!=='train')return h;const a=h.indexOf('<div class="card"><h3>主修心法</h3>');if(a<0)return h;const b=h.indexOf('<div class="card"><h3>放置收益',a);if(b<0)return h;return h.slice(0,a)+styleHTML()+h.slice(b);};}
+(function(){const st=document.createElement('style');st.textContent=`.sa-hero{text-align:center;display:grid;gap:4px}.sa-role{font-family:var(--f-title);font-size:28px;letter-spacing:.2em;color:var(--red2)}
+.sa-main{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}.sa-main>div{display:grid;gap:1px;padding:8px;border:2px solid var(--rule);border-radius:10px}.sa-main b{font-family:var(--f-title);font-size:17px}.sa-main small{font-size:11.5px;opacity:.75}
+.sa-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.sa-tab{all:unset;box-sizing:border-box;cursor:pointer;display:grid;justify-items:center;gap:1px;padding:7px 2px;border:2px solid var(--rule);border-radius:10px;text-align:center}
+.sa-tab b{font-size:14px}.sa-tab small{font-size:10.5px;opacity:.7}.sa-tab.on{border-color:var(--gold2);background:rgba(212,160,60,.2)}.sa-tab .mi{width:22px;height:22px}
+.sa-list{display:grid;gap:8px}.sa-row{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:3px;padding:8px 10px;border:2px solid var(--rule);border-radius:10px;position:relative;width:100%}.sa-row.on{border-color:var(--gold2);background:rgba(212,160,60,.14);box-shadow:0 0 0 2px rgba(212,160,60,.25)}
+.sa-top{display:flex;align-items:center;gap:6px}.sa-top b{font-size:15.5px}.sa-lv{margin-left:auto;font-size:12.5px}.sa-eff{font-size:12px;opacity:.85}.sa-eff .warn{font-style:normal}
+.sa-tier{font-size:10.5px;padding:0 5px;border-radius:5px;color:#fff}.t1{background:#8a8070}.t2{background:#5f8a6a}.t3{background:#4f6fa8}.t4{background:#8a4fa8}.t5{background:#c0503a}
+.sa-on{position:absolute;right:8px;bottom:6px;font-size:11px;color:var(--red2);font-weight:700}`;document.head.appendChild(st);})();
 
 </script>
 <script>
