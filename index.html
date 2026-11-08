@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-125442";</script>
+<script>window.XY_BUILD="20261108-131552";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5335,6 +5335,27 @@ Object.assign(TITLES,{lb_st5:{n:'氣吞山河',src:'氣海淬體五重',tier:6,e
 {const ord=k=>{const F=FACTIONS[k];if(k==='zili')return 99;return F.loc&&LOCS[F.loc]?(LOCS[F.loc].realm||0)+1:0;};
  const keys=Object.keys(FACTIONS).sort((a,b)=>ord(a)-ord(b));const T={};for(const k of keys)T[k]=FACTIONS[k];for(const k of keys)delete FACTIONS[k];Object.assign(FACTIONS,T);}
 
+/* ================= 客卿：不入門也能接門派任務、累積與使用貢獻；門派絕學與高級兌換要正式入門 ================= */
+const guestFacs=s=>Object.keys(FACTIONS).filter(id=>id!=='zili'&&!(s.fac&&s.fac.id===id));
+function guestState(s,fid){if(!s.guest||typeof s.guest!=='object')s.guest={};const G=s.guest[fid]||(s.guest[fid]={contrib:0,total:0,tasks:{day:-1,done:{}}});return G;}
+function guestWhy(s,fid){if(fid==='zili'||!FACTIONS[fid])return '無法以客卿身分往來';if(s.fac&&s.fac.id===fid)return '你已是本門弟子';if(realmOf(s)<1)return '需晉升三流高手';
+ const F=FACTIONS[fid];if(F.loc&&typeof locUnlocked==='function'&&!locUnlocked(s,F.loc))return '需先解鎖「'+LOCS[F.loc].n+'」';return null;}
+function guestRun(s,fid,fn){const G=guestState(s,fid),real=s.fac;s.fac={id:fid,contrib:G.contrib,total:G.total,rank:0,tasks:G.tasks,rules:[],name:'',disciples:[],bmDay:-1,guest:1};
+ try{return fn();}finally{G.contrib=s.fac.contrib;G.total=s.fac.total;G.tasks=s.fac.tasks;s.fac=real;}}
+const GUEST_LOCK=e=>e.rank||e.page||e.art||e.arts||e.gear;
+{const _ru=rankUpdate;rankUpdate=function(s,sum){if(s.fac&&s.fac.guest)return;return _ru(s,sum);};}
+{const _fs=facShopState;facShopState=function(s,e){if(s.fac&&s.fac.guest&&GUEST_LOCK(e))return '正式入門後才能兌換';return _fs(s,e);};}
+{const _fb=facBuy;facBuy=function(s,id){if(s.fac&&s.fac.guest){const e=(FAC_SHOP[s.fac.id]||[]).find(x=>x.id===id);if(e&&GUEST_LOCK(e))return '正式入門後才能兌換';}return _fb(s,id);};}
+{const _em=extStatMods;extStatMods=function(s,st){if(s.fac&&s.fac.guest){const f=s.fac;s.fac=null;try{return _em(s,st);}finally{s.fac=f;}}return _em(s,st);};}
+function guestTasks(s,fid){return guestRun(s,fid,()=>facTasks(s));}
+function guestTask(s,fid,id){const w=guestWhy(s,fid);if(w)return {err:w};return guestRun(s,fid,()=>{const r=facTask(s,id);if(r&&!r.err&&!r.fail&&Array.isArray(r.lines))r.lines.push('（以客卿身分完成，貢獻記在'+FACTIONS[fid].org+'。）');return r;});}
+function guestBuy(s,fid,id){const w=guestWhy(s,fid);if(w)return w;return guestRun(s,fid,()=>facBuy(s,id));}
+/* 正式入門時，客卿貢獻一併帶入 */
+{const _j=joinFaction;joinFaction=function(s,id,name,rules,style){const e=_j(s,id,name,rules,style);if(!e&&s.fac&&s.guest&&s.guest[id]){const G=s.guest[id];s.fac.contrib+=G.contrib;s.fac.total+=G.total;
+  if(G.total>0)addJournal(s,'門派','以客卿身分累積的 '+G.contrib+' 點貢獻，帶入了'+FACTIONS[id].org+'。');delete s.guest[id];rankUpdate(s,null);}return e;};}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const G=raw&&raw.guest;s.guest={};if(G&&typeof G==='object')for(const k in G){if(!FACTIONS[k]||k==='zili')continue;const g=G[k]||{};
+  s.guest[k]={contrib:Math.max(0,g.contrib|0),total:Math.max(0,g.total|0),tasks:g.tasks&&typeof g.tasks==='object'?{day:g.tasks.day|0,done:Object.assign({},g.tasks.done)}:{day:-1,done:{}}};}return s;};}
+
 </script>
 <script>
 'use strict';
@@ -9474,6 +9495,28 @@ Object.assign(ACT,{
    return msgModal('靈台問心・未成',`<p class="sub">正確答案是「${q.a}」。</p><p class="sub">${r.txt}</p>`,'mtpath');}
   Q.i++;if(Q.i<Q.qs.length)return lbQuiz();const r=lbInFinish(S,Q.ok,Q.qs.length);ui.lbQ=null;save();render();renderTop();SFX.story&&SFX.story();msgModal('靈台問心・突破',`<p class="eff">${r.txt}</p>`,'mtpath');},
 });
+/* 客卿介面 */
+function guestHTML(fid){const F=FACTIONS[fid],G=guestState(S,fid),w=guestWhy(S,fid);const L=guestTasks(S,fid);
+ let h=`${backRow((F.org||F.n)+'・客卿')}<p class="sub">不必入門，也能以客卿身分替${F.org||F.n}跑腿辦事、累積貢獻，換取補給與收藏。門派絕學、職位與高級兌換，要正式入門才能取得；日後入門時，客卿貢獻會一併帶入。</p>
+  <div class="kv"><div><span>客卿貢獻</span><b>${fmt(G.contrib)}</b></div><div><span>累計</span><b>${fmt(G.total)}</b></div></div>`;
+ if(w)return h+`<p class="mini">${w}</p>`;
+ h+=`<div class="lbl">今日任務</div><div class="card">${L.map(T=>{const dn=G.tasks.done[T.id];const need=T.submit?Object.entries(T.submit).map(([k,v])=>matN(k)+' '+(S.mat[k]||0)+'/'+v).join('、'):'';
+  return lineRow(`<b>${T.n}</b><div class="sub">${T.d}${need?'・需 '+need:''}${T.stam?'・體力 '+T.stam:''}${T.fight?'・體力 3':''}${T.silver?'・本金 '+T.silver+' 兩':''}</div><div class="sub">${T.contrib?'貢獻 +'+T.contrib:''}${T.fame?' 聲望 +'+T.fame:''}</div>`,dn?'<span class="mini">已完成</span>':`<button class="btn sm" data-act="gTask" data-f="${fid}" data-id="${T.id}">執行</button>`);}).join('')}</div>`;
+ if(FAC_SHOP[fid]&&FAC_SHOP[fid].length){const sh=guestRun(S,fid,()=>facShopHTML(S.fac)).replace(/data-act="facBuy"/g,`data-act="gBuy" data-f="${fid}"`);h+=`<div class="lbl">貢獻兌換</div><div class="card">${sh}</div>`;}
+ return h;}
+function guestOpen(fid){ui.gFac=fid;openModal(guestHTML(fid),undefined,()=>{$('#sheet').innerHTML=guestHTML(ui.gFac);});}
+Object.assign(ACT,{
+ gOpen:d=>guestOpen(d.f),
+ gTask:d=>{const r=guestTask(S,d.f,d.id);if(r.err)return toast(r.err);save();renderTop();if(r.res){battleModal('客卿任務',{E:r.E,res:r.res,lines:r.lines});return;}toast((r.lines||[]).slice(-2).join(' '));guestOpen(d.f);},
+ gBuy:d=>{S._facBuyMsg=null;const e=guestBuy(S,d.f,d.id);if(e)return toast(e);SFX.coin();toast(S._facBuyMsg||'兌換成功');S._facBuyMsg=null;save();renderTop();guestOpen(d.f);},
+});
+/* 門派列表：每個門派都可以客卿身分往來 */
+{const gBtn=fid=>{const G=guestState(S,fid),w=guestWhy(S,fid);return `<button class="btn sm ghost g-btn" data-act="gOpen" data-f="${fid}" ${w?'disabled':''}>客卿往來<small>${G.contrib?'客卿貢獻 '+fmt(G.contrib):(w||'不入門也可接任務')}</small></button>`;};
+ const _vf=vFaction;vFaction=function(){let h=_vf();const L=guestFacs(S);
+  if(!S.fac){for(const fid of L){const k='data-act="facJoin" data-f="'+fid+'"';const i=h.indexOf(k);if(i<0)continue;const b=h.lastIndexOf('<button',i);h=h.slice(0,b)+gBtn(fid)+h.slice(b);}
+   return h.replace('<div class="card fac-card','<div class="card"><span class="sub">不入門也能以「客卿」身分接各派任務、累積貢獻，換取補給與收藏；門派絕學、職位與高級兌換，要正式入門才能取得。日後入門時，客卿貢獻會一併帶入。</span></div><div class="card fac-card');}
+  return h+fold('guest','客卿往來',`<div class="card"><span class="sub">以客卿身分替其他門派辦事、累積貢獻。門派絕學要正式入門才能學。</span>${L.map(fid=>lineRow(`<b>${FACTIONS[fid].org||FACTIONS[fid].n}</b>`,gBtn(fid))).join('')}</div>`);};}
+(function(){const st=document.createElement('style');st.textContent='.g-btn{margin:4px 6px 0 0}';document.head.appendChild(st);})();
 
 /* ================= 庭院互動 2.0 與據點 2.0 介面 ================= */
 /* ---------- 家園：庭院互動清單 ---------- */
