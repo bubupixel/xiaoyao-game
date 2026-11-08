@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-085004";</script>
+<script>window.XY_BUILD="20261108-125442";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5331,6 +5331,9 @@ function lbInFinish(s,correct,total){const L=lbState(s);L.inTry=gday(s);if(corre
 Object.assign(TITLES,{lb_st5:{n:'氣吞山河',src:'氣海淬體五重',tier:6,e:{stamRegen:8,hpPct:5}},lb_st10:{n:'氣海無涯',src:'氣海淬體圓滿',tier:7,e:{stamRegen:15,hpPct:10,atkPct:4}},
  lb_in5:{n:'靈台清明',src:'靈台問心五層',tier:6,e:{wis:4,xpPct:6}},lb_in10:{n:'明心見性',src:'靈台問心圓滿',tier:7,e:{wis:8,xpPct:12,crit:3}}});
 {const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);lbState(s);s.stam=Math.max(0,Math.min(stamMax(s),Number.isFinite(raw.stam)?raw.stam:s.stam));s.insight=Math.max(0,Math.min(insMax(s),Number.isFinite(raw.insight)?raw.insight:s.insight));return s;};}
+/* 門派排序：由易到難（不限地點 → 需前往遠方 → 自立門戶） */
+{const ord=k=>{const F=FACTIONS[k];if(k==='zili')return 99;return F.loc&&LOCS[F.loc]?(LOCS[F.loc].realm||0)+1:0;};
+ const keys=Object.keys(FACTIONS).sort((a,b)=>ord(a)-ord(b));const T={};for(const k of keys)T[k]=FACTIONS[k];for(const k of keys)delete FACTIONS[k];Object.assign(FACTIONS,T);}
 
 </script>
 <script>
