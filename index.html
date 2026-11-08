@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261108-131552";</script>
+<script>window.XY_BUILD="20261108-153638";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5336,9 +5336,9 @@ Object.assign(TITLES,{lb_st5:{n:'氣吞山河',src:'氣海淬體五重',tier:6,e
  const keys=Object.keys(FACTIONS).sort((a,b)=>ord(a)-ord(b));const T={};for(const k of keys)T[k]=FACTIONS[k];for(const k of keys)delete FACTIONS[k];Object.assign(FACTIONS,T);}
 
 /* ================= 客卿：不入門也能接門派任務、累積與使用貢獻；門派絕學與高級兌換要正式入門 ================= */
-const guestFacs=s=>Object.keys(FACTIONS).filter(id=>id!=='zili'&&!(s.fac&&s.fac.id===id));
+const GUEST_OK=['zhengdao'];const guestFacs=s=>GUEST_OK.filter(id=>FACTIONS[id]&&!(s.fac&&s.fac.id===id));
 function guestState(s,fid){if(!s.guest||typeof s.guest!=='object')s.guest={};const G=s.guest[fid]||(s.guest[fid]={contrib:0,total:0,tasks:{day:-1,done:{}}});return G;}
-function guestWhy(s,fid){if(fid==='zili'||!FACTIONS[fid])return '無法以客卿身分往來';if(s.fac&&s.fac.id===fid)return '你已是本門弟子';if(realmOf(s)<1)return '需晉升三流高手';
+function guestWhy(s,fid){if(!GUEST_OK.includes(fid)||!FACTIONS[fid])return '只有青雲門接受客卿';if(s.fac&&s.fac.id===fid)return '你已是本門弟子';if(realmOf(s)<1)return '需晉升三流高手';
  const F=FACTIONS[fid];if(F.loc&&typeof locUnlocked==='function'&&!locUnlocked(s,F.loc))return '需先解鎖「'+LOCS[F.loc].n+'」';return null;}
 function guestRun(s,fid,fn){const G=guestState(s,fid),real=s.fac;s.fac={id:fid,contrib:G.contrib,total:G.total,rank:0,tasks:G.tasks,rules:[],name:'',disciples:[],bmDay:-1,guest:1};
  try{return fn();}finally{G.contrib=s.fac.contrib;G.total=s.fac.total;G.tasks=s.fac.tasks;s.fac=real;}}
@@ -5353,7 +5353,7 @@ function guestBuy(s,fid,id){const w=guestWhy(s,fid);if(w)return w;return guestRu
 /* 正式入門時，客卿貢獻一併帶入 */
 {const _j=joinFaction;joinFaction=function(s,id,name,rules,style){const e=_j(s,id,name,rules,style);if(!e&&s.fac&&s.guest&&s.guest[id]){const G=s.guest[id];s.fac.contrib+=G.contrib;s.fac.total+=G.total;
   if(G.total>0)addJournal(s,'門派','以客卿身分累積的 '+G.contrib+' 點貢獻，帶入了'+FACTIONS[id].org+'。');delete s.guest[id];rankUpdate(s,null);}return e;};}
-{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const G=raw&&raw.guest;s.guest={};if(G&&typeof G==='object')for(const k in G){if(!FACTIONS[k]||k==='zili')continue;const g=G[k]||{};
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const G=raw&&raw.guest;s.guest={};if(G&&typeof G==='object')for(const k in G){if(!GUEST_OK.includes(k))continue;const g=G[k]||{};
   s.guest[k]={contrib:Math.max(0,g.contrib|0),total:Math.max(0,g.total|0),tasks:g.tasks&&typeof g.tasks==='object'?{day:g.tasks.day|0,done:Object.assign({},g.tasks.done)}:{day:-1,done:{}}};}return s;};}
 
 </script>
@@ -9514,9 +9514,12 @@ Object.assign(ACT,{
 {const gBtn=fid=>{const G=guestState(S,fid),w=guestWhy(S,fid);return `<button class="btn sm ghost g-btn" data-act="gOpen" data-f="${fid}" ${w?'disabled':''}>客卿往來<small>${G.contrib?'客卿貢獻 '+fmt(G.contrib):(w||'不入門也可接任務')}</small></button>`;};
  const _vf=vFaction;vFaction=function(){let h=_vf();const L=guestFacs(S);
   if(!S.fac){for(const fid of L){const k='data-act="facJoin" data-f="'+fid+'"';const i=h.indexOf(k);if(i<0)continue;const b=h.lastIndexOf('<button',i);h=h.slice(0,b)+gBtn(fid)+h.slice(b);}
-   return h.replace('<div class="card fac-card','<div class="card"><span class="sub">不入門也能以「客卿」身分接各派任務、累積貢獻，換取補給與收藏；門派絕學、職位與高級兌換，要正式入門才能取得。日後入門時，客卿貢獻會一併帶入。</span></div><div class="card fac-card');}
-  return h+fold('guest','客卿往來',`<div class="card"><span class="sub">以客卿身分替其他門派辦事、累積貢獻。門派絕學要正式入門才能學。</span>${L.map(fid=>lineRow(`<b>${FACTIONS[fid].org||FACTIONS[fid].n}</b>`,gBtn(fid))).join('')}</div>`);};}
+   return h;}
+  return h+fold('guest','青雲門・客卿往來',`<div class="card"><span class="sub">青雲門廣結善緣，不入門也可以客卿身分接任務、累積貢獻。青雲門的招式，要正式入門才能學。</span>${L.map(fid=>lineRow(`<b>${FACTIONS[fid].org||FACTIONS[fid].n}</b>`,gBtn(fid))).join('')}</div>`);};}
 (function(){const st=document.createElement('style');st.textContent='.g-btn{margin:4px 6px 0 0}';document.head.appendChild(st);})();
+/* 青雲門卡上說明客卿規則 */
+{const _vf2=vFaction;vFaction=function(){let h=_vf2();if(S.fac)return h;const k='data-act="gOpen" data-f="zhengdao"';const i=h.indexOf(k);if(i<0)return h;const b=h.lastIndexOf('<button',i);
+  return h.slice(0,b)+'<span class="eff next">青雲門廣結善緣：不入門也能以客卿身分接任務、累積和使用貢獻；但青雲門的招式、職位與高級兌換，要正式入門才能取得。入門時客卿貢獻會一併帶入。</span>'+h.slice(b);};}
 
 /* ================= 庭院互動 2.0 與據點 2.0 介面 ================= */
 /* ---------- 家園：庭院互動清單 ---------- */
