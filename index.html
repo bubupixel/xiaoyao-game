@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261110-091612";</script>
+<script>window.XY_BUILD="20261110-093117";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5474,6 +5474,219 @@ LETTER_MISC.push(
   if(OUTFITS[id]&&!s.col.outfits.includes(id)&&Math.random()<.6){giveCol(s,'outfits',id);return '你摸到了一套「'+OUTFITS[id].n+'」，賺到了！';}
   const r=Math.random();if(r<.3){gainItem(s,'lingzhi',1);return '摸到一個木盒，裡面竟是一株靈芝！';}if(r<.5){gainItem(s,'iron',1);return '摸到一塊沉甸甸的黑鐵——是玄鐵！';}gainItem(s,'ore',3);return '摸到三塊生鏽的鐵……不過拿去鐵匠舖還能用（礦石 ×3）。';};}
 
+/* ================= 門派 3.0：晨課、師兄妹情誼、出師試煉 ================= */
+/* ---------- 一、師兄妹情誼 ---------- */
+/* 性格相投或相剋：正數投緣，'r' 代表互相較勁 */
+const ZL_COMPAT={'qin|hui':15,'hao|hou':15,'pi|ling':18,'wen|hou':12,'qin|hao':10,'hui|wen':10,'ling|hao':10,'pi|wen':-8,'pi|qin':-10,'ao|ao':'r','ao|hao':'r','ao|qin':'r','pi|ao':-12};
+/* 有名有姓的弟子之間的舊緣 */
+const ZL_PAIR_NAMED=[[3,11,'r','兩個都是天才，誰也不服誰。'],[5,6,35,'都是被人撿回去養大的孩子，一見面就覺得親。'],[2,8,25,'都在水邊長大，比賽憋氣能比一整個下午。'],
+ [7,10,20,'花小鈴下山時的盤纏，是唐如意幫她賣掉一本秘笈抄本換來的。'],[4,0,30,'一個能吃十個饅頭，一個能扛兩捆柴，成天湊在一起。'],[1,9,25,'都愛讀書，常為一句詩爭到半夜。'],[3,4,-10,'沈孤鴻嫌韓大寶吵，韓大寶偏要跟著他。'],[10,8,15,'兩個都閒不住，一起被罰過好幾次。']];
+const zlPK=(a,b)=>a<b?a+'-'+b:b+'-'+a;
+function zlBonds(s){const Z=zlState(s);if(!Z)return {};if(!Z.bonds||typeof Z.bonds!=='object')Z.bonds={};return Z.bonds;}
+function zlBondInit(s,a,b){const T=a.trait,U=b.trait,c=ZL_COMPAT[T+'|'+U]??ZL_COMPAT[U+'|'+T];let v=8+(T===U?6:0),r=c==='r',note=null;if(typeof c==='number')v+=c;
+ if(a.nid!=null&&b.nid!=null){const N=ZL_PAIR_NAMED.find(p=>(p[0]===a.nid&&p[1]===b.nid)||(p[0]===b.nid&&p[1]===a.nid));if(N){if(N[2]==='r')r=true;else v=N[2];note=N[3];}}
+ return {v,r:r?1:0,note,combo:0};}
+function zlBond(s,a,b){const B=zlBonds(s),k=zlPK(a.id,b.id);if(!B[k])B[k]=zlBondInit(s,a,b);return B[k];}
+function zlBondAdd(s,a,b,n){const o=zlBond(s,a,b);o.v=Math.max(-50,Math.min(100,o.v+n));return o;}
+const zlBondLv=v=>v>=70?{n:'情同手足',c:'hi'}:v>=40?{n:'交好',c:'ok'}:v>=10?{n:'和睦',c:''}:v>=-10?{n:'生疏',c:'lo'}:{n:'不和',c:'bad'};
+/* 稱呼：先入門的是師兄師姐 */
+const zlCall=(me,o)=>(o.id<me.id?(o.male?'師兄':'師姐'):(o.male?'師弟':'師妹'));
+/* 情誼帶來的修為加成 */
+function zlBondInfo(s,d){const f=zl(s);if(!f)return {mul:1,tags:[]};let mul=1;const tags=[];
+ for(const o of f.disciples){if(o===d||o.away)continue;const b=zlBond(s,d,o);
+  if(b.r){mul+=.08;tags.push('與'+o.name+'較勁 +8%');}
+  if(b.v>=70&&o.path===d.path){mul+=.1;tags.push('與'+o.name+'同修 +10%');}
+  if(b.v>=40&&o.id<d.id&&o.lv>=d.lv+5){mul+=.1;tags.push(o.name+'帶著練 +10%');}
+  if(b.v<-10){mul-=.05;tags.push('與'+o.name+'不和 −5%');}}
+ return {mul:Math.max(.8,Math.min(1.5,mul)),tags};}
+/* 情誼影響每秒修為：先把修為加成算在 tick 之後補上 */
+{const _t=zlTick;zlTick=function(s,sec,sum){const f=zl(s);const before=f?f.disciples.map(d=>[d,d.lv,d.xp]):[];_t(s,sec,sum);if(!f)return;
+ for(const [d,lv,xp] of before){if(d.away||d.lv!==lv||d.lv>=ZL_LV_MAX)continue;const g=d.xp-xp;if(g<=0)continue;const m=zlBondInfo(s,d).mul;if(m!==1)d.xp=Math.max(0,d.xp+g*(m-1));}
+ /* 不和的心情慢慢變差、較勁的心情起伏 */
+ Z3hr(s,sec);};}
+function Z3hr(s,sec){const Z=zlState(s);Z.bt=(Z.bt||0)+sec;if(Z.bt<3600)return;const n=Math.floor(Z.bt/3600);Z.bt-=n*3600;const f=zl(s);
+ for(let i=0;i<f.disciples.length;i++)for(let j=i+1;j<f.disciples.length;j++){const a=f.disciples[i],b=f.disciples[j];if(a.away||b.away)continue;const o=zlBond(s,a,b);
+  if(o.v<-10){a.mood=Math.max(0,a.mood-.15*n);b.mood=Math.max(0,b.mood-.15*n);}else if(o.v>=70){a.mood=Math.min(100,a.mood+.05*n);b.mood=Math.min(100,b.mood+.05*n);}
+  if(a.path===b.path)o.v=Math.min(100,o.v+.02*n);}}
+/* 新弟子入門：和每位同門建立關係 */
+{const _r=zlRecruit;zlRecruit=function(s,i){const r=_r(s,i);if(!r.err&&r.d){const f=zl(s);for(const o of f.disciples)if(o!==r.d)zlBond(s,r.d,o);}return r;};}
+/* 論劍大會：合擊 */
+let ZL_CUP_BOOST=null;
+{const _p=zlPower;zlPower=function(d){return Math.round(_p(d)*(ZL_CUP_BOOST&&ZL_CUP_BOOST[d.id]||1));};}
+function zlCupCombo(s,ids){const f=zl(s),T=(ids||[]).map(id=>zlFind(s,id)).filter(Boolean).slice(0,3),out=[];const B={};
+ for(let i=0;i<T.length;i++)for(let j=i+1;j<T.length;j++){const o=zlBond(s,T[i],T[j]);if(o.combo){B[T[i].id]=(B[T[i].id]||1)+.2;B[T[j].id]=(B[T[j].id]||1)+.2;out.push(T[i].name+'・'+T[j].name);}
+  else if(o.v>=70){B[T[i].id]=(B[T[i].id]||1)+.08;B[T[j].id]=(B[T[j].id]||1)+.08;}else if(o.v<-10){B[T[i].id]=(B[T[i].id]||1)-.1;B[T[j].id]=(B[T[j].id]||1)-.1;}}
+ return {B,out};}
+{const _c=zlCup;zlCup=function(s,ids){const C=zlCupCombo(s,ids);ZL_CUP_BOOST=C.B;let r;try{r=_c(s,ids);}finally{ZL_CUP_BOOST=null;}
+ if(!r.err&&C.out.length)r.lines.unshift('合擊之術：'+C.out.join('、')+'，戰力 +20%！');return r;};}
+
+/* 同門之間的事：每天最多一件，掛在門下弟子最上方 */
+const ZL_PEV=[
+ {id:'spar',n:'切磋',t:'{a}想找{b}比劍，兩人在演武場上擺好了架勢，大家都圍過來看。',ch:[
+  ['讓他們比，點到即止',(s,a,b)=>{zlStatUp(a,'gen',.2);zlStatUp(b,'gen',.2);const w=zlPower(a)>=zlPower(b)?a:b,l=w===a?b:a;zlBondAdd(s,a,b,6);l.mood-=3;return '三十招後，'+w.name+'險勝。'+l.name+'不服氣地說「明天再來」，'+w.name+'笑著說「隨時奉陪」。兩人根骨都有長進。';}],
+  ['你來下場，一對二',(s,a,b)=>{a.xp+=zlNeed(a)*.15;b.xp+=zlNeed(b)*.15;zlBondAdd(s,a,b,10);a.loyal+=3;b.loyal+=3;return '兩人聯手也碰不到你的衣角。打到最後，他們開始互相掩護。修為小進，彼此默契也好了不少。';}]]},
+ {id:'candy',n:'偷溜下山',t:'{a}和{b}半夜偷溜下山買糖葫蘆，回來時被巡夜的弟子抓個正著。',ch:[
+  ['兩個一起罰跪祠堂',(s,a,b)=>{a.loyal+=4;b.loyal+=4;a.mood-=4;b.mood-=4;zlBondAdd(s,a,b,12);return '兩人跪了一夜，膝蓋都麻了，卻在祠堂裡偷偷分完了最後一串糖葫蘆。患難之交，就是這麼來的。';}],
+  ['沒收糖葫蘆，自己吃掉',(s,a,b)=>{a.mood+=6;b.mood+=6;zlBondAdd(s,a,b,6);return '你當著兩人的面吃了一顆。'+a.name+'和'+b.name+'先是瞪大眼睛，接著一起笑出聲來。';}]]},
+ {id:'sick',n:'守夜',t:'{b}染了風寒，燒了一整夜。第二天早上，大家發現{a}趴在{b}床邊睡著了。',ch:[
+  ['當眾誇獎{a}',(s,a,b)=>{a.loyal+=5;a.mood+=6;zlBondAdd(s,a,b,15);return a.name+'被誇得滿臉通紅。'+b.name+'病好之後，每天都多盛一碗飯給'+a.name+'。';}],
+  ['讓兩人都歇一天',(s,a,b)=>{a.mood+=10;b.mood+=10;zlBondAdd(s,a,b,10);return '兩人在屋簷下曬了一整天太陽，說了很多以前沒說過的話。';}]]},
+ {id:'book',n:'爭秘笈',t:'{a}和{b}同時看上了藏經閣裡的一本拳譜，誰也不讓誰，吵到你這裡來了。',ch:[
+  ['讓他們輪流看',(s,a,b)=>{zlStatUp(a,'wu',.15);zlStatUp(b,'wu',.15);zlBondAdd(s,a,b,5);return '一人看一天。後來兩人發現，一起看、一起討論，進步得更快。悟性都有長進。';}],
+  ['給先入門的那位',(s,a,b)=>{const sr=a.id<b.id?a:b,jr=sr===a?b:a;zlStatUp(sr,'wu',.35);jr.mood-=6;zlBondAdd(s,a,b,-6);return sr.name+'得了拳譜，'+jr.name+'嘴上說沒關係，晚飯卻沒吃幾口。';}],
+  ['收回拳譜，你親自講',(s,a,b)=>{a.xp+=zlNeed(a)*.12;b.xp+=zlNeed(b)*.12;a.loyal+=2;b.loyal+=2;return '你講了一下午。兩人聽完，誰也不吵了。';}]]},
+ {id:'teach',n:'師兄教招',t:'{a}把自己琢磨出來的一招教給了{b}，兩人在後山練得滿頭大汗。',ch:[
+  ['鼓勵他們繼續',(s,a,b)=>{zlStatUp(b,'shen',.3);zlBondAdd(s,a,b,10);a.mood+=5;return b.name+'學得很快。'+a.name+'得意得不得了：「看吧，我教得好。」';}],
+  ['指出這招的破綻',(s,a,b)=>{zlStatUp(a,'wu',.3);zlStatUp(b,'wu',.15);zlBondAdd(s,a,b,4);return '兩人聽完愣了半天，回去一起把招式改了一遍。悟性都有長進。';}]]},
+ {id:'prank',n:'惡作劇',t:'{a}在{b}的被窩裡放了一隻青蛙。{b}半夜的尖叫聲，把整座山門都吵醒了。',cond:(a,b)=>a.trait==='pi'||b.trait==='pi',ch:[
+  ['讓{b}報仇',(s,a,b)=>{a.mood+=4;b.mood+=8;zlBondAdd(s,a,b,8);return '第二天，'+a.name+'的鞋子裡多了一條蚯蚓。兩人從此冤冤相報，卻越鬧越親。';}],
+  ['罰{a}挑水一個月',(s,a,b)=>{a.loyal+=4;a.mood-=6;zlStatUp(a,'gen',.3);b.mood+=4;zlBondAdd(s,a,b,-4);return a.name+'挑了一個月的水，力氣倒是大了不少。';}]]},
+ {id:'drumstick',n:'搶雞腿',t:'晚飯只剩一隻雞腿。{a}和{b}的筷子同時伸了過去。',ch:[
+  ['一人一半',(s,a,b)=>{zlBondAdd(s,a,b,5);a.mood+=3;b.mood+=3;return '雞腿被撕成兩半，大的那半不知怎麼又被推回了對方碗裡。';}],
+  ['你夾走雞腿',(s,a,b)=>{a.mood+=2;b.mood+=2;zlBondAdd(s,a,b,8);return '兩人目瞪口呆，然後一起說：「師父太過分了！」——這是他們第一次站在同一邊。';}]]},
+ {id:'gossip',n:'背後說話',t:'有人聽見{a}在背後說{b}「仗著資質好，眼睛長在頭頂上」。{b}已經知道了。',cond:(a,b,o)=>o.v<30,ch:[
+  ['叫兩人當面說開',(s,a,b)=>{const ok=Math.random()<.65;zlBondAdd(s,a,b,ok?18:-8);return ok?'吵了一頓，又沉默了很久，最後'+a.name+'先道了歉。兩人之間的結，總算解開了。':'說開不成，反而越吵越兇。這兩人恐怕還要一陣子才能和好。';}],
+  ['讓他們分開練功',(s,a,b)=>{a.mood+=3;b.mood+=3;return '眼不見為淨。兩人都輕鬆了些，只是關係沒什麼變化。';}]]},
+ {id:'night',n:'夜談',t:'夜裡，{a}和{b}坐在屋頂上看星星，聊起各自上山以前的事。',ch:[
+  ['別打擾他們',(s,a,b)=>{zlBondAdd(s,a,b,12);a.mood+=4;b.mood+=4;return '你在樓下聽見兩人笑了一夜。';}],
+  ['上去一起坐',(s,a,b)=>{zlBondAdd(s,a,b,6);a.loyal+=4;b.loyal+=4;return '你講了自己年輕時闖江湖的事。兩人聽得入神，誰也沒有睡意。';}]]},
+ {id:'combo',n:'合擊',t:'{a}和{b}默契越來越好，竟然自己琢磨出了一套兩人合使的招式，只是還有些破綻。',cond:(a,b,o)=>o.v>=70&&!o.combo,ch:[
+  ['傳授合擊心法',(s,a,b)=>{const o=zlBond(s,a,b);o.combo=1;a.loyal+=3;b.loyal+=3;return '你花了三天，替兩人補上破綻。從此兩人同時出戰論劍大會時，戰力 +20%。';}],
+  ['讓他們自己摸索',(s,a,b)=>{zlStatUp(a,'wu',.2);zlStatUp(b,'wu',.2);return '兩人又練了半個月，招式越來越像樣。悟性都有長進。（之後還有機會傳授合擊心法）';}]]},
+ {id:'rival',n:'較勁',t:'{a}聽說{b}昨天多練了一個時辰，今天天沒亮就爬起來練功。{b}知道後，乾脆不睡了。',cond:(a,b,o)=>o.r,ch:[
+  ['由他們去',(s,a,b)=>{a.xp+=zlNeed(a)*.2;b.xp+=zlNeed(b)*.2;a.mood-=4;b.mood-=4;return '兩人都瘦了一圈，修為卻突飛猛進。';}],
+  ['逼兩人去睡覺',(s,a,b)=>{a.mood+=5;b.mood+=5;zlBondAdd(s,a,b,6);return '兩人被你趕回房，隔著一道牆小聲吵了半夜，最後一起睡著了。';}]]},
+];
+function zlPevRoll(s){const f=zl(s);if(!f)return;const Z=zlState(s),d0=gday(s);if(Z.pev&&Z.pev.day>=d0-2)return;if(Z.pevDay===d0)return;Z.pevDay=d0;
+ const L=f.disciples.filter(d=>!d.away);if(L.length<2||Math.random()>=.45){if(Z.pev&&Z.pev.day<d0-2)Z.pev=null;return;}
+ const a=pick(L),b=pick(L.filter(x=>x!==a)),o=zlBond(s,a,b),E=ZL_PEV.filter(E=>!E.cond||E.cond(a,b,o));Z.pev={id:pick(E).id,a:a.id,b:b.id,day:d0};}
+{const _r=zlEvRoll;zlEvRoll=function(s){_r(s);zlPevRoll(s);};}
+const zlPevTx=(t,a,b)=>t.replace(/\{a\}/g,a.name).replace(/\{b\}/g,b.name);
+function zlPevGet(s){const Z=zlState(s);if(!Z||!Z.pev)return null;const a=zlFind(s,Z.pev.a),b=zlFind(s,Z.pev.b),E=ZL_PEV.find(x=>x.id===Z.pev.id);if(!a||!b||!E){Z.pev=null;return null;}return {a,b,E};}
+function zlPevResolve(s,ci){const P=zlPevGet(s);if(!P)return {err:'沒有待處理的事'};const c=P.E.ch[ci];if(!c)return {err:'選項無效'};const before=zlBond(s,P.a,P.b).v;const txt=c[1](s,P.a,P.b);
+ for(const d of [P.a,P.b]){d.mood=Math.max(0,Math.min(100,d.mood));d.loyal=Math.max(0,Math.min(100,d.loyal));}zlState(s).pev=null;const dv=Math.round(zlBond(s,P.a,P.b).v-before);
+ return {txt,E:P.E,a:P.a,b:P.b,dv};}
+
+/* ---------- 二、晨課：一次帶全部弟子，拆招小遊戲 ---------- */
+const ZL_LESSON={wu:{n:'劍招',d:'教一套新的劍招'},yi:{n:'藥理',d:'講解藥性與針法'},shang:{n:'算學',d:'教記帳與看人'},tan:{n:'輕功',d:'帶大家在山間奔走'},chuan:{n:'經義',d:'講武德與道理'}};
+/* 三種出手：劈（擋）、刺（閃）、掃（躍） */
+const ZL_MOVES={pi:{n:'劈',ans:'block'},ci:{n:'刺',ans:'dodge'},sao:{n:'掃',ans:'jump'}};
+const ZL_TELL={pi:['雙臂高高舉起','肩膀一沉，劍往上抬','腳跟離地，身子拔高','眼睛盯著你的頭頂'],ci:['劍尖對準你的胸口','後腳一蹬，重心往前壓','手腕一收，像要突刺','身子側成一條線'],sao:['膝蓋微彎，身子壓低','劍尖貼著地面','眼睛瞄向你的腳下','腰一擰，像要橫掃']};
+const ZL_ANS={block:'格擋',dodge:'側閃',jump:'躍起'};
+const zlLessonDone=s=>{const Z=zlState(s);return !!(Z&&Z.lesson&&Z.lesson.day===gday(s));};
+const ZL_LESSON_STAM=10;
+/* 開課：產生五輪出招 */
+function zlLessonStart(s,topic){const f=zl(s);if(!f)return {err:'需自立門戶'};if(!ZL_LESSON[topic])return {err:'無效'};const L=f.disciples.filter(d=>!d.away);if(!L.length)return {err:'沒有弟子可以上課'};
+ if(zlLessonDone(s))return {err:'今天的晨課已經上過了'};if(s.stam<ZL_LESSON_STAM)return {err:'體力不足（需 '+ZL_LESSON_STAM+'）'};
+ const rounds=[];const ord=L.slice().sort(()=>Math.random()-.5);for(let i=0;i<5;i++){const d=ord[i%ord.length],mk=Object.keys(ZL_MOVES),m=pick(mk);
+  const feint=d.trait==='pi'&&Math.random()<.45?pick(mk.filter(x=>x!==m)):null;const tm=Math.round((2600-i*220)*(d.trait==='ao'?.8:1)*(d.trait==='hou'?1.15:1));
+  rounds.push({id:d.id,m,feint,tell:pick(ZL_TELL[feint||m]),real:feint?pick(ZL_TELL[m]):null,tm});}
+ return {rounds,topic};}
+/* 結算：score = 拆中的輪數 */
+function zlLessonFinish(s,topic,hits){const f=zl(s);if(!f)return {err:'需自立門戶'};if(zlLessonDone(s))return {err:'今天的晨課已經上過了'};if(s.stam<ZL_LESSON_STAM)return {err:'體力不足'};
+ const Z=zlState(s),sc=Math.max(0,Math.min(5,hits.filter(Boolean).length));s.stam-=ZL_LESSON_STAM;advTime(s,90);Z.lesson={day:gday(s),score:sc,topic};
+ const L=f.disciples.filter(d=>!d.away),lines=[];const P=ZL_PATHS[topic];
+ for(const d of L){const m=d.path===topic?1.6:1;d.xp+=zlNeed(d)*(.15+.06*sc)*m;d.mood=Math.min(100,d.mood+4+sc);d.loyal=Math.min(100,d.loyal+1+sc*.4);d.talk=gday(s);
+  if(d.path===topic){zlStatUp(d,P.st[0],.1+.04*sc);}}
+ for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++)zlBondAdd(s,L[i],L[j],1+(sc>=4?1:0));
+ let star=null;if(sc>=5&&L.length){star=pick(L);zlStatUp(star,'wu',.4);star.xp+=zlNeed(star)*.3;}
+ const sum=newSummary();addXp(s,stageReq(s.g)*(.01+.004*sc),sum);
+ const grade=['講得磕磕絆絆','勉強過關','中規中矩','有聲有色','精彩','滴水不漏'][sc];
+ lines.push('晨課「'+ZL_LESSON[topic].n+'」：'+grade+'（拆招 '+sc+'/5）。');lines.push(L.length+' 位弟子修為大進、心情 +'+(4+sc)+'；修'+P.n+'的弟子收穫更多。');
+ if(star)lines.push('滿堂喝采！'+star.name+'當場頓悟，悟性大進。');lines.push('同堂聽課，同門情誼也好了一些。教學相長，你的修為也有精進。');
+ if(s.stat){s.stat.zlLesson=(s.stat.zlLesson||0)+1;}addJournal(s,'門派','晨課「'+ZL_LESSON[topic].n+'」，拆招 '+sc+'/5。','zll'+gday(s));return {lines,sc,star};}
+/* 舊的「親自指點」改由晨課取代 */
+zlTeach=function(){return {err:'改為每日晨課：一次帶全部弟子上課'};};
+
+/* ---------- 三、出師試煉：每位弟子專屬 ---------- */
+/* 每一關：[題目, [[選項, 屬性], …], 過關描述] */
+const ZL_TRIAL_N={
+ 0:{n:'地牢裡的孩子',st:[
+  ['小樵回到青石鎮，發現玄蛇會的餘黨又在拐孩子。鎮外破廟傳出哭聲，門口站著兩個守衛。',[['正面打進去','gen'],['繞上屋頂潛入','shen'],['扮成樵夫送柴混進去','xin']],'守衛還沒回過神，小樵已經進了廟。'],
+  ['地牢裡鎖著五個孩子，鑰匙掛在頭目腰上。孩子們嚇得直哭。',[['從頭目身上搶鑰匙','gen'],['用柴刀撬開鎖','wu'],['先蹲下來，叫孩子們別怕','xin']],'鎖開了，孩子們一個拉著一個跟在他身後。'],
+  ['頭目點燃了火藥桶，要和大家同歸於盡。',[['衝上去踢飛火摺子','shen'],['背起孩子撞破後牆','gen'],['喝住他，勸他投降','xin']],'火光熄滅的那一刻，五個孩子都平安出來了。']],
+  end:'陸昭在鎮口等著。小樵把最小的孩子交給她，說：「當年你背我出來，今天換我背他們。」'},
+ 1:{n:'天機三問',st:[
+  ['知遠回到天機閣。老閣主說：「先過機關迴廊，再來見我。」',[['推算機關的規律','wu'],['用輕功踩著橫樑過去','shen'],['硬闖','gen']],'迴廊盡頭的門，自己打開了。'],
+  ['老閣主問：「天下最難算的，是什麼？」',[['引經據典，說是天象','wu'],['說是人心','xin']],'老閣主沉默很久，點了點頭。'],
+  ['最後一關，是和天機閣大弟子比試。對方的招式，全是知遠讀過的書。',[['用書裡寫的破綻','wu'],['以拙勝巧，硬接','gen'],['不急，拖到對方不耐煩','xin']],'大弟子收手時笑了：「你終於不只是個書生了。」']],
+  end:'溫如晦親自送他下山。「上次是我把你踢下去的，」老人說，「這次，是送你下去。」'},
+ 2:{n:'碼頭失竊案',st:[
+  ['漕幫碼頭丟了一船貨，有人說是江小浪手腳不乾淨。他得自己證明清白。',[['跳進江裡找沉下去的貨箱','shen'],['回想當晚碼頭上的每個人','wu'],['找當晚值夜的船工對口供','xin']],'貨箱上的繩結，是幫裡老舵手才會打的結。'],
+  ['老舵手連夜划船逃走了。',[['跳下水游過去追','shen'],['搶一條船追上去','gen'],['猜他會在哪個渡口靠岸','wu']],'天亮前，小浪在下游的蘆葦蕩裡攔住了他。'],
+  ['老舵手跪下來說，偷貨是為了替病重的女兒抓藥。',[['替他向江映川求情','xin'],['想個兩全的辦法','wu']],'貨回來了，老舵手的女兒也有了藥錢。']],
+  end:'江映川拍拍他的肩：「水性比我好，現在連手腳也乾淨了。」'},
+ 3:{n:'試劍坪',st:[
+  ['孤鴻回到青雲門，要再和堂姐比一場。山門弟子攔住了他。',[['一路打上去','gen'],['遞上拜帖，以禮求見','xin'],['從後山崖壁攀上去','shen']],'他站上了試劍坪，沈青霜已經在等了。'],
+  ['堂姐的劍法比當年更快、更穩。',[['用師父教的劍','wu'],['以快打快','shen'],['硬碰硬','gen']],'百招過去，兩人都沒有後退一步。'],
+  ['勝負未分，沈青霜忽然收了劍。',[['也收劍，抱拳','xin'],['堅持要分出勝負','gen']],'孤鴻放下了劍，也放下了那口氣。']],
+  end:'下山時他說：「我不用再贏她了。」語氣裡第一次沒有不甘。'},
+ 4:{n:'第一趟鏢',st:[
+  ['大寶第一次自己押鏢。剛出城，鏢車就陷進了泥坑。',[['一個人扛起鏢車','gen'],['找石板墊在輪下','wu']],'鏢車出了泥坑，趟子手們都看傻了。'],
+  ['山路上，一群山賊攔住了去路。',[['打過去','gen'],['請山賊吃饅頭，講講道理','xin'],['先探路，繞過山寨','shen']],'鏢車平平安安過了山。'],
+  ['夜裡，有人摸進了營地。',[['裝睡，等他靠近','xin'],['一拳打出去','gen'],['抓一把鍋灰撒過去','wu']],'摸營的人被五花大綁，天亮送了官。']],
+  end:'回到威遠鏢局，韓鐵衣親手把一面鏢旗交到他手上：「往後，這面旗是你的。」'},
+ 5:{n:'玉珮的來歷',st:[
+  ['了塵回到寒山古寺，想知道襁褓裡那塊玉珮是誰留下的。',[['翻閱十二年前的香客簿','wu'],['去問慧明大師','xin']],'香客簿上，有一行被墨塗掉的字。'],
+  ['下山路上，九幽的冬使攔住了他：「把玉珮交出來。」',[['不閃不避，硬接一掌','gen'],['以身法周旋','shen'],['唸一段經給他聽','xin']],'冬使退開三步，看他的眼神變了。'],
+  ['冬使說，玉珮上的字是「歸」——那是他妹妹的名字。',[['放下，不再追問','xin'],['追問到底','wu']],'了塵把玉珮收進懷裡，向冬使合十一禮。']],
+  end:'回到山門，他說：「我叫了塵。」說完笑了，好像什麼都放下了。'},
+ 6:{n:'疫村',st:[
+  ['山下的村子鬧了疫病。白芷跟著你趕到時，村口滿地都是病人。',[['先分輕重，再一個個救','wu'],['咬著牙，先替重傷的人止血','xin']],'哭聲漸漸小了，村裡的人開始聽她指揮。'],
+  ['一個孩子的傷口潰爛了，必須切開。白芷的手在發抖。',[['深吸一口氣，下刀','xin'],['先用麻沸散讓孩子睡著','wu'],['叫你幫忙按住','gen']],'刀口很穩。孩子醒來時，燒已經退了。'],
+  ['藥材不夠了。',[['連夜上山採藥','shen'],['用現有的藥材改方子','wu']],'天亮時，最後一碗藥也煎好了。']],
+  end:'蘇晚晴來接她時，看了看她的手：「你現在不怕了。」'},
+ 7:{n:'唐家兵器進京',st:[
+  ['如意要把唐家的兵器賣進京城。第一位大客戶是個精明的老掌櫃。',[['算盤打給他看，句句是理','wu'],['不談價錢，先談交情','xin']],'老掌櫃簽下了第一張單子。'],
+  ['貨走到半路，被人劫了。',[['親自去追','shen'],['請威遠鏢局幫忙','xin'],['打回來','gen']],'貨追回來了，一件不少。'],
+  ['京城最大的商行聯手壓價，想逼她賤賣。',[['寧可不賣','xin'],['改賣他們沒有的貨','wu']],'三個月後，那幾家商行反過來求她供貨。']],
+  end:'唐小滿收到她寄回的第一筆銀子，在信上只寫了兩個字：「好樣。」'},
+ 8:{n:'出海',st:[
+  ['鄭孤帆的船在外海失了消息。小潮偷了一條船，出海去找。半路遇上暴風雨。',[['死死掌住舵','gen'],['爬上桅杆收帆','shen']],'風雨過去，船還在。'],
+  ['她找到了哥哥的船——被海盜圍住了。',[['潛下水鑿穿海盜的船','shen'],['迎面殺過去','gen'],['把海盜引到淺灘擱淺','wu']],'海盜的船一艘接一艘沉了下去。'],
+  ['救出哥哥後，鄭孤帆第一句話是：「誰准你來的？回家去！」',[['跟他好好說','xin'],['證明自己不再是小孩','shen']],'鄭孤帆看了她很久，終於把舵交給了她。']],
+  end:'潮音港的人說，那天回港的船，是鄭家妹妹掌的舵。'},
+ 9:{n:'一封家書',st:[
+  ['趙明璃有一封信，要送到宮裡。只有素心認得進宮的路。',[['扮回宮女混進去','xin'],['夜裡翻牆','shen']],'她進了宮門，腳步熟得像沒離開過。'],
+  ['在長廊上，她被從前的嬤嬤認了出來。',[['面不改色地撒個謊','xin'],['摺扇一點，讓嬤嬤睡一會兒','shen'],['據實相告，求她放行','wu']],'嬤嬤沒有聲張。'],
+  ['信終於送到了。可對方要她跪著把郡主的話說完。',[['一字一句說完','xin'],['讓信自己說話','wu']],'聽完，那人沉默了很久，說：「告訴她，我知道了。」']],
+  end:'回來那晚，趙明璃抱著她哭了一場。素心說：「我現在說謊，已經比郡主好了。」'},
+ 10:{n:'物歸原主',st:[
+  ['小鈴決定把當年偷走的輕功秘笈還回瑤華宮。',[['偷偷放回藏經閣','shen'],['光明正大從正門走進去','xin']],'秘笈放回了原處。'],
+  ['師姐們把她團團圍住。',[['跑','shen'],['認錯','xin'],['比一場','gen']],'花見月出現了，揮手讓大家散開。'],
+  ['花見月說：「那就把秘笈上的輕功，演一遍給我看。」',[['一招一式照著演','wu'],['加上自己的變化','shen']],'演完最後一式，滿院子的師姐都安靜了。']],
+  end:'花見月說：「這本秘笈，你帶走吧。現在它是你的了。」'},
+ 11:{n:'雪原狼王',st:[
+  ['崑崙山下來了一頭狼王，咬死了好幾家的羊。賀蘭鳶背起弓上了雪原。',[['看雪地上的足跡','wu'],['在雪原上追三天三夜','gen']],'第三天傍晚，她找到了狼窩。'],
+  ['一場暴雪壓了下來。',[['掘個雪洞，等雪停','xin'],['冒雪前進','gen']],'雪停時，狼王就在百步之外。'],
+  ['她拉滿了弓，卻看見狼王身後擠著三隻小狼。',[['一箭射中','shen'],['放下弓','xin']],'她回頭走了。後來，那頭狼王再也沒下過山。']],
+  end:'賀蘭朔聽完只說了一句：「這一箭不射，比射中更難。」'},
+};
+const ZL_TRIAL_P={
+ wu:{n:'下山挑戰',st:[['{n}下山挑戰成名人物。第一場在城裡的擂台上。',[['硬碰硬','gen'],['以身法取勝','shen']],'台下掌聲雷動。'],['回客棧的路上，有人在暗處放冷箭。',[['閃開','shen'],['不動聲色，引他現身','xin']],'放冷箭的人被揪了出來。'],['最後一戰，對手是一位成名三十年的老前輩。',[['用你教的招式','wu'],['以力破巧','gen']],'老前輩收刀時說：「後生可畏。」']],end:'{n}的名字，開始在江湖上傳開了。'},
+ yi:{n:'行醫',st:[['{n}到山下鄉間行醫。第一個病人的病，誰也說不出名堂。',[['翻遍醫書找出病因','wu'],['耐心問清楚病人的起居','xin']],'病因找到了。'],['半夜，有人來敲門：家裡的媳婦難產。',[['鎮定下來，一步步來','xin'],['背上藥箱跑過去','gen']],'天亮時，屋裡傳出嬰兒的哭聲。'],['藥材用完了，附近的山崖上有一株老參。',[['攀上山崖去採','shen'],['用別的藥材代替','wu']],'病人的燒退了。']],end:'鄉親們送{n}出村，送了好幾里路。'},
+ shang:{n:'獨掌一店',st:[['{n}要獨力經營一家鋪子一個月。先得選個好地方。',[['算清各處的人流','wu'],['到處問問老街坊','xin']],'鋪子開張了。'],['地痞上門收保護費。',[['把他們打出去','gen'],['好言好語，請他們喝茶','xin']],'地痞再也沒來過。'],['對面新開了一家，削價搶客。',[['不跟著降價，賣口碑','xin'],['想出新的貨色','wu']],'一個月後，對面關門了。']],end:'{n}把帳本交給你，一筆一筆，清清楚楚。'},
+ tan:{n:'獨探古墓',st:[['{n}獨自進了一座古墓。墓道裡全是機關。',[['推算機關的規律','wu'],['靠身法一路閃過去','shen']],'機關一個個停了下來。'],['墓室裡盤著一窩毒蛇。',[['趁蛇不動時繞過去','shen'],['點火把逼退','gen']],'毒蛇散了。'],['墓主留下一封遺書，說墓裡的寶物會帶來災禍。',[['原封不動地留下','xin'],['只帶走遺書，研究來歷','wu']],'{n}帶著一身塵土回到山門。']],end:'{n}把古墓的來歷寫成一本遊記，放進了藏經閣。'},
+ chuan:{n:'開壇講學',st:[['{n}在鎮上開壇講學。剛開講，就有人在台下搗亂。',[['不理他，繼續講','xin'],['請他上台比劃比劃','gen']],'台下安靜了。'],['一位老學究上台，要和{n}辯論。',[['旁徵博引','wu'],['以理服人','xin']],'老學究拱手認輸。'],['散場後，一個窮孩子還站在台下，不肯走。',[['問他想學什麼','xin'],['送他一本書','wu']],'後來，那孩子也上山拜師了。']],end:'{n}講學的地方，後來蓋起了一座書院。'},
+};
+function zlTrialDef(d){const T=d.nid!=null&&ZL_TRIAL_N[d.nid];if(T)return T;const P=ZL_TRIAL_P[d.path]||ZL_TRIAL_P.wu,f=x=>x.replace(/\{n\}/g,d.name);
+ return {n:P.n,st:P.st.map(([t,ch,ok])=>[f(t),ch,f(ok)]),end:f(P.end)};}
+/* 把握：屬性越高越穩 */
+function zlTrialChance(d,k){const v=d.st[k]||1;return Math.max(.12,Math.min(.95,.22+v/20*.7+(d.loyal-60)/250+(d.mood-50)/500));}
+function zlTrialInfo(s,d){if(!d.trial||typeof d.trial!=='object')d.trial={step:0,ok:0,fails:0,day:-1};return d.trial;}
+function zlTrialTry(s,id,ci){const d=zlFind(s,id);if(!d)return {err:'找不到弟子'};if(d.lv<ZL_LV_MAX)return {err:'修到真傳（'+ZL_LV_MAX+' 級）才能出師'};if(d.loyal<60)return {err:'忠誠需達 60'};
+ const T=zlTrialInfo(s,d),D=zlTrialDef(d);if(T.ok)return {err:'已通過試煉'};if(T.day===gday(s))return {err:'今天先休息，明天再試'};const st=D.st[T.step],c=st&&st[1][ci];if(!c)return {err:'選項無效'};
+ const p=zlTrialChance(d,c[1]),win=Math.random()<p;if(!win){T.day=gday(s);T.fails++;d.mood=Math.max(0,d.mood-3);return {win:false,txt:d.name+'這一關沒過。'+pick(['不要緊，休息一天再來。','輸了不丟人，明天換個法子。','回來時一身狼狽，卻咬著牙說還要再去。'])};}
+ T.step++;let fin=false;if(T.step>=D.st.length){T.ok=1;fin=true;const g=Math.max(1,3-T.fails);T.grade=g;const v=Math.round(1500*d.apt*g),fm=Math.round(40*g*fameMult(s));s.silver+=v;s.fame+=fm;d.loyal=Math.min(100,d.loyal+10);
+  addJournal(s,'門派',d.name+'通過出師試煉「'+D.n+'」（'+['','丙','乙','甲'][g]+'等）。');return {win:true,fin,txt:st[2],end:D.end,g,v,fm};}
+ return {win:true,txt:st[2]};}
+{const _g=zlGraduate;zlGraduate=function(s,id,how){const d=zlFind(s,id);if(d&&d.lv>=ZL_LV_MAX&&!(d.trial&&d.trial.ok))return {err:'先通過出師試煉'};const g=d&&d.trial&&d.trial.grade;const r=_g(s,id,how);
+ if(!r.err&&g){const Z=zlState(s),L=how==='elder'?Z.elders:how==='heir'?[Z.heir]:Z.out,rec=L[L.length-1];if(rec)rec.grade=g;}
+ if(!r.err){const B=zlBonds(s);for(const k in B)if(k.split('-').includes(String(id)))delete B[k];}return r;};}
+/* 逐出師門／離開：清掉關係 */
+function zlBondClean(s){const f=zl(s);if(!f)return;const B=zlBonds(s),ids=new Set(f.disciples.map(d=>String(d.id)));for(const k in B){const [a,b]=k.split('-');if(!ids.has(a)||!ids.has(b))delete B[k];}const Z=zlState(s);if(Z.pev&&(!ids.has(String(Z.pev.a))||!ids.has(String(Z.pev.b))))Z.pev=null;}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);try{if(zl(s)){zlBonds(s);zlBondClean(s);}}catch(e){}return s;};}
+
 </script>
 <script>
 'use strict';
@@ -9415,10 +9628,11 @@ function zlDiscModal(id){const d=zlFind(S,id);if(!d){closeModal();return;}const 
  if(d.ev){const E=ZL_EV.find(x=>x.id===d.ev),tx=zlEvText(E,d);h+=`<div class="card hi zl-evc"><b>${E.n}</b><div class="sub">${tx(E.t)}</div><div class="zl-ch">${E.ch.map((c,i)=>{const no=c[2]&&c[2](S);return `<button class="btn sm${i?' ghost':''}" data-act="zlEv" data-id="${d.id}" data-c="${i}" ${no?'disabled':''}>${tx(c[0])}${no?`<small>${no}</small>`:''}</button>`;}).join('')}</div></div>`;}
  h+=`<div class="lbl">修行方向</div><div class="chips">${Object.entries(ZL_PATHS).map(([k,P])=>`<button class="chip" data-act="zlSet" data-id="${d.id}" data-k="path" data-v="${k}" aria-pressed="${d.path===k}">${P.n}</button>`).join('')}</div><span class="mini">${ZL_PATHS[d.path].d}</span>
   <div class="lbl">栽培方式</div><div class="chips">${Object.entries(ZL_METHODS).map(([k,M])=>`<button class="chip" data-act="zlSet" data-id="${d.id}" data-k="method" data-v="${k}" aria-pressed="${d.method===k}">${M.n}${T.like===k?' ♡':T.hate===k?' ✕':''}</button>`).join('')}</div><span class="mini">${ZL_METHODS[d.method].d}${T.like===d.method?'（'+T.n+'的弟子喜歡這樣）':T.hate===d.method?'（'+T.n+'的弟子會不服）':''}</span>
-  <div class="lbl">今日相處</div><div class="row"><button class="btn sm" data-act="zlTeach" data-id="${d.id}" ${d.talk===today||d.away?'disabled':''}>親自指點<small>${d.talk===today?'今天已指點':'體力 5'}</small></button></div>`;
+  ${zlBondHTML(d)}<div class="lbl">送禮</div>`;
  const gifts=Object.keys(S.mat).filter(k=>S.mat[k]>=1&&ITEMS[k]&&['料理','藥品'].includes(ITEMS[k].cat)).slice(0,8);
  h+=d.gift===today?'<span class="mini">今天已經送過禮了。</span>':gifts.length?`<span class="mini">送一件東西（料理最討喜）：</span><div class="chips">${gifts.map(k=>`<button class="chip" data-act="zlGift" data-id="${d.id}" data-k="${k}">${ITEMS[k].n} ×${Math.floor(S.mat[k])}</button>`).join('')}</div>`:'<span class="mini">行囊裡沒有料理或藥品可送。</span>';
- if(d.lv>=ZL_LV_MAX){const Z=S.fac.zl,lo=d.loyal<60;h+=`<div class="lbl">出師</div><span class="sub">${esc(d.name)}已修成真傳${lo?'，但忠誠未滿 60，還不肯出師。':'，可以出師了。'}</span><div class="zl-ch">
+ if(d.lv>=ZL_LV_MAX&&!(d.trial&&d.trial.ok))h+=zlTrialHTML(d);
+ else if(d.lv>=ZL_LV_MAX){const Z=S.fac.zl,lo=d.loyal<60;h+=`<div class="lbl">出師</div><span class="sub">${esc(d.name)}已修成真傳${lo?'，但忠誠未滿 60，還不肯出師。':'，可以出師了。'}</span><div class="zl-ch">
   <button class="btn sm" data-act="zlGrad" data-id="${d.id}" data-h="elder" ${lo||Z.elders.length>=3?'disabled':''}>留任長老<small>永久加成・${Z.elders.length}/3</small></button>
   <button class="btn sm ghost" data-act="zlGrad" data-id="${d.id}" data-h="out" ${lo?'disabled':''}>下山歷練<small>聲望＋定期寄回謝禮</small></button>
   <button class="btn sm red" data-act="zlGrad" data-id="${d.id}" data-h="heir" ${lo||Z.heir?'disabled':''}>傳承衣缽<small>${Z.heir?'已有傳人':'稱號＋大幅加成'}</small></button></div>`;}
@@ -9545,7 +9759,7 @@ function todayList(){if(!S||!S.started)return [];const L=[],d=gday(S),go=(t,k,v)
  if(S.fac){const n=facTasks(S).filter(T=>!S.fac.tasks.done[T.id]).length;if(n)L.push(['🏯','門務還有 '+n+' 件',go('cultivate','cult','fac')]);}
  if(zl(S)){const f=S.fac,ev=f.disciples.filter(x=>x.ev).length;if(ev)L.push(['🧒',ev+' 位弟子有事找你',go('cultivate','cult','fac')]);
   const C=zlCupInfo(S);if(!C.done&&f.disciples.length)L.push(['⚔','本週論劍大會還沒參加',go('cultivate','cult','fac')]);
-  const t=f.disciples.filter(x=>x.talk!==d&&!x.away).length;if(t)L.push(['📖',t+' 位弟子今天還沒指點',go('cultivate','cult','fac')]);}
+  if(f.disciples.some(x=>!x.away)&&!zlLessonDone(S))L.push(['📖','今天的晨課還沒上',go('cultivate','cult','fac')]);if(zlState(S).pev)L.push(['🤝','同門之間有事要你拿主意',go('cultivate','cult','fac')]);}
  const pk=petOn(S);if(pk){const p=petP(S,pk);if(p.fed!==d||p.play!==d)L.push(['🐾',PETS[pk].n+'今天還沒'+(p.fed!==d?'餵食':'陪玩'),go('people','people','pet')]);}
  return L;}
 function todayCard(){const L=todayList();if(!L.length)return '';ui.homeOpen.today=ui.homeOpen.today??1;
@@ -10319,6 +10533,88 @@ document.addEventListener('click',e=>{const b=e.target.closest('#nav button');if
 .fx-lv i{position:absolute;width:7px;height:7px;border-radius:50%;background:#ffd76a;box-shadow:0 0 6px #ffd76a;animation:fxSpark 1.1s ease-out forwards;transform:rotate(var(--a)) translateY(0)}
 @keyframes fxSpark{to{transform:rotate(var(--a)) translateY(calc(-1 * var(--d) * 2.2));opacity:0}}
 @media (prefers-reduced-motion:reduce){.fx-rip,.fx-lv i,.fx-lv-ring,.fx-quake,.fx-shake{animation:none!important}}`;document.head.appendChild(st);})();
+
+/* ================= 門派 3.0 介面：晨課拆招、同門情誼、出師試煉 ================= */
+if(typeof FX_SILENT!=='undefined')['lesAns','lesGo','zlTrial'].forEach(k=>FX_SILENT.add(k));
+/* ---- 門派頁最上方：晨課卡＋同門之間 ---- */
+function zlLessonCard(){const f=S.fac,L=f.disciples.filter(d=>!d.away),Z=zlState(S),dn=zlLessonDone(S);
+ if(!f.disciples.length)return '';
+ return `<div class="card zl-les${dn?'':' hi'}"><div class="zl-les-h"><div class="zl-les-por">${L.slice(0,5).map(d=>zlPor(d,30)).join('')}</div><div style="min-width:0"><b>晨課</b> <span class="mini">${dn?'今天已上・拆招 '+Z.lesson.score+'/5':'一次帶全部弟子・體力 '+ZL_LESSON_STAM}</span>
+  <div class="mini">${dn?'明天再來。':'選一門課，再和弟子過五招。拆得越準，大家收穫越多。'}</div></div></div>
+  ${dn?'':`<div class="zl-les-t">${Object.entries(ZL_LESSON).map(([k,T])=>{const n=L.filter(d=>d.path===k).length;return `<button class="btn sm${n?'':' ghost'}" data-act="lesGo" data-k="${k}" ${S.stam<ZL_LESSON_STAM?'disabled':''}>${T.n}<small>${n?n+' 位修'+ZL_PATHS[k].n+' ×1.6':ZL_PATHS[k].n}</small></button>`;}).join('')}</div>`}</div>`;}
+function zlPevCard(){const P=zlPevGet(S);if(!P)return '';const o=zlBond(S,P.a,P.b),Lv=zlBondLv(o.v);
+ return `<div class="card hi zl-pev"><div class="zl-pev-h">${zlPor(P.a,40)}<span class="zl-pev-x">${o.r?'⚔':'♡'}</span>${zlPor(P.b,40)}<div style="min-width:0"><b>同門之間・${P.E.n}</b><div class="mini">${esc(P.a.name)} 與 ${esc(P.b.name)}・${Lv.n}</div></div></div>
+  <div class="sub">${zlPevTx(P.E.t,P.a,P.b)}</div><div class="zl-ch">${P.E.ch.map((c,i)=>`<button class="btn sm${i?' ghost':''}" data-act="zlPev" data-c="${i}">${zlPevTx(c[0],P.a,P.b)}</button>`).join('')}</div></div>`;}
+{const _ss=zlSectHTML;zlSectHTML=function(){return zlLessonCard()+zlPevCard()+_ss();};}
+/* ---- 弟子頁：同門情誼 ---- */
+function zlBondHTML(d){const f=S.fac,O=f.disciples.filter(o=>o!==d);if(!O.length)return '';const I=zlBondInfo(S,d);
+ return `<div class="lbl">同門 <span class="mini">${I.mul!==1?'修為 ×'+I.mul.toFixed(2):''}</span></div><div class="zl-bonds">${O.map(o=>{const b=zlBond(S,d,o),Lv=zlBondLv(b.v);
+  return `<div class="zl-bd"><button class="zl-bd-p" data-act="zlOpen" data-id="${o.id}">${zlPor(o,34)}</button><div style="min-width:0;flex:1"><div><b>${esc(o.name)}</b> <span class="mini">${zlCall(d,o)}</span> <span class="zl-bl ${Lv.c}">${Lv.n}</span>${b.r?' <span class="zl-bl rv">較勁</span>':''}${b.combo?' <span class="zl-bl hi">合擊</span>':''}</div>
+   <div class="zl-bbar"><i style="width:${Math.max(0,(b.v+50)/150*100)}%"></i></div>${b.note?`<div class="mini">${b.note}</div>`:''}</div></div>`;}).join('')}</div>
+  ${I.tags.length?`<div class="mini">${I.tags.join('・')}</div>`:'<div class="mini">情同手足且同修一路：修為 +10%；交好的師兄師姐等級高出 5 級：帶著練 +10%；性格相剋會互相較勁 +8%，不和則 −5%。</div>'}`;}
+/* ---- 弟子頁：出師試煉 ---- */
+function zlTrialHTML(d){const today=gday(S);if(d.loyal<60)return `<div class="lbl">出師</div><span class="sub">${esc(d.name)}已修成真傳，但忠誠未滿 60，還不肯出師。</span>`;
+ const T=zlTrialInfo(S,d),D=zlTrialDef(d),st=D.st[T.step];const dots=D.st.map((_,i)=>`<i class="${i<T.step?'ok':i===T.step?'cur':''}"></i>`).join('');
+ let h=`<div class="lbl">出師試煉</div><div class="card zl-trial"><div class="zl-tr-h"><b>${D.n}</b><span class="zl-dots">${dots}</span></div>`;
+ if(T.day===today)h+=`<div class="sub">${esc(d.name)}今天累了，明天再接著闖第 ${T.step+1} 關。</div>`;
+ else h+=`<div class="sub">${st[0]}</div><div class="zl-ch">${st[1].map(([t,k],i)=>{const p=zlTrialChance(d,k),pc=Math.round(p*10);return `<button class="btn sm${i?' ghost':''}" data-act="zlTrial" data-id="${d.id}" data-c="${i}">${t}<small>靠${ZL_STN[k]} ${Math.floor(d.st[k])}・把握 ${pc>=9?'九成':['一','二','三','四','五','六','七','八'][Math.max(0,pc-1)]+'成'}</small></button>`;}).join('')}</div>
+  <span class="mini">挑最擅長的那條路。失敗了不扣東西，休息一天再來。</span>`;
+ return h+'</div>';}
+/* ---- 晨課小遊戲 ---- */
+let LES=null;
+function lesRender(){if(!LES)return;const R=LES.rounds[LES.i],d=zlFind(S,R.id);if(!d){LES.i++;return lesNext();}
+ const T=ZL_LESSON[LES.topic];
+ $('#sheet').innerHTML=`<div class="les"><div class="les-top"><b>晨課・${T.n}</b><span class="les-sc">${LES.hits.map(h=>`<i class="${h?'ok':'no'}"></i>`).join('')}${'<i></i>'.repeat(5-LES.hits.length)}</span></div>
+  <div class="les-stage"><div class="les-d" id="lesD">${zlSprImg(d,120)||zlPor(d,96)}</div><div class="les-nm">${esc(d.name)} <span class="mini">第 ${LES.i+1}／5 招</span></div>
+   <div class="les-tell" id="lesTell">${esc(d.name)}${R.tell}……</div><div class="les-time"><i id="lesBar"></i></div><div class="les-fb" id="lesFb"></div></div>
+  <div class="les-btns">${Object.entries(ZL_ANS).map(([k,n])=>`<button class="btn" data-act="lesAns" data-a="${k}">${n}<small>${{block:'對付劈',dodge:'對付刺',jump:'對付掃'}[k]}</small></button>`).join('')}</div>
+  <span class="mini">看準弟子起手的動作：高舉是劈、前壓是刺、壓低是掃。${d.trait==='pi'?'頑皮的弟子愛使虛招，看到最後一刻。':d.trait==='ao'?'孤傲的弟子出手特別快。':''}</span></div>`;
+ LES.lock=false;const tok=++LES.tok,tm=R.tm+(R.feint?750:0);SFX.tick();
+ requestAnimationFrame(()=>{const b=$('#lesBar');if(b){b.style.transition='none';b.style.width='100%';void b.offsetWidth;b.style.transition=`width ${tm}ms linear`;b.style.width='0%';}});
+ if(R.feint)setTimeout(()=>{if(!LES||LES.tok!==tok||LES.lock)return;const t=$('#lesTell');if(t){t.innerHTML=`<s>${esc(t.textContent)}</s> <b class="les-feint">虛招！</b>其實是${R.real}`;SFX.pluck();}},750);
+ LES.timer=setTimeout(()=>{if(LES&&LES.tok===tok&&!LES.lock)lesAnswer(null);},tm);}
+function lesAnswer(a){if(!LES||LES.lock)return;LES.lock=true;clearTimeout(LES.timer);const R=LES.rounds[LES.i],ok=a===ZL_MOVES[R.m].ans,d=zlFind(S,R.id),nm=d?d.name:'弟子';LES.hits.push(ok);
+ const fb=$('#lesFb'),D=$('#lesD'),b=$('#lesBar');if(b){const w=getComputedStyle(b).width;b.style.transition='none';b.style.width=w;}
+ if(ok){SFX.hit();setTimeout(()=>SFX.ok(),90);if(fb)fb.innerHTML=`<b class="les-ok">${pick(['拆得漂亮！','分毫不差！','好！','輕輕一撥，化解了。'])}</b> ${nm}的「${ZL_MOVES[R.m].n}」被你${ZL_ANS[ZL_MOVES[R.m].ans]}化解，大家看得目不轉睛。`;if(D)D.classList.add('les-back');}
+ else{SFX.crit();if(fb)fb.innerHTML=`<b class="les-no">${a?'被打中了！':'慢了半拍！'}</b> 是「${ZL_MOVES[R.m].n}」，該${ZL_ANS[ZL_MOVES[R.m].ans]}。${nm}${pick(['樂得眉開眼笑。','偷偷吐了吐舌頭。','有點不好意思。'])}`;const sh=$('#sheet');if(sh){sh.classList.remove('fx-quake');void sh.offsetWidth;sh.classList.add('fx-quake');}if(D)D.classList.add('les-hit');}
+ document.querySelectorAll('.les-btns .btn').forEach(x=>{x.disabled=true;if(x.dataset.a===ZL_MOVES[R.m].ans)x.classList.add('les-right');});
+ setTimeout(()=>{if(!LES)return;LES.i++;lesNext();},1300);}
+function lesNext(){if(!LES)return;if(LES.i<LES.rounds.length)return lesRender();const r=zlLessonFinish(S,LES.topic,LES.hits);const topic=LES.topic;LES=null;
+ if(r.err){closeModal();return toast(r.err);}save();render();renderTop();(r.sc>=3?SFX.win:SFX.story)();
+ $('#sheet').innerHTML=`<div class="les les-end"><h3>晨課・${ZL_LESSON[topic].n}</h3><div class="les-stars">${'★'.repeat(r.sc)}<span>${'★'.repeat(5-r.sc)}</span></div>${r.lines.map(l=>`<p class="sub">${l}</p>`).join('')}<button class="btn" data-act="closeModal">散課</button></div>`;}
+Object.assign(ACT,{
+ lesGo:d=>{const r=zlLessonStart(S,d.k);if(r.err)return done(r.err);SFX.open();LES={topic:d.k,rounds:r.rounds,i:0,hits:[],tok:0};openModal('<div class="les"></div>');
+  $('#sheet').innerHTML=`<div class="les les-intro"><h3>晨課・${ZL_LESSON[d.k].n}</h3><p class="sub">${ZL_LESSON[d.k].d}之後，弟子們輪流上前，向你出五招。</p>
+   <div class="les-key"><span><b>劈</b>從上往下 → <b>格擋</b></span><span><b>刺</b>直取中路 → <b>側閃</b></span><span><b>掃</b>橫掃下盤 → <b>躍起</b></span></div><button class="btn red" data-act="lesBegin">開始</button></div>`;},
+ lesBegin:()=>{if(LES)lesRender();},
+ lesAns:d=>lesAnswer(d.a),
+ zlPev:d=>{const r=zlPevResolve(S,+d.c);if(r.err)return toast(r.err);SFX.story();save();render();renderTop();
+  openModal(`<div class="zl-pev-h">${zlPor(r.a,48)}<span class="zl-pev-x">${r.dv>0?'♡':r.dv<0?'…':'·'}</span>${zlPor(r.b,48)}<div><h3 style="margin:0">${r.E.n}</h3><span class="mini">${r.dv?'情誼 '+(r.dv>0?'+':'')+r.dv:''}</span></div></div><p class="sub">${r.txt}</p><button class="btn" data-act="closeModal">好</button>`);},
+ zlTrial:d=>{const r=zlTrialTry(S,d.id,+d.c);if(r.err)return toast(r.err);save();render();renderTop();
+  if(r.fin){SFX.major();const x=zlFind(S,d.id);openModal(`<div class="zl-row">${zlPor(x,72)}<div><h3 style="margin:0">試煉通過・${['','丙','乙','甲'][r.g]}等</h3><span class="mini">銀兩 +${fmt(r.v)}・聲望 +${r.fm}・忠誠 +10</span></div></div><p class="sub">${r.txt}</p><p class="sub">${r.end}</p><button class="btn" data-act="zlOpen" data-id="${d.id}">決定${esc(x.name)}的去向</button>`);return;}
+  (r.win?SFX.ok:SFX.err)();refreshModal();const s=$('#sheet');if(s){s.insertAdjacentHTML('afterbegin',`<div class="card ${r.win?'hi':''} zl-trres"><b>${r.win?'過關！':'沒過'}</b><div class="sub">${r.txt}</div></div>`);s.scrollTop=0;}},
+});
+/* 關掉視窗時停掉小遊戲 */
+{const _cm=closeModal;closeModal=function(){if(LES){clearTimeout(LES.timer);LES=null;}return _cm.apply(this,arguments);};}
+(function(){const st=document.createElement('style');st.textContent=`
+.zl-les-h,.zl-pev-h{display:flex;gap:10px;align-items:center}.zl-les-por{display:flex;flex-shrink:0}.zl-les-por .zl-por{margin-left:-8px;border:2px solid var(--paper,#f3e6c8);border-radius:50%}.zl-les-por .zl-por:first-child{margin-left:0}
+.zl-les-t{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin-top:8px}
+.zl-pev-x{font-size:18px;color:#c0504a;margin:0 -2px}.zl-pev .sub{margin:8px 0}
+.zl-bonds{display:grid;gap:8px}.zl-bd{display:flex;gap:8px;align-items:center}.zl-bd-p{background:none;border:0;padding:0;flex-shrink:0}
+.zl-bl{font-size:11px;padding:1px 6px;border-radius:8px;background:rgba(120,90,50,.15);color:#6b5434}.zl-bl.hi{background:#c0504a;color:#fff}.zl-bl.ok{background:rgba(80,140,90,.2);color:#3d6b45}.zl-bl.lo{opacity:.7}.zl-bl.bad{background:rgba(160,60,50,.2);color:#9a3a30}.zl-bl.rv{background:rgba(70,90,150,.18);color:#3b4f8a}
+.zl-bbar{height:5px;border-radius:3px;background:rgba(0,0,0,.12);margin:3px 0;overflow:hidden}.zl-bbar i{display:block;height:100%;background:linear-gradient(90deg,#c9a24a,#d9665a)}
+.zl-tr-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.zl-dots{display:flex;gap:5px}.zl-dots i{width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,.15)}.zl-dots i.ok{background:#c9a24a}.zl-dots i.cur{background:#d9665a;animation:lesPulse 1s infinite alternate}
+.zl-trial .zl-ch{display:grid;gap:6px;margin:8px 0}.zl-trres{animation:fxRes .4s both}
+.les{display:grid;gap:10px}.les-top{display:flex;justify-content:space-between;align-items:center}.les-sc{display:flex;gap:4px}.les-sc i{width:12px;height:12px;border-radius:50%;border:1.5px solid #b08a4a}.les-sc i.ok{background:#c9a24a}.les-sc i.no{background:#a44}
+.les-stage{text-align:center;padding:10px;border-radius:12px;background:radial-gradient(ellipse at 50% 85%,rgba(201,162,74,.25),transparent 70%)}
+.les-d{display:inline-block;animation:lesIn .35s ease both}.les-d.les-back{animation:lesBack .5s ease both}.les-d.les-hit{animation:lesLunge .4s ease both}
+.les-nm{margin-top:4px}.les-tell{font-size:17px;min-height:48px;margin:8px 0;line-height:1.5}.les-feint{color:#c0504a}
+.les-time{height:8px;border-radius:4px;background:rgba(0,0,0,.15);overflow:hidden}.les-time i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#d9665a,#e8b04a)}
+.les-fb{min-height:44px;margin-top:8px}.les-ok{color:#3d7a48}.les-no{color:#b0443a}
+.les-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.les-btns .btn{font-size:17px;padding:12px 4px}.les-btns .btn.les-right{outline:3px solid #c9a24a;animation:fxChip .3s}
+.les-key{display:grid;gap:4px;margin:6px 0 10px}.les-stars{font-size:30px;color:#d9a43a;letter-spacing:4px;text-align:center;animation:fxRes .6s both}.les-stars span{color:rgba(0,0,0,.15)}
+@keyframes lesIn{from{transform:translateX(40px);opacity:0}}@keyframes lesBack{40%{transform:translateX(26px) rotate(8deg)}100%{transform:none}}@keyframes lesLunge{40%{transform:translateX(-22px) scale(1.08)}100%{transform:none}}
+@keyframes lesPulse{to{transform:scale(1.3)}}`;document.head.appendChild(st);})();
 
 </script>
 <script>
