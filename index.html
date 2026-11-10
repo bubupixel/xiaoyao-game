@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261110-093626";</script>
+<script>window.XY_BUILD="20261110-105201";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5579,14 +5579,14 @@ const ZL_LESSON_STAM=10;
 function zlLessonStart(s,topic){const f=zl(s);if(!f)return {err:'需自立門戶'};if(!ZL_LESSON[topic])return {err:'無效'};const L=f.disciples.filter(d=>!d.away);if(!L.length)return {err:'沒有弟子可以上課'};
  if(zlLessonDone(s))return {err:'今天的晨課已經上過了'};if(s.stam<ZL_LESSON_STAM)return {err:'體力不足（需 '+ZL_LESSON_STAM+'）'};
  const rounds=[];const ord=L.slice().sort(()=>Math.random()-.5);for(let i=0;i<5;i++){const d=ord[i%ord.length],mk=Object.keys(ZL_MOVES),m=pick(mk);
-  const feint=d.trait==='pi'&&Math.random()<.45?pick(mk.filter(x=>x!==m)):null;const tm=Math.round((2600-i*220)*(d.trait==='ao'?.8:1)*(d.trait==='hou'?1.15:1));
+  const feint=null;const tm=Math.round((2600-i*220)*(d.trait==='ao'?.8:1)*(d.trait==='hou'?1.15:1));
   rounds.push({id:d.id,m,feint,tell:pick(ZL_TELL[feint||m]),real:feint?pick(ZL_TELL[m]):null,tm});}
  return {rounds,topic};}
 /* 結算：score = 拆中的輪數 */
 function zlLessonFinish(s,topic,hits){const f=zl(s);if(!f)return {err:'需自立門戶'};if(zlLessonDone(s))return {err:'今天的晨課已經上過了'};if(s.stam<ZL_LESSON_STAM)return {err:'體力不足'};
  const Z=zlState(s),sc=Math.max(0,Math.min(5,hits.filter(Boolean).length));s.stam-=ZL_LESSON_STAM;advTime(s,90);Z.lesson={day:gday(s),score:sc,topic};
  const L=f.disciples.filter(d=>!d.away),lines=[];const P=ZL_PATHS[topic];
- for(const d of L){const m=d.path===topic?1.6:1;d.xp+=zlNeed(d)*(.15+.06*sc)*m;d.mood=Math.min(100,d.mood+4+sc);d.loyal=Math.min(100,d.loyal+1+sc*.4);d.talk=gday(s);
+ for(const d of L){const m=d.path===topic?1.6:1;d.xp+=zlNeed(d)*(.25+.04*sc)*m;d.mood=Math.min(100,d.mood+4+sc);d.loyal=Math.min(100,d.loyal+1+sc*.4);d.talk=gday(s);
   if(d.path===topic){zlStatUp(d,P.st[0],.1+.04*sc);}}
  for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++)zlBondAdd(s,L[i],L[j],1+(sc>=4?1:0));
  let star=null;if(sc>=5&&L.length){star=pick(L);zlStatUp(star,'wu',.4);star.xp+=zlNeed(star)*.3;}
@@ -10540,7 +10540,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('#nav button');if
 @media (prefers-reduced-motion:reduce){.fx-rip,.fx-lv i,.fx-lv-ring,.fx-quake,.fx-shake{animation:none!important}}`;document.head.appendChild(st);})();
 
 /* ================= 門派 3.0 介面：晨課拆招、同門情誼、出師試煉 ================= */
-if(typeof FX_SILENT!=='undefined')['lesAns','lesGo','zlTrial'].forEach(k=>FX_SILENT.add(k));
+if(typeof FX_SILENT!=='undefined')['lesAns','lesGo','zlTrial','lesQuick'].forEach(k=>FX_SILENT.add(k));
 /* ---- 門派頁最上方：晨課卡＋同門之間 ---- */
 function zlLessonCard(){const f=S.fac,L=f.disciples.filter(d=>!d.away),Z=zlState(S),dn=zlLessonDone(S);
  if(!f.disciples.length)return '';
@@ -10566,31 +10566,29 @@ function zlTrialHTML(d){const today=gday(S);if(d.loyal<60)return `<div class="lb
   <span class="mini">挑最擅長的那條路。失敗了不扣東西，休息一天再來。</span>`;
  return h+'</div>';}
 /* ---- 晨課小遊戲 ---- */
-let LES=null;
+let LES=null;const LES_IC={pi:'⬇',ci:'➡',sao:'〰'},LES_AIC={block:'⬇',dodge:'➡',jump:'〰'};
 function lesRender(){if(!LES)return;const R=LES.rounds[LES.i],d=zlFind(S,R.id);if(!d){LES.i++;return lesNext();}
  const T=ZL_LESSON[LES.topic];
  $('#sheet').innerHTML=`<div class="les"><div class="les-top"><b>晨課・${T.n}</b><span class="les-sc">${LES.hits.map(h=>`<i class="${h?'ok':'no'}"></i>`).join('')}${'<i></i>'.repeat(5-LES.hits.length)}</span></div>
   <div class="les-stage"><div class="les-d" id="lesD">${zlSprImg(d,120)||zlPor(d,96)}</div><div class="les-nm">${esc(d.name)} <span class="mini">第 ${LES.i+1}／5 招</span></div>
-   <div class="les-tell" id="lesTell">${esc(d.name)}${R.tell}……</div><div class="les-time"><i id="lesBar"></i></div><div class="les-fb" id="lesFb"></div></div>
-  <div class="les-btns">${Object.entries(ZL_ANS).map(([k,n])=>`<button class="btn" data-act="lesAns" data-a="${k}">${n}<small>${{block:'對付劈',dodge:'對付刺',jump:'對付掃'}[k]}</small></button>`).join('')}</div>
-  <span class="mini">看準弟子起手的動作：高舉是劈、前壓是刺、壓低是掃。${d.trait==='pi'?'頑皮的弟子愛使虛招，看到最後一刻。':d.trait==='ao'?'孤傲的弟子出手特別快。':''}</span></div>`;
- LES.lock=false;const tok=++LES.tok,tm=R.tm+(R.feint?750:0);SFX.tick();
- requestAnimationFrame(()=>{const b=$('#lesBar');if(b){b.style.transition='none';b.style.width='100%';void b.offsetWidth;b.style.transition=`width ${tm}ms linear`;b.style.width='0%';}});
- if(R.feint)setTimeout(()=>{if(!LES||LES.tok!==tok||LES.lock)return;const t=$('#lesTell');if(t){t.innerHTML=`<s>${esc(t.textContent)}</s> <b class="les-feint">虛招！</b>其實是${R.real}`;SFX.pluck();}},750);
- LES.timer=setTimeout(()=>{if(LES&&LES.tok===tok&&!LES.lock)lesAnswer(null);},tm);}
+   <div class="les-tell" id="lesTell">${esc(d.name)}${R.tell}……</div><div class="les-mv"><span>${LES_IC[R.m]}</span>${ZL_MOVES[R.m].n}</div><div class="les-fb" id="lesFb"></div></div>
+  <div class="les-btns">${Object.entries(ZL_ANS).map(([k,n])=>`<button class="btn" data-act="lesAns" data-a="${k}"><span class="les-bi">${LES_AIC[k]}</span>${n}<small>${{block:'對付劈',dodge:'對付刺',jump:'對付掃'}[k]}</small></button>`).join('')}</div>
+  <span class="mini">按下和招式圖示一樣的那一個就可以了，不限時間。</span></div>`;
+ LES.lock=false;++LES.tok;SFX.tick();}
 function lesAnswer(a){if(!LES||LES.lock)return;LES.lock=true;clearTimeout(LES.timer);const R=LES.rounds[LES.i],ok=a===ZL_MOVES[R.m].ans,d=zlFind(S,R.id),nm=d?d.name:'弟子';LES.hits.push(ok);
- const fb=$('#lesFb'),D=$('#lesD'),b=$('#lesBar');if(b){const w=getComputedStyle(b).width;b.style.transition='none';b.style.width=w;}
+ const fb=$('#lesFb'),D=$('#lesD');
  if(ok){SFX.hit();setTimeout(()=>SFX.ok(),90);if(fb)fb.innerHTML=`<b class="les-ok">${pick(['拆得漂亮！','分毫不差！','好！','輕輕一撥，化解了。'])}</b> ${nm}的「${ZL_MOVES[R.m].n}」被你${ZL_ANS[ZL_MOVES[R.m].ans]}化解，大家看得目不轉睛。`;if(D)D.classList.add('les-back');}
  else{SFX.crit();if(fb)fb.innerHTML=`<b class="les-no">${a?'被打中了！':'慢了半拍！'}</b> 是「${ZL_MOVES[R.m].n}」，該${ZL_ANS[ZL_MOVES[R.m].ans]}。${nm}${pick(['樂得眉開眼笑。','偷偷吐了吐舌頭。','有點不好意思。'])}`;const sh=$('#sheet');if(sh){sh.classList.remove('fx-quake');void sh.offsetWidth;sh.classList.add('fx-quake');}if(D)D.classList.add('les-hit');}
  document.querySelectorAll('.les-btns .btn').forEach(x=>{x.disabled=true;if(x.dataset.a===ZL_MOVES[R.m].ans)x.classList.add('les-right');});
- setTimeout(()=>{if(!LES)return;LES.i++;lesNext();},1300);}
+ setTimeout(()=>{if(!LES)return;LES.i++;lesNext();},1000);}
 function lesNext(){if(!LES)return;if(LES.i<LES.rounds.length)return lesRender();const r=zlLessonFinish(S,LES.topic,LES.hits);const topic=LES.topic;LES=null;
  if(r.err){closeModal();return toast(r.err);}save();render();renderTop();(r.sc>=3?SFX.win:SFX.story)();
  $('#sheet').innerHTML=`<div class="les les-end"><h3>晨課・${ZL_LESSON[topic].n}</h3><div class="les-stars">${'★'.repeat(r.sc)}<span>${'★'.repeat(5-r.sc)}</span></div>${r.lines.map(l=>`<p class="sub">${l}</p>`).join('')}<button class="btn" data-act="closeModal">散課</button></div>`;}
 Object.assign(ACT,{
  lesGo:d=>{const r=zlLessonStart(S,d.k);if(r.err)return done(r.err);SFX.open();LES={topic:d.k,rounds:r.rounds,i:0,hits:[],tok:0};openModal('<div class="les"></div>');
   $('#sheet').innerHTML=`<div class="les les-intro"><h3>晨課・${ZL_LESSON[d.k].n}</h3><p class="sub">${ZL_LESSON[d.k].d}之後，弟子們輪流上前，向你出五招。</p>
-   <div class="les-key"><span><b>劈</b>從上往下 → <b>格擋</b></span><span><b>刺</b>直取中路 → <b>側閃</b></span><span><b>掃</b>橫掃下盤 → <b>躍起</b></span></div><button class="btn red" data-act="lesBegin">開始</button></div>`;},
+   <div class="les-key"><span><b>劈</b>從上往下 → <b>格擋</b></span><span><b>刺</b>直取中路 → <b>側閃</b></span><span><b>掃</b>橫掃下盤 → <b>躍起</b></span></div><button class="btn red" data-act="lesBegin">開始過招</button><button class="btn ghost" data-act="lesQuick">直接上課<small>不過招，照「中規中矩」結算</small></button></div>`;},
+ lesQuick:()=>{if(!LES)return;LES.hits=[true,true,true,false,false];LES.i=LES.rounds.length;lesNext();},
  lesBegin:()=>{if(LES)lesRender();},
  lesAns:d=>lesAnswer(d.a),
  zlPev:d=>{const r=zlPevResolve(S,+d.c);if(r.err)return toast(r.err);SFX.story();save();render();renderTop();
@@ -10615,6 +10613,7 @@ Object.assign(ACT,{
 .les-d{display:inline-block;animation:lesIn .35s ease both}.les-d.les-back{animation:lesBack .5s ease both}.les-d.les-hit{animation:lesLunge .4s ease both}
 .les-nm{margin-top:4px}.les-tell{font-size:17px;min-height:48px;margin:8px 0;line-height:1.5}.les-feint{color:#c0504a}
 .les-time{height:8px;border-radius:4px;background:rgba(0,0,0,.15);overflow:hidden}.les-time i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#d9665a,#e8b04a)}
+.les-mv{display:inline-flex;gap:8px;align-items:center;font-size:22px;font-weight:700;color:#b0443a;margin-bottom:4px}.les-mv span,.les-bi{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:rgba(201,162,74,.25);font-size:20px}.les-bi{display:grid;margin:0 auto 4px;width:30px;height:30px;font-size:16px}
 .les-fb{min-height:44px;margin-top:8px}.les-ok{color:#3d7a48}.les-no{color:#b0443a}
 .les-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.les-btns .btn{font-size:17px;padding:12px 4px}.les-btns .btn.les-right{outline:3px solid #c9a24a;animation:fxChip .3s}
 .les-key{display:grid;gap:4px;margin:6px 0 10px}.les-stars{font-size:30px;color:#d9a43a;letter-spacing:4px;text-align:center;animation:fxRes .6s both}.les-stars span{color:rgba(0,0,0,.15)}
