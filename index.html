@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261110-090318";</script>
+<script>window.XY_BUILD="20261110-091612";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4846,7 +4846,7 @@ const ZL_BUILD={
  yan:{n:'演武場',d:'弟子修為 +15%／級',max:5,cost:l=>20000*Math.pow(2,l)},
  yao:{n:'百草園',d:'醫藥、探索產出 +15%／級',max:5,cost:l=>18000*Math.pow(2,l)},
  cang:{n:'藏經閣',d:'弟子悟性成長、出師加成 +10%／級',max:5,cost:l=>25000*Math.pow(2,l)},
- shan:{n:'山門',d:'弟子上限 +1、候選人資質提高／級',max:5,cost:l=>30000*Math.pow(2,l)},
+ shan:{n:'山門',d:'弟子名額 +1（最多 8 位）、候選人資質提高／級',max:5,cost:l=>30000*Math.pow(2,l)},
 };
 const zl=s=>s.fac&&s.fac.id==='zili'?s.fac:null;
 function zlState(s){const f=zl(s);if(!f)return null;if(!f.zl||typeof f.zl!=='object')f.zl={};const Z=f.zl;
@@ -4858,7 +4858,8 @@ function zlMakeCand(s,seed){const Z=zlState(s),R=(()=>{let x=seed>>>0;return ()=
  return {male,por:(male?0:6)+Math.floor(R()*6),name:ZL_SURN[Math.floor(R()*ZL_SURN.length)]+(male?ZL_GM:ZL_GF)[Math.floor(R()*12)],apt,trait:tk[Math.floor(R()*tk.length)],origin:ZL_ORIGINS[Math.floor(R()*ZL_ORIGINS.length)],
   st:{gen:stat(),wu:stat(),shen:stat(),xin:stat()}};}
 function zlCands(s){const Z=zlState(s);if(!Z)return [];const d=gday(s);if(Z.cand.day!==d){Z.cand={day:d,rf:0,taken:[],list:[0,1,2].map(i=>zlMakeCand(s,zlHash(d*7+i,(s.created|0)%100000)))};}return Z.cand.list;}
-function zlDiscMax(s){const f=zl(s);if(!f)return 0;const Z=zlState(s);return 3+f.rank+(f.rules.includes('guangna')?2:0)+Z.build.shan;}
+const ZL_DISC_CAP=8;
+function zlDiscMax(s){const f=zl(s);if(!f)return 0;const Z=zlState(s);return Math.min(ZL_DISC_CAP,3+f.rank+(f.rules.includes('guangna')?2:0)+Z.build.shan);}
 discMax=zlDiscMax;
 const zlRecruitCost=(s,c)=>Math.round(800*c.apt*c.apt*(1+s.fac.disciples.length*.25)*(zlState(s).style==='shang'?.7:1));
 function zlRecruit(s,i){const f=zl(s);if(!f)return {err:'需自立門戶'};const L=zlCands(s),c=L[i],Z=zlState(s);if(!c)return {err:'沒有這位候選人'};if(Z.cand.taken.includes(i))return {err:'已經收下了'};
@@ -10236,6 +10237,88 @@ Object.assign(ACT,{sbRecast:d=>{const e=sbRecast(S,d.id);if(e)return toast(e);SF
  buyBack:d=>{const e=buyBack(S,+d.i);if(e)return toast(e);SFX.coin();save();toast('已買回');render();renderTop();}});
 {const _bh=bagHTML;bagHTML=function(){return lostHTML()+_bh();};}
 {const _sh=shenbingHTML;shenbingHTML=function(){const h=_sh();const L=sbLost(S);return L.length?h.replace('</div>',`<span class="warn">有 ${L.length} 把神兵不在身邊，可到「修行 › 裝備」找唐小滿重鑄。</span></div>`):h;};}
+
+/* ================= 手感：按鈕聲效、按壓動畫、數字飄字、晉升特效、戰鬥音效 ================= */
+const FXS={on:()=>!!(S&&S.settings&&S.settings.sound),ctx:()=>{try{if(!bgmInit())return null;const c=BGM.ctx;return c.state==='running'?c:null;}catch(e){return null;}}};
+function fxTone(f,d,type,vol,delay,slide){if(!FXS.on())return;const C=FXS.ctx();if(!C)return;try{const t=C.currentTime+(delay||0),o=C.createOscillator(),g=C.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol||.04,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(C.destination);o.start(t);o.stop(t+d+.03);}catch(e){}}
+function fxNoise(d,vol,freq,delay){if(!FXS.on())return;const C=FXS.ctx();if(!C)return;try{const n=Math.floor(C.sampleRate*d),b=C.createBuffer(1,n,C.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);
+ const s=C.createBufferSource(),f=C.createBiquadFilter(),g=C.createGain(),t=C.currentTime+(delay||0);s.buffer=b;f.type='bandpass';f.frequency.value=freq||1800;f.Q.value=.8;g.gain.value=vol||.05;s.connect(f).connect(g).connect(C.destination);s.start(t);}catch(e){}}
+Object.assign(SFX,{
+ tap:()=>{fxTone(1250,.045,'triangle',.035);fxTone(620,.06,'sine',.025,.004);},              /* 木魚般的輕敲 */
+ tab:()=>{fxNoise(.09,.035,2600);fxTone(523,.08,'sine',.03,.01);fxTone(784,.1,'sine',.03,.06);}, /* 翻頁＋兩聲 */
+ tick:()=>fxTone(1568,.04,'sine',.03),
+ pick:()=>{fxTone(880,.05,'triangle',.035);fxTone(1319,.08,'triangle',.03,.05);},
+ open:()=>{fxNoise(.14,.04,1200);fxTone(392,.12,'sine',.025,.02,523);},                        /* 展開卷軸 */
+ close:()=>fxTone(659,.09,'sine',.025,0,440),
+ err:()=>{fxTone(196,.08,'square',.025);fxTone(165,.1,'square',.025,.09);},
+ ok:()=>{fxTone(1047,.08,'triangle',.03);fxTone(1568,.14,'triangle',.025,.06);},
+ hit:()=>{fxNoise(.06,.05,900);fxTone(150,.06,'triangle',.04,0,90);},
+ crit:()=>{fxNoise(.12,.08,700);fxTone(220,.12,'sawtooth',.035,0,70);fxTone(1760,.1,'triangle',.02,.02);},
+ heal:()=>[784,988,1319].forEach((f,i)=>fxTone(f,.12,'sine',.025,i*.05)),
+ pluck:()=>fxTone(1175,.25,'triangle',.03,0,1100),
+});
+/* 依按鈕種類播放聲音 */
+const FX_TAB=new Set(['tab','goTo']),FX_TICK=new Set(['seg','artTab','bagTab','zlTeam','chip','h2Mate','setRule','ziliRule','zlStyle','mode','setInner','setMartial','zlSet']),
+ FX_CLOSE=new Set(['closeModal','close','battleBack','skipBattle']),FX_SILENT=new Set(['toggleSound','toggleMusic','sm']);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+ if(b.disabled||b.getAttribute('aria-disabled')==='true'){SFX.err();fxShake(b);return;}if(FX_SILENT.has(a))return;
+ if(FX_TAB.has(a))SFX.tab();else if(FX_TICK.has(a)||b.classList.contains('chip'))SFX.tick();else if(FX_CLOSE.has(a))SFX.close();else SFX.tap();},true);
+/* disabled 的按鈕原本收不到 click：用 pointerdown 補上 */
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button[disabled][data-act]');if(b){SFX.err();fxShake(b);}},true);
+function fxShake(el){if(!el)return;el.classList.remove('fx-shake');void el.offsetWidth;el.classList.add('fx-shake');setTimeout(()=>el.classList.remove('fx-shake'),400);}
+/* 漣漪 */
+const RIP='.btn,.bg-it,.zl-card,.sa-row,.sa-tab,.h2-it,.mode,.td-row,.slot,.item,.zl-cand .btn,.h2-est,.chip';
+document.addEventListener('pointerdown',e=>{const b=e.target.closest(RIP);if(!b||b.disabled)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height)*1.2,sp=document.createElement('span');
+ sp.className='fx-rip';sp.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;if(getComputedStyle(b).position==='static')b.style.position='relative';b.classList.add('fx-host');b.appendChild(sp);setTimeout(()=>sp.remove(),520);},{passive:true});
+/* 失敗訊息：錯誤音 */
+{const _d=done;done=function(err,okMsg,stay){if(err)SFX.err();else if(okMsg)SFX.ok();return _d(err,okMsg,stay);};}
+/* 視窗開關 */
+{const _om=openModal;openModal=function(html,scene,fn){const was=$('#modal').hidden;_om(html,scene,fn);if(was){SFX.open();const sh=$('#sheet');sh.classList.remove('sheet-in');void sh.offsetWidth;sh.classList.add('sheet-in');}};}
+/* 頂欄：銀兩、體力變化時飄字；晉升時特效 */
+let FX_LAST=null,FX_ACT=0;document.addEventListener('click',()=>{FX_ACT=Date.now();},true);
+function fxFloat(el,txt,cls){if(!el)return;const r=el.getBoundingClientRect(),d=document.createElement('div');d.className='float-num '+(cls||'');d.textContent=txt;d.style.left=(r.left+r.width/2)+'px';d.style.top=(r.bottom+2)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1300);
+ el.classList.remove('fx-bump');void el.offsetWidth;el.classList.add('fx-bump');}
+{const _rt=renderTop;renderTop=function(){_rt();if(!S||!S.started)return;const now={silver:Math.floor(S.silver),stam:Math.floor(S.stam),g:S.g,fame:Math.floor(S.fame)};
+  {const L=FX_LAST;if(L&&Date.now()-FX_ACT<2500){const ds=now.silver-L.silver,dt=now.stam-L.stam;
+   if(ds>=1&&ds<1e9){fxFloat($('#vSilver'),'+'+fmt(ds));}else if(ds<=-1)fxFloat($('#vSilver'),'−'+fmt(-ds),'neg');
+   if(dt>=1)fxFloat($('#vStam'),'+'+dt,'stam');else if(dt<=-3)fxFloat($('#vStam'),'−'+(-dt),'neg');
+   }if(L&&now.g>L.g)fxLevelUp(now.g);}FX_LAST=now;};}
+function fxLevelUp(g){SFX.major();const d=document.createElement('div');d.className='fx-lv';const nm='等級 '+g;
+ d.innerHTML=`<div class="fx-lv-ring"></div><div class="fx-lv-t"><small>修為精進</small><b>${nm}</b></div>`;for(let i=0;i<18;i++){const p=document.createElement('i');p.style.setProperty('--a',(i*20)+'deg');p.style.setProperty('--d',(60+Math.random()*60)+'px');d.appendChild(p);}
+ document.body.appendChild(d);setTimeout(()=>d.remove(),1900);}
+/* 戰鬥：暴擊震動、回血音、敵人出手時對手欄震一下 */
+{const _bm=battleModal;battleModal=function(title,out){_bm(title,out);const blog=$('#blog'),res=$('#bRes'),sh=$('#sheet');if(!blog)return;
+  const mo=new MutationObserver(ms=>{if(ms.length>2||ms[0].addedNodes.length>1)return;const n=ms[0].addedNodes[0];if(!n||!n.classList)return;
+   if(n.classList.contains('crit')){SFX.crit();sh.classList.remove('fx-quake');void sh.offsetWidth;sh.classList.add('fx-quake');}
+   else if(n.classList.contains('heal'))SFX.heal();
+   else if(n.classList.contains('en')){const b=$('#bpP');if(b){b.classList.remove('fx-shake');void b.offsetWidth;b.classList.add('fx-shake');}}});
+  mo.observe(blog,{childList:true});
+  if(res){const mo2=new MutationObserver(()=>{if(!res.hidden){mo2.disconnect();mo.disconnect();res.classList.add('fx-res');}});mo2.observe(res,{attributes:true,attributeFilter:['hidden']});}};}
+/* 底部導航：按下時圖示彈一下 */
+document.addEventListener('click',e=>{const b=e.target.closest('#nav button');if(!b)return;const ic=b.querySelector('.nv-ic');if(ic){ic.classList.remove('fx-pop');void ic.offsetWidth;ic.classList.add('fx-pop');}},true);
+(function(){const st=document.createElement('style');st.textContent=`
+.btn,.chip,.sa-tab,.sa-row,.bg-it,.zl-card,.h2-it,.mode,.td-row,.slot,.item,.h2-est,.zl-cand,.sm-k{transition:transform .08s ease,filter .12s ease}
+.btn:active:not([disabled]),.chip:active,.sa-tab:active,.sa-row:active,.bg-it:active,.zl-card:active,.h2-it:active,.mode:active,.td-row:active,.slot:active,.item:active,.h2-est:active{transform:scale(.965);filter:brightness(1.06)}
+.chip[aria-pressed="true"]{animation:fxChip .25s ease}@keyframes fxChip{40%{transform:scale(1.08)}}
+.fx-host{overflow:hidden}.fx-rip{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,236,170,.55),rgba(255,236,170,0) 70%);transform:scale(0);animation:fxRip .5s ease-out forwards;pointer-events:none;z-index:0}
+@keyframes fxRip{to{transform:scale(1);opacity:0}}
+.fx-shake{animation:fxShake .35s}@keyframes fxShake{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+.fx-bump{animation:fxBump .35s ease}@keyframes fxBump{40%{transform:scale(1.25);color:#ffe9a0}}
+.float-num.neg{color:#ff9b8a}.float-num.stam{color:#a8f0c0}
+#toast>div{animation:fxToast .28s cubic-bezier(.2,.9,.3,1.2) both}@keyframes fxToast{from{transform:translateY(-14px) scale(.96);opacity:0}}
+.fx-quake{animation:fxQuake .3s}@keyframes fxQuake{20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(3px,0)}}
+.fx-res{animation:fxRes .5s cubic-bezier(.2,.9,.3,1.3) both}@keyframes fxRes{from{transform:scale(.7);opacity:0}}
+#nav .nv-ic.fx-pop{animation:fxPop .35s ease}@keyframes fxPop{40%{transform:translateY(-10px) scale(1.35) rotate(-6deg)}}
+.fx-lv{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:90}
+.fx-lv-ring{position:absolute;width:40px;height:40px;border-radius:50%;border:4px solid #f3c55a;box-shadow:0 0 30px 10px rgba(255,210,110,.7);animation:fxRing 1.2s ease-out forwards}
+@keyframes fxRing{to{transform:scale(9);opacity:0}}
+.fx-lv-t{display:grid;justify-items:center;padding:14px 26px;border-radius:14px;background:rgba(40,16,10,.86);border:2px solid #f3c55a;color:#ffe9a8;font-family:var(--f-title);animation:fxLvT 1.9s ease forwards}
+.fx-lv-t b{font-size:24px;letter-spacing:.12em}.fx-lv-t small{font-size:13px;opacity:.85;letter-spacing:.3em}
+@keyframes fxLvT{0%{transform:scale(.4);opacity:0}15%{transform:scale(1.1);opacity:1}25%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
+.fx-lv i{position:absolute;width:7px;height:7px;border-radius:50%;background:#ffd76a;box-shadow:0 0 6px #ffd76a;animation:fxSpark 1.1s ease-out forwards;transform:rotate(var(--a)) translateY(0)}
+@keyframes fxSpark{to{transform:rotate(var(--a)) translateY(calc(-1 * var(--d) * 2.2));opacity:0}}
+@media (prefers-reduced-motion:reduce){.fx-rip,.fx-lv i,.fx-lv-ring,.fx-quake,.fx-shake{animation:none!important}}`;document.head.appendChild(st);})();
 
 </script>
 <script>
