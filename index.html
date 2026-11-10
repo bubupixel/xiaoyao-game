@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261110-093117";</script>
+<script>window.XY_BUILD="20261110-093626";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -8723,7 +8723,7 @@ const _vQuestL=vQuest;vQuest=function(){return signCard()+weekCard()+_vQuestL();
 function rebCard(){const R=rebState(S),ready=rebReady(S);if(!ready&&!R.n)return S.g>=G_MAX-STAGE_N?`<div class="card"><h3>☯ 輪迴飛升</h3><span class="sub">晉升到「一代大宗師・九重」後，可以放下一身修為重新來過，換取永久天賦。</span></div>`:'';
  let h=`<div class="card reb"><div class="h-row"><h3>☯ 輪迴飛升${R.n?'・'+rebName(R.n):''}</h3><span class="sub">天賦點 <b class="num" style="color:var(--gold2)">${R.pts}</b></span></div>`;
  if(R.n)h+=`<span class="eff">輪迴加成：修為 +${10*R.n}%（每轉 +10%）</span>`;
- if(ready)h+=`<span class="sub">你已登峰造極。飛升後境界回到「初入江湖」，但會得到 <b>${rebGain(S)}</b> 點天賦。</span><div class="row"><button class="btn" data-act="rebAsk">輪迴飛升</button></div>`;
+ if(ready)h+=`<span class="sub">你已登峰造極。飛升後境界回到「初入江湖」，但會得到 <b>${rebGain(S)}</b> 點天賦。</span><div class="row"><button class="btn ghost" data-act="rebAsk">了解輪迴飛升</button></div>`;
  if(R.n||R.pts){h+=`<div class="lbl" style="margin-top:6px">天賦（每項最多 ${REB_PERK_MAX} 級）</div>`+Object.entries(REB_PERKS).map(([k,P])=>{const l=R.perk[k]|0;return lineRow(`<b>${P.n} ${'●'.repeat(l)}${'○'.repeat(REB_PERK_MAX-l)}</b><div class="sub">每級：${P.d}</div>`,`<button class="btn sm" data-act="rebPerk" data-k="${k}" ${R.pts<1||l>=REB_PERK_MAX?'disabled':''}>+1</button>`);}).join('')+
   `<div class="row"><button class="btn ghost sm" data-act="rebReset">重新分配（${fmt(2000*(1+R.n))} 兩）</button></div>`;}
  return h+'</div>';}
@@ -8731,7 +8731,12 @@ function rebAskModal(){const R=rebState(S);openModal(`${backRow('輪迴飛升')}
  <div class="card"><h3>保留</h3><span class="sub">武功、裝備、銀兩、物品、收藏、居所與據點、所有人物好感與故事、江湖風雲錄進度、稱號、試劍塔紀錄、已去過的地方（照樣可以去）、已用過等級的兵器（照樣可以裝備）。</span></div>
  <div class="card"><h3>重置</h3><span class="sub">境界回到「初入江湖・等級 0」，修為歸零。</span></div>
  <div class="card"><h3>得到</h3><span class="sub">天賦點 ${rebGain(S)} 點、修為永久 +10%、感悟 +30、體力回滿${R.n?'':'、稱號「輪迴行者」'}。</span></div>
- <p class="sub">這一步做了就不能反悔。確定嗎？</p><button class="btn" data-act="rebGo">確定飛升</button><button class="btn ghost" data-act="closeModal">再想想</button>`,undefined);}
+ <p class="sub">這一步做了就不能反悔。</p><button class="btn ghost" data-act="closeModal">再想想</button><button class="btn red" data-act="rebAsk2">我明白，下一步</button>`,undefined);}
+/* 第二重確認：再次說明代價，倒數五秒才能按 */
+function rebAsk2Modal(){ui.rebOk=0;openModal(`<div class="card reb-warn"><h3>⚠ 最後確認</h3><p class="sub">你現在是「<b>${esc(stageName(S.g))}</b>」。飛升之後，境界會回到<b>「初入江湖・等級 0」</b>，修為歸零，要從頭再修一遍。</p>
+ <p class="sub">這一步<b>無法復原</b>，存檔會立即覆蓋。</p></div>
+ <button class="btn" data-act="closeModal">不飛升了</button><button class="btn red" id="rebGoBtn" data-act="rebGo" disabled>確定飛升<small id="rebCd">5 秒後可按</small></button>`,undefined);
+ let n=5;const tk=setInterval(()=>{const b=$('#rebGoBtn'),c=$('#rebCd');if(!b||$('#modal').hidden){clearInterval(tk);return;}n--;if(n<=0){clearInterval(tk);b.disabled=false;ui.rebOk=1;c.textContent='從頭開始，不能反悔';}else c.textContent=n+' 秒後可按';},1000);}
 
 /* ---------- 兵魂 ---------- */
 function bondCard(){const it=eqWeapon(S);if(!it)return `<div class="card"><h3>⚔ 兵魂</h3><span class="sub">裝備一把兵器，用它打仗、陪它修煉，兵器就會慢慢認得你。</span></div>`;
@@ -8743,7 +8748,7 @@ function bondCard(){const it=eqWeapon(S);if(!it)return `<div class="card"><h3>�
  <div class="row">${l<BOND_MAX?`<button class="btn" data-act="bondWipe">拭劍養魂<small>銀兩 ${fmt(c.silver)}・礦石 ${c.ore}・兵魂 +15</small></button>`:''}<button class="btn ghost" data-act="bondNameAsk" ${l<5?'disabled':''}>${it.nm?'改名':'命名'}<small>${l<5?'第 5 重解鎖':'為它取個名字'}</small></button></div>
  <span class="mini">打贏一場 +4（頭目 +7），輸了也有 +1；裝備著修煉時每小時 +3（練習武功時 +6，離線也算）。兵魂留在這把兵器上，換兵器不會消失。</span></div>`;}
 const _vCultivateL=vCultivate;vCultivate=function(){let h=_vCultivateL();const sg=seg('cult',[['train','修行'],['arts','武功'],['gear','裝備']]);
- if(ui.seg.cult==='train'){const r=rebCard();if(r)h=h.replace(sg,sg+r);}else if(ui.seg.cult==='gear')h=h.replace(sg,sg+bondCard());return h;};
+ if(ui.seg.cult==='train'){const r=rebCard();if(r)h+=fold('reb','<span class="mini">☯ 輪迴飛升（重新來過）</span>',r);}else if(ui.seg.cult==='gear')h=h.replace(sg,sg+bondCard());return h;};
 
 /* ---------- 收藏里程碑 ---------- */
 function mileCard(){const L=mileList(S);const by={};for(const m of L)(by[m.M.k]=by[m.M.k]||[]).push(m);
@@ -8756,7 +8761,6 @@ const _vCollectL=vCollect;vCollect=function(){return mileCard()+_vCollectL();};
 /* ---------- 下一步指引、紅點 ---------- */
 const _nextStepL=nextStep;nextStep=function(){const g=_nextStepL();if(g.act==='encOpen')return g;
  if(S.started&&!signToday(S))return {ic:'📅',t:'今天還沒簽到',sub:'累計第 '+(signState(S).total+1)+' 天：'+SIGN_DAYS[signState(S).total%7].n,btn:'簽到',act:'signIn'};
- if(rebReady(S)&&g.act!=='breakthrough')return {ic:'☯',t:'可以輪迴飛升了',sub:'放下修為重新來過，換取永久天賦。',btn:'前往',act:'tab',data:{t:'cultivate'}};
  return g;};
 const _renderNavL=renderNav;renderNav=function(){_renderNavL();if(!S||!S.started)return;const dot=(t,on,lab)=>{const b=$('#nav [data-t="'+t+'"]');if(b&&on&&!b.querySelector('.nav-dot'))b.insertAdjacentHTML('beforeend','<i class="nav-dot" aria-label="'+lab+'"></i>');};
  const W=weekState(S);dot('quest',!signToday(S)||weekTasks(S).some(t=>t.done&&!t.got)||(W.got.length>=3&&!W.chest),'有可領取的獎勵');dot('collect',mileClaimable(S),'有可領取的里程碑');};
@@ -8777,7 +8781,8 @@ Object.assign(ACT,{
  weekClaim:d=>{const r=weekClaim(S,+d.i);if(r.err)return toast(r.err);save();SFX.coin();toast('獲得 '+r.got.join('、'));render();renderTop();renderNav();},
  weekChest:()=>{const r=weekChest(S);if(r.err)return toast(r.err);save();SFX.major&&SFX.major();breakAnim(false,'本週寶箱',r.got.join('、'));toast('獲得 '+r.got.join('、'));render();renderTop();renderNav();},
  rebAsk:()=>rebAskModal(),
- rebGo:()=>{sync();const r=rebirth(S);if(r.err){closeModal();return toast(r.err);}save();closeModal();SFX.major&&SFX.major();breakAnim(true,'輪迴飛升・'+rebName(r.n),'天賦點 +'+r.gain);try{FX.burst('confetti');}catch(e){}render();renderTop();renderNav();},
+ rebAsk2:()=>rebAsk2Modal(),
+ rebGo:()=>{if(!ui.rebOk)return rebAsk2Modal();ui.rebOk=0;sync();const r=rebirth(S);if(r.err){closeModal();return toast(r.err);}save();closeModal();SFX.major&&SFX.major();breakAnim(true,'輪迴飛升・'+rebName(r.n),'天賦點 +'+r.gain);try{FX.burst('confetti');}catch(e){}render();renderTop();renderNav();},
  rebPerk:d=>{const e=rebPerkUp(S,d.k);if(e)return toast(e);save();SFX.click();render();renderTop();},
  rebReset:()=>{const e=rebPerkReset(S);if(e)return toast(e);save();toast('天賦點已退回，可以重新分配');render();renderTop();},
  bondWipe:()=>{sync();const r=bondWipe(S);if(r.err)return toast(r.err);save();SFX.coin();if(r.up){breakAnim(false,'兵魂提升','「'+itemName(r.it)+'」第 '+r.it.bl+' 重');}else toast('兵魂 +15');render();renderTop();},
