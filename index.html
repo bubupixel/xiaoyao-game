@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261110-105201";</script>
+<script>window.XY_BUILD="20261118-191830";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5687,6 +5687,100 @@ function zlTrialTry(s,id,ci){const d=zlFind(s,id);if(!d)return {err:'找不到�
 function zlBondClean(s){const f=zl(s);if(!f)return;const B=zlBonds(s),ids=new Set(f.disciples.map(d=>String(d.id)));for(const k in B){const [a,b]=k.split('-');if(!ids.has(a)||!ids.has(b))delete B[k];}const Z=zlState(s);if(Z.pev&&(!ids.has(String(Z.pev.a))||!ids.has(String(Z.pev.b))))Z.pev=null;}
 {const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);try{if(zl(s)){zlBonds(s);zlBondClean(s);}}catch(e){}return s;};}
 
+/* ================= 江湖大事件：每週輪換、三幕、兩條結局、影響之後一週 ================= */
+/* 每一幕：[敘述, [選項…]]；選項：[文字, 陣營 a/b, 類型 go|fight|pay, 參數, 結果描述] */
+const WEV=[
+ {id:'hanshan',n:'寒山寺之圍',ic:'🛕',intro:'九幽的人馬封了寒山古寺的山門，寺裡的僧人與香客被困在裡面。',
+  sa:'死守山門',sb:'深入敵營',
+  st:[['山下的村民說，九幽的人每晚換一次哨。慧明大師托人帶話：寺裡的存糧只夠三天。',[['正面殺上山門','a','fight',1,'你一路打到山門前，守門的九幽弟子四散。'],['趁換哨時摸進後山','b','go',0,'你從後山小徑繞進敵營，看清了他們的布置。']]],
+   ['寺裡傷者越來越多，藥不夠了。九幽的冬使派人來說：交出寺中的經卷，就放人。',[['花錢買通山下藥商，把藥送進寺裡','a','pay',1,'藥送到了，慧明大師親自出來道謝。'],['夜襲九幽的糧倉','b','fight',1.15,'糧倉燒起來的時候，九幽的人亂成一團。']]],
+   ['決戰之夜。冬使親自帶人攻山。',[['守在山門前，一步不退','a','fight',1.3,'天亮時，九幽退兵了。'],['直取冬使的營帳','b','fight',1.3,'你闖進營帳時，冬使正在等你。']]]],
+  ea:{t:'寒山寺保住了。慧明大師把一份練功心得送給你：「江湖能靜下來，是因為有人肯站在前面。」',e:{xpPct:8},bn:'寺僧感念'},
+  eb:{t:'冬使敗在你手下，帶著殘部退回九幽。臨走前他說：「這一劍，我記住了。」',e:{atkPct:6},bn:'威震九幽'}},
+ {id:'caobang',n:'漕幫風波',ic:'⛵',intro:'漕幫二當家不滿江映川，要在大會上奪權。運河上的船已經停了三天。',
+  sa:'助江映川',sb:'聽二當家的道理',
+  st:[['碼頭上兩派人馬對峙，一句話不對就要動手。',[['站到江映川身邊','a','go',0,'江映川看見你，鬆了一口氣。'],['先去聽聽二當家怎麼說','b','go',0,'二當家說，幫裡的老兄弟三年沒加過一文工錢。']]],
+   ['有人在夜裡鑿沉了兩條運糧船。',[['潛下水查個明白','a','fight',1.05,'水底下等著你的，是一群拿錢辦事的水匪。'],['出錢先把糧補上，穩住人心','b','pay',1,'糧補上了，碼頭上的人不再吵了。']]],
+   ['大會當天，兩派各推一人比武定輸贏。',[['替江映川出戰','a','fight',1.25,'你贏了。江映川當眾答應：明年起給兄弟們加工錢。'],['勸兩人坐下來談','b','go',0,'吵到天黑，兩人終於碰了杯。']]]],
+  ea:{t:'江映川坐穩了幫主之位，漕幫的船對你一律免費。',e:{goldPct:10},bn:'漕運暢通'},
+  eb:{t:'漕幫重新分了權，水路比從前更通暢，往來各地都快了不少。',e:{expSpeed:12},bn:'水路四通'}},
+ {id:'lunjian',n:'武林大會',ic:'🏆',intro:'十年一度的武林大會在洛陽開幕，各派都在搶盟主之位。',
+  sa:'爭奪盟主',sb:'查明幕後',
+  st:[['報名的高手擠滿了城。有人在背後說，這次大會早就內定了。',[['報名參賽','a','fight',1,'初賽，你一招就把對手送下了台。'],['先去打聽傳言','b','go',0,'酒樓的掌櫃悄悄告訴你：主辦的人收了誰的銀子。']]],
+   ['你發現有人在比武台的木樁上動了手腳。',[['不管，照樣上台','a','fight',1.15,'木樁斷了，你在半空中翻身落地，還是贏了。'],['花錢請人連夜換掉木樁','b','pay',1,'第二天，原本要在台上出事的，是主辦方安排好的人。']]],
+   ['決賽。對面站著的，是傳說中已經退隱的老盟主。',[['全力一戰','a','fight',1.35,'最後一招，你們同時收手。滿場掌聲。'],['在台下揭穿主辦方','b','go',0,'帳本攤開的那一刻，全場鴉雀無聲。']]]],
+  ea:{t:'你成了這屆的武林盟主。走在街上，有人遠遠就讓了路。',e:{atkPct:5,defPct:5},bn:'武林盟主'},
+  eb:{t:'大會的黑幕被揭開，各派都欠你一個人情，紛紛把壓箱底的武學拿出來與你切磋。',e:{profPct:12},bn:'各派切磋'}},
+ {id:'wenyi',n:'瘟疫南下',ic:'🌿',intro:'北方傳來的疫病沿著官道南下，青石鎮外已經有人倒下了。',
+  sa:'開棚救人',sb:'追查疫源',
+  st:[['蘇晚晴說，藥不夠，人手也不夠。',[['在鎮口搭起醫棚','a','go',0,'醫棚搭起來了，排隊的人一直排到橋頭。'],['到上游看看水源','b','go',0,'你在上游發現了一片死去的魚。']]],
+   ['藥材的價錢一天翻了三倍。',[['出錢把藥全買下','a','pay',1.2,'藥材一車車運進醫棚。'],['追查囤藥的商人','b','fight',1.1,'囤藥的商人雇了打手。打手不夠打。']]],
+   ['疫情最兇的那幾天。',[['守在醫棚，三天不睡','a','go',0,'第四天早上，第一個病人下了床。'],['闖進上游的毒窟','b','fight',1.3,'往水裡下毒的人，原來是九幽的餘黨。']]]],
+  ea:{t:'疫病過去了。鎮上的人在醫棚原址立了一塊碑，上面有你的名字。',e:{hpPct:8,stamRegen:10},bn:'杏林之德'},
+  eb:{t:'疫源斷了。蘇晚晴說，你帶回來的毒樣讓她找到了三種新藥方。',e:{herbBonus:20,xpPct:3},bn:'疫源已斷'}},
+ {id:'shenbing',n:'古劍出世',ic:'⚔',intro:'崑崙山崩，一柄古劍從山腹裡露了出來，劍光照了三天三夜。',
+  sa:'奪劍',sb:'護劍歸主',
+  st:[['各派的人都往崑崙趕，路上已經打過好幾場。',[['搶在所有人前面','a','fight',1.05,'你第一個趕到了山腳。'],['找賀蘭朔打聽古劍的來歷','b','go',0,'賀蘭朔說，那是他祖上一位將軍的佩劍。']]],
+   ['山腹裡有機關，也有其他門派的高手。',[['硬闖','a','fight',1.2,'機關和高手，都沒能攔住你。'],['花錢雇嚮導帶路','b','pay',.8,'嚮導帶著你走了一條沒人知道的路。']]],
+   ['古劍就插在石台上。所有人都看著你。',[['拔劍','a','fight',1.35,'劍出石台的那一刻，山谷裡響起了一聲長吟。'],['請賀蘭朔來取','b','go',0,'賀蘭朔握住劍柄，跪了很久。']]]],
+  ea:{t:'古劍歸你了。它不肯認你為主，卻肯陪你練劍。',e:{crit:3,critDmg:10},bn:'古劍相伴'},
+  eb:{t:'古劍回到了將軍的後人手裡。崑崙的牧民從此把你當自己人，各地商隊也願意跟你做生意。',e:{goldPct:6,profPct:6},bn:'劍歸其主'}},
+ {id:'bianguan',n:'邊關告急',ic:'🏹',intro:'崑崙關外的部族南下，邊關的烽火已經點起來了。賀蘭朔派人求援。',
+  sa:'上陣殺敵',sb:'出關議和',
+  st:[['關內的百姓在逃難，路上亂成一片。',[['逆著人潮趕往前線','a','go',0,'你趕到關上時，城牆已經裂了一道縫。'],['先護送百姓入關','b','go',0,'你帶著一百多個百姓走了兩天，沒有一個掉隊。']]],
+   ['敵軍的先鋒趁夜攻城。',[['跟守軍一起守城','a','fight',1.15,'天亮時，先鋒退了。'],['帶著禮物出關','b','pay',1,'部族首領收下禮物，答應見你一面。']]],
+   ['最後一戰——或者最後一次談判。',[['衝陣斬旗','a','fight',1.35,'帥旗倒下的那一刻，敵軍潰退了。'],['和首領單獨談','b','go',0,'你們喝了一夜的酒。天亮時，他答應退兵。']]]],
+  ea:{t:'邊關守住了。賀蘭朔說：「有你在，關外的風都小了些。」',e:{atkPct:8},bn:'邊關英雄'},
+  eb:{t:'兩邊開了互市。關外的馬和藥材源源不斷地運進來。',e:{stamRegen:15,goldPct:4},bn:'關外互市'}},
+];
+const WEV_STAM=5,WEV_GAP=4*36e5; /* 下一幕隔 4 小時才開 */
+function wevState(s){const k=localWeek(nowT());let W=s.wev;if(!W||typeof W!=='object'||W.k!==k){W=s.wev={k,id:WEV[((k%WEV.length)+WEV.length)%WEV.length].id,step:0,a:0,b:0,at:0,log:[],end:null};}return W;}
+const wevDef=s=>WEV.find(E=>E.id===wevState(s).id)||WEV[0];
+function wevNextAt(s){const W=wevState(s);return W.step?W.at+WEV_GAP:0;}
+function wevReady(s){const W=wevState(s);return !W.end&&W.step<3&&nowT()>=wevNextAt(s)&&(s.g|0)>=10;}
+function wevBuff(s){const B=s.wbuff;return B&&B.until>nowT()?B:null;}
+function wevCost(s,p){return Math.round(1200*(1+realmOf(s))*p);}
+function wevFoe(s,k,name){const P=playerFighter(s),E=finishEnemy(Object.assign(enemyBase(realmOf(s)*3.8+2,k>=1.3),{name}));
+ Object.assign(E,{hp:Math.round(P.hp*(.55+1.9*(k-1))),atk:Math.round(P.atk*(.7+1*(k-1))),def:Math.round(P.def*.8),spd:P.spd,crit:6,critDmg:50,dodge:4,dbl:3,stun:0,pierce:5,reflect:0,lifesteal:0,opening:0});return finishEnemy(E);}
+const WEV_FOES={hanshan:['九幽弟子','九幽護法','九幽冬使'],caobang:['水匪頭目','水匪頭目','二當家'],lunjian:['少林棍僧','華山劍客','老盟主'],wenyi:['囤藥打手','囤藥打手','九幽毒師'],shenbing:['崑崙劍客','守山傀儡','古劍劍靈'],bianguan:['部族斥候','先鋒騎兵','部族勇士']};
+function wevDo(s,ci){const W=wevState(s),E=wevDef(s);if(W.end)return {err:'本週大事件已經結束'};if((s.g|0)<10)return {err:'等級 10 後才會捲入江湖大事'};if(!wevReady(s))return {err:'下一幕還沒開始'};
+ const st=E.st[W.step],c=st&&st[1][ci];if(!c)return {err:'選項無效'};const [lab,side,kind,par,txt]=c;let res=null,F=null;
+ if(kind==='pay'){const v=wevCost(s,par);if(s.silver<v)return {err:'銀兩不足（需 '+fmt(v)+'）'};s.silver-=v;}
+ if(kind==='fight'||kind==='go'){if(s.stam<WEV_STAM)return {err:'體力不足（需 '+WEV_STAM+'）'};s.stam-=WEV_STAM;}
+ if(kind==='fight'){F=wevFoe(s,par,(WEV_FOES[E.id]||['對手'])[W.step]);res=fight(playerFighter(s),F);applyPotions(s,res);
+  if(!res.win){s.stam+=WEV_STAM;return {lose:true,E:F,res,lines:['這一戰沒能拿下。體力已退回，準備好了再來。']};}}
+ advTime(s,60);W[side]+=kind==='fight'?2:1;W.log.push([W.step,ci]);W.step++;W.at=nowT();const rw=Math.round(600*(1+realmOf(s))),fm=Math.round(25*fameMult(s));s.silver+=rw;s.fame+=fm;
+ const lines=[txt,'銀兩 +'+fmt(rw)+'、聲望 +'+fm+'。'];let end=null;
+ if(W.step>=3){const sd=W.a>=W.b?'a':'b',O=sd==='a'?E.ea:E.eb;W.end=sd;s.wbuff={id:E.id,side:sd,n:O.bn,e:Object.assign({},O.e),until:nowT()+7*864e5};const bv=Math.round(2500*(1+realmOf(s))),bf=Math.round(80*fameMult(s));s.silver+=bv;s.fame+=bf;
+  end={t:O.t,bn:O.bn,e:O.e,silver:bv,fame:bf};addJournal(s,'江湖','江湖大事件「'+E.n+'」落幕：'+O.bn+'。','wev'+W.k);s.stat.wev=(s.stat.wev||0)+1;}
+ else addJournal(s,'江湖','「'+E.n+'」第 '+W.step+' 幕：'+lab+'。');
+ return {lines,E:F,res,end,win:true};}
+{const _x=extStatMods;extStatMods=function(s,st){_x(s,st);const B=wevBuff(s);if(B)for(const k in B.e)st[k]=(st[k]||0)+B.e[k];};}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const W=raw.wev;
+ if(W&&typeof W==='object'&&Number.isFinite(W.k)&&WEV.some(E=>E.id===W.id))s.wev={k:W.k|0,id:W.id,step:Math.max(0,Math.min(3,W.step|0)),a:W.a|0,b:W.b|0,at:+W.at||0,log:Array.isArray(W.log)?W.log.slice(0,3):[],end:W.end==='a'||W.end==='b'?W.end:null};
+ const B=raw.wbuff;if(B&&typeof B==='object'&&B.e&&typeof B.e==='object'&&+B.until>0)s.wbuff={id:String(B.id||''),side:B.side,n:String(B.n||''),e:Object.fromEntries(Object.entries(B.e).filter(([k,v])=>Number.isFinite(v))),until:+B.until};
+ if(s.stat&&raw.stat&&raw.stat.wev)s.stat.wev=raw.stat.wev|0;return s;};}
+
+/* ================= 今日事務：沒有選擇的日常，一鍵做完 ================= */
+function dailyAll(s){const L=[],d=gday(s);let n=0;const ok=(t)=>{L.push(t);n++;};
+ try{if(typeof signToday==='function'&&!signToday(s)){const r=signIn(s);if(!r.err)ok('簽到第 '+r.total+' 天：'+r.got.join('、'));}}catch(e){}
+ try{const T=weekTasks(s);for(const t of T)if(t.done&&!t.got){const r=weekClaim(s,t.i);if(!r.err)ok('每週大事「'+t.txt+'」：'+r.got.join('、'));}
+  const W=weekState(s);if(!W.chest&&W.got.length>=3){const r=weekChest(s);if(!r.err)ok('本週寶箱：'+r.got.join('、'));}}catch(e){}
+ try{const pk=petOn(s);if(pk){const p=petP(s,pk);if(p.fed!==d){const r=petFeed(s,pk);if(!r.err)ok('餵了'+PETS[pk].n+(r.up?'，升到 '+r.lv+' 級':''));}if(p.play!==d){const r=petPlay(s,pk);if(!r.err)ok('陪'+PETS[pk].n+'玩了一會兒'+(r.up?'，升到 '+r.lv+' 級':''));}}}catch(e){}
+ try{const H=homeState(s);if(H&&Array.isArray(H.plots))H.plots.forEach((_,i)=>{const st=plotState(s,i);if(st&&st.ready){const r=harvest(s,i);if(!r.err)ok('收成：'+r.got.join('、'));}});}catch(e){}
+ try{if(s.fac){for(const T of facTasks(s)){if(s.fac.tasks.done[T.id]||T.fight||T.submit||T.silver||(T.need&&!T.need(s)))continue;if(T.stam&&s.stam<T.stam)continue;const r=facTask(s,T.id);if(r&&!r.err&&!r.res)ok('門務「'+T.n+'」完成'+(r.bonusSilver?'，銀兩 +'+fmt(r.bonusSilver):''));}}}catch(e){}
+ try{if(zl(s)&&!zlLessonDone(s)&&s.stam>=ZL_LESSON_STAM){const f=s.fac,cnt={};f.disciples.filter(x=>!x.away).forEach(x=>cnt[x.path]=(cnt[x.path]||0)+1);const k=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  if(k){const r=zlLessonFinish(s,k,[true,true,true,false,false]);if(!r.err)ok('晨課「'+ZL_LESSON[k].n+'」：弟子們修為大進');}}}catch(e){}
+ return {n,lines:L};}
+/* 預覽：還有幾項可以一鍵做 */
+function dailyCount(s){let n=0;const d=gday(s);try{if(typeof signToday==='function'&&!signToday(s))n++;}catch(e){}
+ try{n+=weekTasks(s).filter(t=>t.done&&!t.got).length;const W=weekState(s);if(!W.chest&&W.got.length>=3)n++;}catch(e){}
+ try{const pk=petOn(s);if(pk){const p=petP(s,pk);if(p.fed!==d&&PET_FOOD.some(x=>(s.mat[x]||0)>0))n++;if(p.play!==d&&s.stam>=3)n++;}}catch(e){}
+ try{const H=homeState(s);if(H&&Array.isArray(H.plots))H.plots.forEach((_,i)=>{const st=plotState(s,i);if(st&&st.ready)n++;});}catch(e){}
+ try{if(s.fac)for(const T of facTasks(s))if(!s.fac.tasks.done[T.id]&&!T.fight&&!T.submit&&!T.silver&&!(T.need&&!T.need(s))&&!(T.stam&&s.stam<T.stam))n++;}catch(e){}
+ try{if(zl(s)&&!zlLessonDone(s)&&s.stam>=ZL_LESSON_STAM&&s.fac.disciples.some(x=>!x.away))n++;}catch(e){}
+ return n;}
+
 </script>
 <script>
 'use strict';
@@ -10619,6 +10713,43 @@ Object.assign(ACT,{
 .les-key{display:grid;gap:4px;margin:6px 0 10px}.les-stars{font-size:30px;color:#d9a43a;letter-spacing:4px;text-align:center;animation:fxRes .6s both}.les-stars span{color:rgba(0,0,0,.15)}
 @keyframes lesIn{from{transform:translateX(40px);opacity:0}}@keyframes lesBack{40%{transform:translateX(26px) rotate(8deg)}100%{transform:none}}@keyframes lesLunge{40%{transform:translateX(-22px) scale(1.08)}100%{transform:none}}
 @keyframes lesPulse{to{transform:scale(1.3)}}`;document.head.appendChild(st);})();
+
+/* ================= 江湖大事件 & 今日事務 介面 ================= */
+const WEV_EFN={xpPct:'修為',atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',goldPct:'財運',expSpeed:'探索速度',profPct:'武學熟練',herbBonus:'採藥',stamRegen:'體力回復',crit:'暴擊',critDmg:'暴擊傷害'};
+const wevEffTxt=e=>Object.entries(e).map(([k,v])=>(WEV_EFN[k]||k)+' +'+v+'%').join('、');
+function wevLeft(ms){const h=Math.floor(ms/36e5),m=Math.ceil(ms%36e5/6e4);return (h?h+' 小時 ':'')+m+' 分';}
+function wevCard(){if(!S||!S.started||(S.g|0)<10)return '';const W=wevState(S),E=wevDef(S),B=wevBuff(S);
+ const dots=[0,1,2].map(i=>`<i class="${i<W.step?'ok':i===W.step&&!W.end?'cur':''}"></i>`).join('');
+ let h=`<div class="card wev${wevReady(S)?' hi':''}"><div class="wev-h"><span class="wev-ic">${E.ic}</span><div style="flex:1;min-width:0"><span class="mini">本週江湖大事件</span><h3 style="margin:0">${E.n}</h3></div><span class="zl-dots">${dots}</span></div>`;
+ if(W.end){const O=W.end==='a'?E.ea:E.eb;h+=`<div class="wev-end"><b>結局・${O.bn}</b><p class="sub">${O.t}</p>${B&&B.id===E.id?`<span class="eff">${wevEffTxt(B.e)}（剩 ${Math.ceil((B.until-nowT())/864e5)} 天）</span>`:''}</div><span class="mini">下週一會有新的大事件。</span>`;}
+ else{const st=E.st[W.step];if(!W.step)h+=`<p class="sub">${E.intro}</p>`;
+  h+=`<div class="wev-side"><span class="${W.a>W.b?'on':''}">${E.sa} ${W.a}</span><span class="${W.b>W.a?'on':''}">${E.sb} ${W.b}</span></div>`;
+  if(!wevReady(S))h+=`<p class="sub">第 ${W.step} 幕已經落幕。江湖上的消息還在傳開……</p><span class="mini">第 ${W.step+1} 幕在 ${wevLeft(wevNextAt(S)-nowT())}後開始。</span>`;
+  else h+=`<div class="lbl">第 ${W.step+1} 幕</div><p class="sub">${st[0]}</p><div class="zl-ch">${st[1].map(([t,side,kind,par],i)=>{const cost=kind==='pay'?'銀兩 '+fmt(wevCost(S,par)):(kind==='fight'?'⚔ 交手・':'')+'體力 '+WEV_STAM;
+   return `<button class="btn sm${i?' ghost':''}" data-act="wev" data-c="${i}">${t}<small>${cost}・偏向「${side==='a'?E.sa:E.sb}」</small></button>`;}).join('')}</div>
+   <span class="mini">三幕裡哪一邊做得多，就走哪個結局（交手算兩分）。輸了不扣東西，體力退回。</span>`;}
+ if(B&&B.id!==E.id)h+=`<div class="mini" style="margin-top:6px">上週餘韻・${B.n}：${wevEffTxt(B.e)}（剩 ${Math.ceil((B.until-nowT())/864e5)} 天）</div>`;
+ return h+'</div>';}
+{const _vj=vJianghu;vJianghu=function(){return wevCard()+_vj();};}
+{const _tl=todayList;todayList=function(){const L=_tl();if(S&&S.started&&wevReady(S))L.unshift(['🔥','江湖大事件「'+wevDef(S).n+'」有新進展','data-act="goTo" data-t="jianghu"']);return L;};}
+{const _tc=todayCard;todayCard=function(){const h=_tc(),n=S&&S.started?dailyCount(S):0;if(!n)return h;const btn=`<button class="btn red daily-btn" data-act="dailyAll">⚡ 一鍵處理日常<small>${n} 項不用做選擇的事，一次做完</small></button>`;
+ if(!h)return `<div class="card today">${btn}</div>`;return h.replace('<div class="card today">','<div class="card today">'+btn);};}
+{const _br=bonusRows;bonusRows=function(){const R=_br();const B=wevBuff(S);if(B)R.push(['江湖大事・'+B.n,wevEffTxt(B.e)+'（剩 '+Math.ceil((B.until-nowT())/864e5)+' 天）']);return R;};}
+Object.assign(ACT,{
+ wev:d=>{sync();const E=wevDef(S),stp=wevState(S).step;const r=wevDo(S,+d.c);if(r.err)return done(r.err);save();
+  const endH=r.end?`<div class="card hi wev-endm"><b>結局・${r.end.bn}</b><p class="sub">${r.end.t}</p><span class="eff">接下來七天：${wevEffTxt(r.end.e)}</span><span class="mini">另得銀兩 +${fmt(r.end.silver)}、聲望 +${r.end.fame}</span></div>`:'';
+  if(r.res){battleModal(E.n+'・第 '+(stp+1)+' 幕',{E:r.E,res:r.res,lines:r.lines.concat(r.end?['【結局】'+r.end.bn+'：'+r.end.t,'接下來七天：'+wevEffTxt(r.end.e)]:[])});if(r.end)setTimeout(()=>{SFX.major&&SFX.major();},300);}
+  else{(r.end?SFX.major:SFX.story)();openModal(`<div class="wev-h"><span class="wev-ic">${E.ic}</span><h3 style="margin:0">${E.n}・第 ${stp+1} 幕</h3></div>${r.lines.map(l=>`<p class="sub">${l}</p>`).join('')}${endH}<button class="btn" data-act="closeModal">好</button>`);}
+  render();renderTop();},
+ dailyAll:()=>{sync();const r=dailyAll(S);if(!r.n)return toast('沒有可以一鍵處理的事');save();SFX.coin&&SFX.coin();setTimeout(()=>SFX.ok&&SFX.ok(),120);render();renderTop();renderNav&&renderNav();
+  openModal(`<h3>⚡ 今日事務・完成 ${r.n} 項</h3><ul class="daily-ul">${r.lines.map(l=>`<li>${l}</li>`).join('')}</ul>${todayList().length?'<span class="mini">剩下的事需要你親自拿主意，在「今日待辦」裡。</span>':''}<button class="btn" data-act="closeModal">好</button>`);},
+});
+if(typeof FX_SILENT!=='undefined')FX_SILENT.add('dailyAll');
+(function(){const st=document.createElement('style');st.textContent=`
+.wev-h{display:flex;gap:10px;align-items:center}.wev-ic{font-size:28px;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:rgba(192,80,74,.15);flex-shrink:0}
+.wev .zl-ch{display:grid;gap:6px;margin:8px 0}.wev-side{display:flex;gap:6px;margin:6px 0}.wev-side span{flex:1;text-align:center;font-size:12px;padding:3px 6px;border-radius:10px;background:rgba(0,0,0,.08)}.wev-side span.on{background:#c0504a;color:#fff}
+.wev-end{margin:6px 0}.wev-endm{margin:8px 0;animation:fxRes .5s both}
+.daily-btn{width:100%;margin-bottom:6px}.daily-ul{margin:6px 0 10px;padding-left:20px;display:grid;gap:4px}.daily-ul li{animation:cardIn .3s both}.daily-ul li:nth-child(2){animation-delay:.06s}.daily-ul li:nth-child(3){animation-delay:.12s}.daily-ul li:nth-child(4){animation-delay:.18s}.daily-ul li:nth-child(5){animation-delay:.24s}.daily-ul li:nth-child(n+6){animation-delay:.3s}`;document.head.appendChild(st);})();
 
 </script>
 <script>
