@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261118-191830";</script>
+<script>window.XY_BUILD="20261118-193004";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5781,6 +5781,46 @@ function dailyCount(s){let n=0;const d=gday(s);try{if(typeof signToday==='functi
  try{if(zl(s)&&!zlLessonDone(s)&&s.stam>=ZL_LESSON_STAM&&s.fac.disciples.some(x=>!x.away))n++;}catch(e){}
  return n;}
 
+/* ================= 江湖名人榜：大宗師之後的十位高手，臨陣要看破對手路數 ================= */
+/* 路數：剛（以守破之）、快（以攻破之）、巧（以變破之） */
+const RK_STYLE={gang:{n:'剛',ans:'shou'},kuai:{n:'快',ans:'gong'},qiao:{n:'巧',ans:'bian'}};
+const RK_STANCE={shou:{n:'穩守',d:'沉住氣，先接後打'},gong:{n:'搶攻',d:'先下手，不給對方出手的機會'},bian:{n:'變招',d:'虛實相間，不讓對方看透'}};
+const RANK10=[
+ {n:'雷震',t:'鐵掌開碑',st:'gang',ic:'✋',hint:'一掌下去，青石板裂成兩半。出手不快，但每一掌都重得嚇人。',say:'接得住我三掌，再說話。',win:'雷震甩了甩發麻的手：「好硬的骨頭。」',e:{defPct:2},en:'開碑勁'},
+ {n:'燕無痕',t:'柳葉飛刀',st:'kuai',ic:'🍃',hint:'刀在袖裡，誰也沒看清他什麼時候出的手。',say:'眨一下眼，你就輸了。',win:'燕無痕的刀第一次落了空。他愣了很久。',e:{spd:3,crit:1},en:'無痕步'},
+ {n:'花非花',t:'百變千面',st:'qiao',ic:'🎭',hint:'每一招都像別人的招式，真真假假，讓人摸不著頭腦。',say:'你猜，我現在用的是誰的武功？',win:'花非花摘下面具，露出一張平凡的臉：「你看穿了。」',e:{dodge:2},en:'千面訣'},
+ {n:'了因',t:'不動明王',st:'gang',ic:'🛕',hint:'寒山寺的老武僧，一身金鐘罩刀槍不入，站在原地一步不動。',say:'施主請。',win:'了因合十：「老衲動了。施主的功夫，比老衲的心還靜。」',e:{hpPct:3},en:'金鐘罩'},
+ {n:'沈千山',t:'一劍追風',st:'kuai',ic:'🌪',hint:'青雲門的老長老。據說他的劍比風還快，從沒人看清過第二劍。',say:'青霜那孩子常提起你。讓我看看。',win:'沈千山收劍：「後生可畏。青霜沒看錯人。」',e:{atkPct:2,spd:2},en:'追風劍意'},
+ {n:'公輸墨',t:'千機手',st:'qiao',ic:'⚙',hint:'身上藏著上百件機關暗器，每一件都在你想不到的地方。',say:'你身上的破綻，我已經數到第十七個了。',win:'公輸墨的機關匣空了。他笑著拍手：「妙，妙！」',e:{crit:2,critDmg:5},en:'千機巧'},
+ {n:'夜無明',t:'九幽之主',st:'kuai',ic:'🌑',hint:'九幽真正的主人。出手如鬼魅，冬使只是他的影子。',say:'冬使說，你是唯一讓他後退的人。',win:'夜無明退入黑暗：「這江湖，暫時歸你了。」',e:{lifesteal:2,atkPct:2},en:'幽冥身法'},
+ {n:'霍霸天',t:'刀聖',st:'gang',ic:'🗡',hint:'一柄八十斤的大刀，三十年來沒人能接下他第一刀。',say:'接我一刀。只要一刀。',win:'霍霸天的刀插在地上，他大笑：「三十年了！終於有人接住了！」',e:{atkPct:3},en:'霸刀'},
+ {n:'蕭寒衣',t:'劍后',st:'qiao',ic:'❄',hint:'劍法如雪花，每一片都不一樣。看得見，卻抓不住。',say:'我不殺無名之輩。你有名字嗎？',win:'蕭寒衣看著劍上的缺口，輕聲說：「記住了。」',e:{critDmg:10,dodge:2},en:'寒衣劍舞'},
+ {n:'無名老人',t:'天下第一',st:'?',ic:'☯',hint:'沒有人知道他的名字。他的路數每一次都不同——上一次是什麼，這一次就不是什麼。',say:'孩子，你走了好長的路。',win:'老人放下竹杖，笑了：「這天下第一，你拿去吧。我可以回家種菜了。」',e:{atkPct:3,defPct:3,xpPct:5},en:'無名之道'},
+];
+const RK_UNLOCK=70,RK_TRIES=3,RK_STAM=10;
+function rkState(s){if(!s.rank10||typeof s.rank10!=='object')s.rank10={beat:0,day:-1,tries:0,last:null,old:null};const R=s.rank10;const d=localDay(nowT());if(R.day!==d){R.day=d;R.tries=0;R.old=null;}return R;}
+/* 無名老人：每次路數不同，和上一次不一樣 */
+function rkStyleOf(s,i){const M=RANK10[i];if(M.st!=='?')return M.st;const R=rkState(s);if(!R.old){const k=Object.keys(RK_STYLE).filter(x=>x!==R.last);R.old=k[hash32(R.day*7+R.tries,99)%k.length];}return R.old;}
+function rkFoe(s,i,P){const st=rkStyleOf(s,i),M=RANK10[i],E=finishEnemy(Object.assign(enemyBase(realmOf(s)*3.8+2,true),{name:M.t+'・'+M.n}));
+ const sp={gang:{hp:1.04,atk:1.03,spd:.9,def:1.04},kuai:{hp:.95,atk:.98,spd:1.15,def:.95},qiao:{hp:1,atk:1,spd:1,def:1}}[st];
+ Object.assign(E,{hp:Math.round(P.hp*(1+.06*i)*sp.hp),atk:Math.round(P.atk*(.86+.028*i)*sp.atk),def:Math.round(P.def*(.82+.02*i)*sp.def),spd:Math.round(P.spd*sp.spd),crit:6+i*.5,critDmg:50,dodge:4+i*.3+(st==='qiao'?3:0),dbl:st==='kuai'?6:3,stun:st==='gang'?3:0,pierce:5+i*.5,reflect:0,lifesteal:0,opening:st==='qiao'?10:0});return finishEnemy(E);}
+function rkCheck(s){if((s.g|0)<RK_UNLOCK)return '「一代大宗師」（等級 '+RK_UNLOCK+'）後才能挑戰名人榜';const R=rkState(s);if(R.beat>=RANK10.length)return '你已是天下第一';if(R.tries>=RK_TRIES)return '今天已經挑戰 '+RK_TRIES+' 次，明天再來';if(s.stam<RK_STAM)return '體力不足（需 '+RK_STAM+'）';return null;}
+function rkChallenge(s,stance){const e=rkCheck(s);if(e)return {err:e};if(!RK_STANCE[stance])return {err:'選一種應對'};const R=rkState(s),i=R.beat,M=RANK10[i],sty=rkStyleOf(s,i);
+ const P=playerFighter(s),right=RK_STYLE[sty].ans===stance;const F=rkFoe(s,i,P);if(right){P.atk=Math.round(P.atk*1.2);P.def=Math.round(P.def*1.2);P.hp=Math.round(P.hp*1.1);}
+ R.tries++;R.last=sty;R.old=null;s.stam-=RK_STAM;advTime(s,60);const res=fight(P,F);applyPotions(s,res);
+ const lines=[M.n+'：「'+M.say+'」',right?'你看穿了對手「'+RK_STYLE[sty].n+'」的路數，以'+RK_STANCE[stance].n+'應對——攻防大增！':'對手走的是「'+RK_STYLE[sty].n+'」的路數，'+RK_STANCE[stance].n+'沒能佔到便宜。'];
+ if(!res.win){s.stam+=RK_STAM;lines.push('這一戰輸了。體力已退回，今天還能挑戰 '+(RK_TRIES-R.tries)+' 次。'+(right?'':'下次換個應對試試。'));return {win:false,res,E:F,lines,right};}
+ R.beat++;const v=Math.round(3000*(1+realmOf(s))*(1+i*.3)),fm=Math.round((60+i*20)*fameMult(s));s.silver+=v;s.fame+=fm;
+ lines.push(M.win,'名人榜第 '+(10-i)+' 位易主！學得「'+M.en+'」：'+rkEffTxt(M.e)+'（永久）。','銀兩 +'+fmt(v)+'、聲望 +'+fm+'。');
+ addJournal(s,'江湖','擊敗名人榜第 '+(10-i)+' 位「'+M.t+'」'+M.n+'。','rk'+i);if(R.beat===RANK10.length){giveTitle(s,'rk_top');lines.push('【天下第一】你登上了江湖名人榜之首。獲得稱號「天下第一」。');}
+ return {win:true,res,E:F,lines,right,M,fin:R.beat===RANK10.length};}
+const RK_EFN={atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',spd:'速度',crit:'暴擊',critDmg:'暴擊傷害',dodge:'閃避',lifesteal:'吸血',xpPct:'修為'};
+const rkEffTxt=e=>Object.entries(e).map(([k,v])=>(RK_EFN[k]||k)+' +'+v+(['spd'].includes(k)?'':'%')).join('、');
+Object.assign(TITLES,{rk_top:{n:'天下第一',src:'擊敗江湖名人榜十位高手',tier:5,e:{atkPct:6,defPct:4,xpPct:6}}});
+{const _x=extStatMods;extStatMods=function(s,st){_x(s,st);const R=s.rank10;if(R&&R.beat)for(let i=0;i<Math.min(R.beat,RANK10.length);i++){const e=RANK10[i].e;for(const k in e)st[k]=(st[k]||0)+e[k];}};}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const R=raw.rank10;if(R&&typeof R==='object')s.rank10={beat:Math.max(0,Math.min(RANK10.length,R.beat|0)),day:R.day|0,tries:Math.max(0,R.tries|0),last:RK_STYLE[R.last]?R.last:null,old:RK_STYLE[R.old]?R.old:null};
+ if(raw.titles&&Array.isArray(raw.titles)&&raw.titles.includes('rk_top')&&Array.isArray(s.titles)&&!s.titles.includes('rk_top'))s.titles.push('rk_top');return s;};}
+
 </script>
 <script>
 'use strict';
@@ -10730,7 +10770,7 @@ function wevCard(){if(!S||!S.started||(S.g|0)<10)return '';const W=wevState(S),E
    <span class="mini">三幕裡哪一邊做得多，就走哪個結局（交手算兩分）。輸了不扣東西，體力退回。</span>`;}
  if(B&&B.id!==E.id)h+=`<div class="mini" style="margin-top:6px">上週餘韻・${B.n}：${wevEffTxt(B.e)}（剩 ${Math.ceil((B.until-nowT())/864e5)} 天）</div>`;
  return h+'</div>';}
-{const _vj=vJianghu;vJianghu=function(){return wevCard()+_vj();};}
+{const _vj=vJianghu;vJianghu=function(){return wevCard()+(typeof rankCard==='function'?rankCard():'')+_vj();};}
 {const _tl=todayList;todayList=function(){const L=_tl();if(S&&S.started&&wevReady(S))L.unshift(['🔥','江湖大事件「'+wevDef(S).n+'」有新進展','data-act="goTo" data-t="jianghu"']);return L;};}
 {const _tc=todayCard;todayCard=function(){const h=_tc(),n=S&&S.started?dailyCount(S):0;if(!n)return h;const btn=`<button class="btn red daily-btn" data-act="dailyAll">⚡ 一鍵處理日常<small>${n} 項不用做選擇的事，一次做完</small></button>`;
  if(!h)return `<div class="card today">${btn}</div>`;return h.replace('<div class="card today">','<div class="card today">'+btn);};}
@@ -10750,6 +10790,29 @@ if(typeof FX_SILENT!=='undefined')FX_SILENT.add('dailyAll');
 .wev .zl-ch{display:grid;gap:6px;margin:8px 0}.wev-side{display:flex;gap:6px;margin:6px 0}.wev-side span{flex:1;text-align:center;font-size:12px;padding:3px 6px;border-radius:10px;background:rgba(0,0,0,.08)}.wev-side span.on{background:#c0504a;color:#fff}
 .wev-end{margin:6px 0}.wev-endm{margin:8px 0;animation:fxRes .5s both}
 .daily-btn{width:100%;margin-bottom:6px}.daily-ul{margin:6px 0 10px;padding-left:20px;display:grid;gap:4px}.daily-ul li{animation:cardIn .3s both}.daily-ul li:nth-child(2){animation-delay:.06s}.daily-ul li:nth-child(3){animation-delay:.12s}.daily-ul li:nth-child(4){animation-delay:.18s}.daily-ul li:nth-child(5){animation-delay:.24s}.daily-ul li:nth-child(n+6){animation-delay:.3s}`;document.head.appendChild(st);})();
+
+/* ================= 江湖名人榜 介面 ================= */
+function rankCard(){if(!S||!S.started||(S.g|0)<RK_UNLOCK-10)return '';const R=rkState(S),i=R.beat,lock=(S.g|0)<RK_UNLOCK;
+ const lad=RANK10.map((M,j)=>{const st=j<i?'ok':j===i?'cur':'';return `<div class="rk-r ${st}"><span class="rk-no">${10-j}</span><span class="rk-ic">${j<=i?M.ic:'？'}</span><span>${j<=i?`<b>${M.n}</b> <span class="mini">${M.t}</span>`:'<span class="mini">？？？</span>'}</span>${j<i?`<span class="mini rk-e">${M.en}</span>`:''}</div>`;}).reverse().join('');
+ let h=`<div class="card rk${!lock&&i<10&&R.tries<RK_TRIES?' hi':''}"><div class="wev-h"><span class="wev-ic">🏯</span><div style="flex:1"><span class="mini">大宗師之後</span><h3 style="margin:0">江湖名人榜</h3></div><b class="num">${i}/10</b></div>`;
+ if(lock)return h+`<p class="sub">晉升「一代大宗師」（等級 ${RK_UNLOCK}）後，江湖上排名前十的高手會一個個來找你。打敗他們，學得各自的絕學。</p></div>`;
+ if(i>=10)return h+`<p class="sub">十位高手都敗在你手下。你就是天下第一。</p>${fold('rk_lad','<span class="mini">名人榜</span>',`<div class="rk-lad">${lad}</div>`)}</div>`;
+ const M=RANK10[i],left=RK_TRIES-R.tries;
+ h+=`<div class="rk-foe"><span class="rk-big">${M.ic}</span><div style="min-width:0"><span class="mini">第 ${10-i} 位</span><div><b>${M.t}・${M.n}</b></div><p class="sub">${M.hint}${M.st==='?'&&R.last?`<br><span class="mini">（今天上一次，他走的是「${RK_STYLE[R.last].n}」的路數。）</span>`:''}</p></div></div>
+  <div class="lbl">臨陣應對 <span class="mini">今天還能挑戰 ${left} 次・體力 ${RK_STAM}</span></div>
+  <div class="rk-st">${Object.entries(RK_STANCE).map(([k,T])=>`<button class="btn sm" data-act="rkGo" data-k="${k}" ${left<=0||S.stam<RK_STAM?'disabled':''}>${T.n}<small>${T.d}</small></button>`).join('')}</div>
+  <span class="mini">看對手的路數出招：剛猛的穩守、快的搶攻、巧的變招。看穿了，攻防大增。輸了不扣東西，體力退回。</span>
+  <span class="mini">打敗後學得「${M.en}」：${rkEffTxt(M.e)}（永久）。</span>
+  ${fold('rk_lad','<span class="mini">名人榜</span>',`<div class="rk-lad">${lad}</div>`)}`;
+ return h+'</div>';}
+{const _tl=todayList;todayList=function(){const L=_tl();if(S&&S.started&&(S.g|0)>=RK_UNLOCK){const R=rkState(S);if(R.beat<10&&R.tries===0)L.push(['🏯','名人榜第 '+(10-R.beat)+' 位「'+RANK10[R.beat].n+'」在等你','data-act="goTo" data-t="jianghu"']);}return L;};}
+{const _br=bonusRows;bonusRows=function(){const R=_br(),K=S.rank10;if(K&&K.beat){const e={};for(let i=0;i<Math.min(10,K.beat);i++)for(const k in RANK10[i].e)e[k]=(e[k]||0)+RANK10[i].e[k];R.push(['名人榜絕學 '+K.beat+' 門',rkEffTxt(e)]);}return R;};}
+ACT.rkGo=d=>{sync();const R=rkState(S),M=RANK10[R.beat];const r=rkChallenge(S,d.k);if(r.err)return done(r.err);save();battleModal('名人榜・'+M.t+' '+M.n,{E:r.E,res:r.res,lines:r.lines});if(r.win)setTimeout(()=>{SFX.major&&SFX.major();},400);render();renderTop();};
+(function(){const st=document.createElement('style');st.textContent=`
+.rk-foe{display:flex;gap:10px;align-items:flex-start;margin:8px 0}.rk-big{font-size:34px;width:56px;height:56px;display:grid;place-items:center;border-radius:12px;background:rgba(40,20,10,.12);flex-shrink:0}
+.rk-st{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rk-st .btn small{font-size:10px}
+.rk-lad{display:grid;gap:3px;margin-top:6px}.rk-r{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:8px;opacity:.55}.rk-r.ok{opacity:1}.rk-r.cur{opacity:1;background:rgba(192,80,74,.12);outline:1px solid rgba(192,80,74,.4)}
+.rk-no{width:20px;text-align:center;font-weight:700;color:#a8762a}.rk-ic{width:22px;text-align:center}.rk-e{margin-left:auto;color:#3d6b45}`;document.head.appendChild(st);})();
 
 </script>
 <script>
