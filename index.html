@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<script>window.XY_BUILD="20261118-193004";</script>
+<script>window.XY_BUILD="20261118-212934";</script>
 <title>逍遙江湖：像素修行錄</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5821,6 +5821,108 @@ Object.assign(TITLES,{rk_top:{n:'天下第一',src:'擊敗江湖名人榜十位�
 {const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);const R=raw.rank10;if(R&&typeof R==='object')s.rank10={beat:Math.max(0,Math.min(RANK10.length,R.beat|0)),day:R.day|0,tries:Math.max(0,R.tries|0),last:RK_STYLE[R.last]?R.last:null,old:RK_STYLE[R.old]?R.old:null};
  if(raw.titles&&Array.isArray(raw.titles)&&raw.titles.includes('rk_top')&&Array.isArray(s.titles)&&!s.titles.includes('rk_top'))s.titles.push('rk_top');return s;};}
 
+/* ================= ④ 門下傳承：出師弟子在江湖的後續 ================= */
+/* 出師時記下有名有姓弟子的編號 */
+{const _g=zlGraduate;zlGraduate=function(s,id,how){const d=zlFind(s,id),nid=d?d.nid:null,nm=d?d.name:null;const r=_g(s,id,how);if(!r.err&&nm!=null){const Z=zlState(s);
+ for(const rec of [].concat(Z.out,Z.elders,Z.heir?[Z.heir]:[]))if(rec&&rec.name===nm&&rec.nid==null)rec.nid=nid;}return r;};}
+const GEV_TIER=[[0,'初出茅廬'],[25,'小有名氣'],[50,'一方豪俠'],[80,'名動江湖']];
+const gevTier=rn=>{let t=GEV_TIER[0][1];for(const [v,n] of GEV_TIER)if((rn||0)>=v)t=n;return t;};
+const GEV_FOES=['黑風寨的山賊','一夥馬賊','九幽的餘黨','鹽幫的打手','海上的倭寇','一群收錢辦事的殺手'];
+const GEV_DEEDS=['擊退了為禍多年的山賊','救下一船落水的百姓','替一個村子討回了被騙的田地','單人匹馬護送賑災的糧車','治好了一場怪病','揪出了城裡的人販子'];
+const GEV_DIL=[
+ ['他在{loc}查到，欺壓百姓的惡霸，竟是一位同門師弟的親舅舅。',['照規矩辦，不講情面',{rn:15,fm:40,t:'他照規矩辦了。百姓們拍手叫好，那位師弟寫信來說：「師兄做得對。」'}],['先寫信問過師弟',{rn:6,loyal:1,t:'師弟回信說：「舅舅的事，我自己去勸。」惡霸後來真的收斂了。'}]],
+ ['有個富商願出大錢，請他當護院，條件是不能再管閒事。',['婉拒，繼續行俠',{rn:12,t:'他回信說：「師父教我的，不是這個。」'}],['先答應，存點錢再說',{silver:1,rn:3,t:'他寄回一大筆銀子，信末寫：「別擔心，我還是會管閒事的。」'}]],
+ ['他打贏了一場比武，對手卻在比武後跪著求他收徒。',['收下這個徒弟',{rn:10,t:'他說：「現在才知道，當師父比當弟子難多了。」'}],['推薦他上山拜你為師',{fm:30,rn:4,t:'過了幾天，山門口真的來了一個背著包袱的年輕人。'}]],
+];
+const GEV={
+ rescue:{n:'求救',w:3,text:(o,x)=>o.name+'在'+x.loc+'被'+x.foe+'圍住了，託人帶信回山求援。',
+  ch:[{t:'親自趕去',k:'fight',fn:(s,o)=>({rn:20,fm:60,t:'你趕到時，'+o.name+'背靠著牆，刀已經捲了刃。你們師徒並肩，殺出了重圍。'})},
+   {t:'派門下弟子去',need:s=>{const f=zl(s);return f&&f.disciples.some(d=>!d.away)?null:'門下沒有弟子可派';},fn:(s,o)=>{const f=zl(s),d=f.disciples.filter(x=>!x.away).sort((a,b)=>zlPower(b)-zlPower(a))[0];d.xp+=zlNeed(d)*.4;d.loyal=Math.min(100,d.loyal+4);return {rn:12,fm:30,t:d.name+'星夜趕去，和'+o.name+'師兄裡應外合。回來時兩人勾肩搭背，'+d.name+'的修為也長進了不少。'};}},
+   {t:'寄銀兩請當地鏢局幫忙',k:'pay',fn:(s,o)=>({rn:8,t:'鏢局的人趕到，圍困解了。'+o.name+'回信說：「讓師父破費了。」'})}]},
+ visit:{n:'拜山',w:2,text:(o,x)=>o.name+'帶著自己收的小徒弟'+x.g+'回山，說要讓徒弟拜見師祖。',
+  ch:[{t:'收小徒孫入門',need:s=>{const f=zl(s);return f&&f.disciples.length<zlDiscMax(s)?null:'弟子名額已滿';},fn:(s,o,x)=>{const Z=zlState(s),c=zlMakeCand(s,hash32(Date.now()%1e9,1e6));c.name=x.g;c.apt=Math.max(c.apt,4);for(const k in c.st)c.st[k]=Math.min(10,c.st[k]+2);c.origin=o.name+'的徒弟';zlCands(s);Z.cand.list.push(c);const r=zlRecruit(s,Z.cand.list.length-1);
+    if(r.err){Z.cand.list.pop();return {err:r.err};}return {rn:5,t:x.g+'拜入門下。'+o.name+'摸著徒弟的頭說：「師祖的話，比我的話還要聽。」'};}},
+   {t:'設宴款待',k:'pay',fn:(s,o)=>{const f=zl(s);if(f)f.disciples.forEach(d=>d.mood=Math.min(100,d.mood+8));return {rn:6,fm:20,t:'那一晚，山門裡熱鬧得像過年。師弟師妹們圍著'+o.name+'，聽他講了一夜的江湖。'};}},
+   {t:'考考小徒孫',fn:(s,o,x)=>({rn:4,fm:15,t:x.g+'一套拳打得有模有樣，最後一招卻摔了個屁股墩。大家笑成一團，'+o.name+'臉都紅了。'})}]},
+ famed:{n:'揚名',w:3,text:(o,x)=>x.loc+'傳來消息：'+o.name+x.deed+'。當地百姓都說，那是你門下的弟子。',
+  ch:[{t:'寫信嘉許',fn:(s,o)=>({rn:12,fm:30,t:'回信很快就到了，只有一行字，字跡卻比以前端正多了：「弟子不敢給師父丟臉。」'})},
+   {t:'叫他回山講給師弟妹聽',fn:(s,o)=>{const f=zl(s);if(f)f.disciples.forEach(d=>{d.xp+=zlNeed(d)*.12;d.mood=Math.min(100,d.mood+5);});return {rn:6,fm:20,t:o.name+'講得眉飛色舞，師弟師妹們聽得兩眼發亮。人人修為小進。'};}}]},
+ dilemma:{n:'兩難',w:2,text:(o,x)=>o.name+'來信：'+x.dil[0].replace('{loc}',x.loc),dyn:true},
+ wed:{n:'成家',w:1,text:(o,x)=>o.name+'要成親了！對方是'+x.loc+'一戶人家的'+(o.male?'姑娘':'公子')+'。'+o.name+'請師父去主婚。',
+  ch:[{t:'親自去主婚',k:'go',fn:(s,o)=>({rn:10,fm:50,t:'喜宴上，'+o.name+'拉著新人給你磕了三個響頭。你喝得有點多，回山時天都亮了。'})},
+   {t:'送一份厚禮',k:'pay',fn:(s,o)=>({rn:6,fm:20,t:'禮送到了。'+o.name+'回信說，新人把你送的東西擺在了堂屋正中間。'})}]},
+ duel:{n:'爭氣',w:2,text:(o,x)=>'江湖上有人放話，說你門下的武功不過如此。'+o.name+'在'+x.loc+'被人當眾羞辱，咽不下這口氣。',
+  ch:[{t:'親自出手',k:'fight',fn:(s,o)=>({rn:15,fm:80,t:'你一招就把那人送出了擂台。從此'+x2loc(o)+'再沒人敢說那句話。'})},
+   {t:'讓他自己爭回面子',fn:(s,o)=>{const ok=Math.random()<.35+(o.rn||0)/150;return ok?{rn:20,fm:40,t:o.name+'苦練了一個月，再上擂台時，對手撐不過十招。'}:{rn:6,t:o.name+'還是輸了，但輸得堂堂正正。對手下台時，向他抱了抱拳。'};}}]},
+};
+const x2loc=o=>LOCS[o.loc]?LOCS[o.loc].n:'那一帶';
+const GEV_STAM=10,GEV_GAP=6*36e5;
+function gevPool(s){const Z=zl(s)&&zlState(s);return Z?Z.out.slice():[];}
+function gevRoll(s){const Z=zl(s)&&zlState(s);if(!Z)return;const t=nowT();if(Z.gev&&t-Z.gev.at<2*864e5)return;if(Z.gev)Z.gev=null;if(Z.gevAt&&t-Z.gevAt<GEV_GAP)return;Z.gevAt=t;
+ const P=gevPool(s);if(!P.length||Math.random()>.6)return;const oi=Math.floor(Math.random()*P.length),o=P[oi];const tot=Object.values(GEV).reduce((a,e)=>a+e.w,0);let r=Math.random()*tot,k='famed';for(const [id,e] of Object.entries(GEV)){r-=e.w;if(r<0){k=id;break;}}
+ Z.gev={k,who:o.name,at:t,loc:x2loc(o),foe:pick(GEV_FOES),deed:pick(GEV_DEEDS),g:ZL_SURN[Math.floor(Math.random()*ZL_SURN.length)]+pick(['小虎','小滿','阿福','小桃','小石','阿蓮','小魚','阿吉']),dil:Math.floor(Math.random()*GEV_DIL.length)};}
+{const _r=zlEvRoll;zlEvRoll=function(s){_r(s);try{gevRoll(s);}catch(e){}};}
+function gevGet(s){const Z=zl(s)&&zlState(s);if(!Z||!Z.gev)return null;const o=Z.out.find(x=>x.name===Z.gev.who);if(!o){Z.gev=null;return null;}const E=GEV[Z.gev.k];if(!E){Z.gev=null;return null;}
+ const x=Object.assign({},Z.gev,{dil:GEV_DIL[Z.gev.dil]||GEV_DIL[0]});let ch=E.ch;if(E.dyn)ch=x.dil.slice(1).map(([t,R])=>({t,fn:()=>Object.assign({},R)}));return {o,E,x,ch,text:E.text(o,x)};}
+const gevCost=s=>Math.round(800*(1+realmOf(s)));
+function gevResolve(s,ci){const G=gevGet(s);if(!G)return {err:'這件事已經過去了'};const c=G.ch[ci];if(!c)return {err:'選項無效'};if(c.need){const n=c.need(s);if(n)return {err:n};}
+ let res=null,F=null;if(c.k==='pay'){const v=gevCost(s);if(s.silver<v)return {err:'銀兩不足（需 '+fmt(v)+'）'};s.silver-=v;}
+ if(c.k==='fight'||c.k==='go'){if(s.stam<GEV_STAM)return {err:'體力不足（需 '+GEV_STAM+'）'};s.stam-=GEV_STAM;}
+ if(c.k==='fight'){const P=playerFighter(s);F=finishEnemy(Object.assign(enemyBase(realmOf(s)*3.8+2,false),{name:G.x.foe.replace(/^(一夥|一群)/,'')}));Object.assign(F,{hp:Math.round(P.hp*.85),atk:Math.round(P.atk*.8),def:Math.round(P.def*.8),spd:P.spd,crit:6,critDmg:50,dodge:4,dbl:3,stun:0,pierce:5,reflect:0,lifesteal:0,opening:0});F=finishEnemy(F);
+  res=fight(P,F);applyPotions(s,res);if(!res.win){s.stam+=GEV_STAM;return {lose:true,E:F,res,lines:['這一戰沒能拿下。體力已退回，事情還沒過去，準備好再來。']};}}
+ const R=c.fn(s,G.o,G.x)||{};if(R.err){if(c.k==='pay')s.silver+=gevCost(s);if(c.k==='go'||c.k==='fight')s.stam+=GEV_STAM;return {err:R.err};}
+ const o=G.o;o.rn=Math.min(100,(o.rn||0)+(R.rn||0));const fm=Math.round((R.fm||0)*fameMult(s));s.fame+=fm;let sv=0;if(R.silver){sv=Math.round(gevCost(s)*1.5);s.silver+=sv;}
+ zlState(s).gev=null;zlState(s).gevAt=nowT();advTime(s,60);addJournal(s,'門派',o.name+'・'+G.E.n+'：'+c.t+'。');s.stat.gev=(s.stat.gev||0)+1;
+ const lines=[R.t,'聲名 +'+(R.rn||0)+'（'+gevTier(o.rn)+'）'+(fm?'、聲望 +'+fm:'')+(sv?'、銀兩 +'+fmt(sv):'')+'。'];return {lines,E:F,res,o,G};}
+/* 門人聲名：每 25 點讓分舵寄回的銀兩多一成 */
+function gevGold(s){const Z=zl(s)&&zlState(s);if(!Z)return 0;return Math.min(20,Z.out.reduce((a,o)=>a+Math.floor((o.rn||0)/25)*2,0));}
+{const _x=extStatMods;extStatMods=function(s,st){_x(s,st);const g=gevGold(s);if(g)st.goldPct=(st.goldPct||0)+g;};}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);try{const rz=raw.fac&&raw.fac.zl,Z=zl(s)&&zlState(s);if(rz&&Z){if(rz.gev&&typeof rz.gev==='object'&&GEV[rz.gev.k])Z.gev=Object.assign({},rz.gev);Z.gevAt=+rz.gevAt||0;
+  const all=[].concat(Z.out,Z.elders,Z.heir?[Z.heir]:[]),rall=[].concat(rz.out||[],rz.elders||[],rz.heir?[rz.heir]:[]);all.forEach(o=>{const ro=rall.find(x=>x&&x.name===o.name);if(ro){if(Number.isFinite(ro.rn))o.rn=Math.max(0,Math.min(100,ro.rn));if(Number.isFinite(ro.nid))o.nid=ro.nid;}
+   if(o.nid==null){const k=ZL_NAMED.findIndex(N=>N.name===o.name);if(k>=0)o.nid=k;}});}}catch(e){}return s;};}
+
+/* ================= ⑥ 千載奇緣：極罕見、每件只遇一次、帶來永久好處 ================= */
+const RARE=[
+ {id:'r_cliff',n:'崖底石洞',text:'你一腳踩空，從山崖上摔了下去。醒來時，身在一個隱秘的石洞裡。洞壁上刻滿了劍痕，角落裡坐著一具百年前的遺骸。',
+  ch:[{t:'參悟石壁上的劍痕',e:{atkPct:4},txt:'你對著石壁看了七天七夜。走出石洞時，手裡的劍好像輕了一半。'},{t:'先安葬這位前輩',e:{defPct:4,xpPct:2},txt:'你替前輩立了墳。墳前的土裡，埋著他留給後人的一卷心法。'}]},
+ {id:'r_ape',n:'白猿獻果',text:'深山裡，一頭白猿攔住了你。牠捧著一顆通紅的果子，眼睛裡竟然帶著求助的神色——牠的孩子掉進了獵人的陷阱。',
+  ch:[{t:'救出小猿，收下朱果',e:{hpPct:5},txt:'朱果入口，一股熱流走遍全身。白猿抱著孩子，向你點了三下頭。'},{t:'救出小猿，朱果還給牠',e:{stamRegen:10,hpPct:2},txt:'白猿愣了很久。之後每次你上山，總有一隻白猿遠遠跟著，替你指路。'}]},
+ {id:'r_doctor',n:'路倒神醫',text:'官道邊倒著一個衣衫襤褸的老人，渾身發燙。路過的人都繞著走。他懷裡露出一角泛黃的醫書。',
+  ch:[{t:'背他去醫館',e:{herbBonus:15,hpPct:2},txt:'老人醒來後說，他是三十年前失蹤的神醫。他把醫書送給了你：「我救了一輩子人，最後是你救了我。」'},{t:'以內力替他療傷',e:{xpPct:5},txt:'你運功三個時辰，老人的燒退了，你的內力卻像被洗過一遍，比從前更加純淨。'}]},
+ {id:'r_swordtomb',n:'劍塚',text:'荒山深處，一片插滿斷劍的亂石坡。只有一柄劍，劍身完好，在月光下微微發亮。',
+  ch:[{t:'拔出那柄劍',e:{crit:3,critDmg:8},txt:'劍出鞘的那一刻，滿山的斷劍一齊嗡鳴。你從沒用過這麼順手的劍。'},{t:'向劍塚三拜後離開',e:{dodge:3,defPct:2},txt:'你轉身時，一陣風吹過，彷彿有人在你耳邊說了一句：「好。」那一夜，你夢見了一套身法。'}]},
+ {id:'r_crane',n:'仙鶴引路',text:'清晨，一隻丹頂鶴落在你面前，叫了三聲，往山頂飛去，又回頭看你。',
+  ch:[{t:'跟著牠上山',e:{xpPct:6},txt:'山頂上，你看見了此生最美的一場日出。那一刻，你忽然明白了很多事情。'},{t:'目送牠離開',e:{wis:3,xpPct:2},txt:'鶴飛遠了。你在原地坐了很久，心裡一片安靜。'}]},
+ {id:'r_beggar',n:'醉丐',text:'酒館門口躺著一個醉醺醺的老乞丐。你經過時，他突然伸出一根手指，點在你的胸口——你竟然躲不開。',
+  ch:[{t:'請他喝一罈好酒',e:{atkPct:3,lifesteal:2},txt:'老乞丐喝完酒，拉著你在後院打了一套掌法，打完就睡著了。第二天，人不見了，掌法你卻記得清清楚楚。'},{t:'把身上的銀子都給他',e:{goldPct:10},txt:'老乞丐哈哈大笑，把銀子塞回你手裡：「你這樣的人，不會缺錢的。」從那以後，你做什麼生意都順。'}]},
+ {id:'r_meteor',n:'天降隕鐵',text:'一聲巨響，一塊燒得通紅的石頭砸進了你身邊的河裡。撈出來一看，是一塊烏黑沉重的隕鐵。',
+  ch:[{t:'自己拿去打造',e:{atkPct:2,pierce:5},item:['xingsha',5],txt:'鐵匠說，這種鐵一百年也遇不到一塊。你的兵器重新鍛過，寒光逼人。'},{t:'送給唐小滿',e:{goldPct:6},rel:['tx',15],txt:'唐小滿捧著隕鐵，眼淚都快掉下來了。唐家的鋪子從此給你的價錢，永遠是最低的。'}]},
+ {id:'r_fisher',n:'漁翁出題',text:'江邊一位漁翁，釣竿上沒有鉤。他頭也不回：「年輕人，我出個題。答得上來，送你一樣東西。」',
+  ch:[{t:'「釣的是心，不是魚。」',e:{expSpeed:10,wis:2},txt:'漁翁收起釣竿，遞給你一張手繪的地圖。上面畫滿了只有他知道的小路。'},{t:'「我答不上來。」',e:{xpPct:4},txt:'漁翁笑了：「知道自己不知道，就是答案。」他教了你一夜的吐納之法。'}]},
+ {id:'r_lotus',n:'千年雪蓮',text:'崑崙雪線之上，冰縫裡開著一朵雪蓮。山下的牧民說，吃了它能延壽十年；山下的病童說，吃了它能治好他的病。',
+  ch:[{t:'自己服下',e:{hpPct:4,stamRegen:6},txt:'寒意之後，是一股暖流。你覺得自己的身體從裡到外都換了一遍。'},{t:'帶下山給病童',e:{xpPct:4},fame:150,txt:'孩子的病好了。全村的人送你出村，送了十里路。你心裡的某道關卡，也跟著打開了。'}]},
+ {id:'r_dream',n:'夢中授藝',text:'你在古寺借宿。夜裡，夢見一位穿著古裝的老人，坐在你床邊，說要教你一套從未見過的心法。',
+  ch:[{t:'專心學',e:{profPct:12},txt:'醒來時天已大亮。你提筆把夢裡的心法寫了下來，一字不差。'},{t:'問他是誰',e:{wis:3,profPct:5},txt:'老人笑而不答，只說了一句：「三百年後，總算有人來了。」醒來後，你武學的進境快了許多。'}]},
+];
+for(const R of RARE)ENCOUNTERS.push({id:R.id,n:R.n,text:R.text,rare:true,ch:R.ch.map((c,i)=>({t:c.t,fn:s=>rareGet(s,R,i)}))});
+const rareList=s=>{if(!Array.isArray(s.qiyu))s.qiyu=[];return s.qiyu;};
+function rareGet(s,R,i){const c=R.ch[i],L=rareList(s);if(!L.some(x=>x[0]===R.id))L.push([R.id,i]);if(c.item)gainItem(s,c.item[0],c.item[1]);if(c.rel&&s.npc[c.rel[0]])addRel(s,c.rel[0],c.rel[1]);if(c.fame)s.fame+=Math.round(c.fame*fameMult(s));
+ if(L.length>=RARE.length)giveTitle(s,'qiyu10');return c.txt+'【永久】'+rareEffTxt(c.e)+'。（千載奇緣 '+L.length+'／'+RARE.length+'）';}
+const RARE_EFN={atkPct:'攻擊',defPct:'防禦',hpPct:'氣血',xpPct:'修為',goldPct:'財運',crit:'暴擊',critDmg:'暴擊傷害',dodge:'閃避',lifesteal:'吸血',herbBonus:'採藥',stamRegen:'體力回復',expSpeed:'探索速度',profPct:'武學熟練',wis:'悟性',pierce:'破甲'};
+const rareEffTxt=e=>Object.entries(e).map(([k,v])=>(RARE_EFN[k]||k)+' +'+v+(k==='wis'?'':'%')).join('、');
+function rareEff(s){const e={};for(const [id,i] of rareList(s)){const R=RARE.find(x=>x.id===id),c=R&&R.ch[i];if(c)for(const k in c.e)e[k]=(e[k]||0)+c.e[k];}return e;}
+Object.assign(TITLES,{qiyu10:{n:'千載奇緣',src:'遇齊十件千載奇緣',tier:5,e:{xpPct:5,goldPct:5,wis:2}}});
+{const _x=extStatMods;extStatMods=function(s,st){_x(s,st);const e=rareEff(s);for(const k in e)st[k]=(st[k]||0)+e[k];};}
+/* 一般奇遇不抽到千載奇緣 */
+{const _a=encAdd;encAdd=function(s,n){const keep=ENCOUNTERS.slice();for(const e of keep.filter(e=>e.rare))ENCOUNTERS.splice(ENCOUNTERS.indexOf(e),1);try{return _a(s,n);}finally{ENCOUNTERS.splice(0,ENCOUNTERS.length,...keep);}};}
+/* 機率：每在江湖待滿一小時（含離線）約 4%；超過 30 小時沒遇過必定出現 */
+function rareRoll(s,sec){if(!s.started||(s.g|0)<5)return;const L=rareList(s),left=RARE.filter(R=>!L.some(x=>x[0]===R.id));if(!left.length)return;const enc=encState(s);if(enc.some(id=>id.startsWith('r_')))return;
+ s.rareAcc=(s.rareAcc||0)+sec;s.rarePity=(s.rarePity||0)+sec;let hit=false;while(s.rareAcc>=3600){s.rareAcc-=3600;if(Math.random()<.04)hit=true;}if(s.rarePity>=30*3600)hit=true;
+ if(hit){s.rarePity=0;s.rareAcc=0;enc.unshift(pick(left).id);s.rareNew=1;}}
+{const _c=catchUp;catchUp=function(s,now){const r=_c(s,now);try{if(r&&r.applied>0)rareRoll(s,r.applied);}catch(e){}return r;};}
+{const _n=normalize;normalize=function(raw,now){const s=_n(raw,now);if(Array.isArray(raw.qiyu))s.qiyu=raw.qiyu.filter(x=>Array.isArray(x)&&RARE.some(R=>R.id===x[0])&&(x[1]===0||x[1]===1)).map(x=>[x[0],x[1]]);
+ s.rareAcc=+raw.rareAcc||0;s.rarePity=+raw.rarePity||0;s.rareNew=raw.rareNew?1:0;if(Array.isArray(raw.enc)&&Array.isArray(s.enc))for(const id of raw.enc)if(String(id).startsWith('r_')&&!s.enc.includes(id)&&ENCOUNTERS.some(e=>e.id===id))s.enc.unshift(id);return s;};}
+
 </script>
 <script>
 'use strict';
@@ -10813,6 +10915,30 @@ ACT.rkGo=d=>{sync();const R=rkState(S),M=RANK10[R.beat];const r=rkChallenge(S,d.
 .rk-st{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.rk-st .btn small{font-size:10px}
 .rk-lad{display:grid;gap:3px;margin-top:6px}.rk-r{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:8px;opacity:.55}.rk-r.ok{opacity:1}.rk-r.cur{opacity:1;background:rgba(192,80,74,.12);outline:1px solid rgba(192,80,74,.4)}
 .rk-no{width:20px;text-align:center;font-weight:700;color:#a8762a}.rk-ic{width:22px;text-align:center}.rk-e{margin-left:auto;color:#3d6b45}`;document.head.appendChild(st);})();
+
+/* ================= 門下傳承 & 千載奇緣 介面 ================= */
+function gevCard(){const G=gevGet(S);if(!G)return '';const {o,E,x,ch,text}=G;
+ return `<div class="card hi gev"><div class="zl-pev-h">${zlPor(o,44)}<div style="min-width:0"><span class="mini">門人來訊・${E.n}</span><div><b>${esc(o.name)}</b> <span class="zl-bl ok">${gevTier(o.rn)}</span></div></div></div>
+  <p class="sub">${text}</p><div class="zl-ch">${ch.map((c,i)=>{const n=c.need?c.need(S):null,cost=c.k==='pay'?'銀兩 '+fmt(gevCost(S)):c.k==='fight'?'⚔ 交手・體力 '+GEV_STAM:c.k==='go'?'體力 '+GEV_STAM:'';
+   return `<button class="btn sm${i?' ghost':''}" data-act="gevGo" data-c="${i}" ${n?'disabled':''}>${esc(c.t)}${n||cost?`<small>${n||cost}</small>`:''}</button>`;}).join('')}</div>
+  <span class="mini">兩天內沒處理，事情會自己過去，不會有壞處。</span></div>`;}
+{const _ss=zlSectHTML;zlSectHTML=function(){let h=_ss();const Z=zlState(S);for(const o of Z.out)h=h.replace(`<b>${esc(o.name)}</b> <span class="zl-rk">`,`<b>${esc(o.name)}</b> <span class="zl-bl ok">${gevTier(o.rn)}</span> <span class="zl-rk">`);return gevCard()+h;};}
+{const _tl=todayList;todayList=function(){const L=_tl();if(!S||!S.started)return L;if(zl(S)&&zlState(S).gev&&gevGet(S))L.unshift(['📜','門人來訊：'+zlState(S).gev.who,'data-act="goTo" data-t="cultivate"']);
+ if((S.enc||[]).some(id=>String(id).startsWith('r_')))L.unshift(['🌟','千載奇緣出現了！','data-act="encOpen"']);return L;};}
+{const _br=bonusRows;bonusRows=function(){const R=_br(),L=rareList(S);if(L.length)R.push(['千載奇緣 '+L.length+'／'+RARE.length,rareEffTxt(rareEff(S))]);const g=gevGold(S);if(g)R.push(['門人聲名','財運 +'+g+'%']);return R;};}
+/* 千載奇緣：金色卷軸 */
+{const _em=encModal;encModal=function(){const L=S.enc||[],E=ENCOUNTERS.find(e=>e.id===L[0]);_em();{const sh=$('#sheet');if(sh)sh.classList.remove('rare-sheet');}if(E&&E.rare){const sh=$('#sheet');if(sh){sh.classList.add('rare-sheet');sh.insertAdjacentHTML('afterbegin','<div class="rare-ban">✦ 千載奇緣 ✦<small>一生只會遇到一次</small></div>');}setTimeout(()=>SFX.major&&SFX.major(),120);}};}
+{const _ec=ACT.encChoose;ACT.encChoose=function(d,b){const L=S.enc||[],rare=String(L[0]||'').startsWith('r_');_ec(d,b);if(rare){const sh=$('#sheet');if(sh)sh.classList.add('rare-sheet');SFX.major&&SFX.major();}};}
+{const _cm=closeModal;closeModal=function(){const sh=$('#sheet');if(sh)sh.classList.remove('rare-sheet');return _cm.apply(this,arguments);};}
+{const _rt=renderTop;renderTop=function(){_rt();if(S&&S.started&&S.rareNew){S.rareNew=0;toast('🌟 千載奇緣出現了！到「江湖」看看');save();}};}
+ACT.gevGo=d=>{sync();const G=gevGet(S);const r=gevResolve(S,+d.c);if(r.err)return done(r.err);save();
+ if(r.res)battleModal((G?G.o.name+'・'+G.E.n:'門人來訊'),{E:r.E,res:r.res,lines:r.lines});
+ else{SFX.story&&SFX.story();openModal(`<div class="zl-pev-h">${zlPor(r.o,48)}<div><h3 style="margin:0">${esc(r.o.name)}・${r.G.E.n}</h3><span class="mini">${gevTier(r.o.rn)}</span></div></div>${r.lines.map(l=>`<p class="sub">${l}</p>`).join('')}<button class="btn" data-act="closeModal">好</button>`);}
+ render();renderTop();};
+(function(){const st=document.createElement('style');st.textContent=`
+.gev .zl-ch{display:grid;gap:6px;margin:8px 0}.gev .sub{margin:8px 0}
+.rare-sheet{box-shadow:0 0 0 3px #e0b04a,0 0 50px rgba(255,200,90,.75)!important}.rare-sheet .ev-text{background:linear-gradient(180deg,#fff8de,#f6e2a8);border:2px solid #d9a43a;border-radius:10px;padding:10px 12px;box-shadow:0 0 18px rgba(255,200,90,.45) inset}
+.rare-ban{text-align:center;font-family:var(--f-title,serif);font-size:20px;letter-spacing:.3em;color:#a8541a;padding:6px 0 10px;display:grid;animation:fxRes .6s both;text-shadow:0 0 12px rgba(255,200,90,.9)}.rare-ban small{font-size:11px;letter-spacing:.2em;color:#8a6a3a}`;document.head.appendChild(st);})();
 
 </script>
 <script>
